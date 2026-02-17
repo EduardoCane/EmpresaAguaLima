@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Corporate Admin Dashboard Design System */
+
+@layer base {
+  :root {
+    /* Main backgrounds */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 5%;
+
+    /* Cards and surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 5%;
+
+    /* Popovers and dropdowns */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 5%;
+
+    /* Primary brand - Vibrant Blue */
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Bright purple */
+    --secondary: 280 85% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted elements */
+    --muted: 210 10% 90%;
+    --muted-foreground: 210 10% 40%;
+
+    /* Accent - Vibrant cyan */
+    --accent: 185 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive - Bright red */
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success - Vibrant green */
+    --success: 120 100% 40%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Bright orange */
+    --warning: 30 100% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 210 20% 85%;
+    --input: 210 20% 90%;
+    --ring: 210 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar - Light mode */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 5%;
+    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 280 85% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 20% 85%;
+    --sidebar-ring: 210 100% 50%;
+    --sidebar-muted: 210 10% 40%;
+  }
+
+  .dark {
+    --background: 15 25% 8%;
+    --foreground: 0 0% 98%;
+    --card: 15 25% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 15 25% 12%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 15 25% 25%;
+    --muted-foreground: 210 10% 65%;
+    --border: 15 25% 20%;
+    --input: 15 25% 15%;
+    --destructive: 0 84% 60%;
+    --success: 120 100% 50%;
+    --warning: 30 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+@layer components {
+  .dashboard-card {
+    @apply bg-card rounded-xl border-2 border-border shadow-lg hover:shadow-2xl transition-all duration-300 hover:border-primary;
+  }
+
+  .stat-card {
+    @apply dashboard-card p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-l-4 border-l-primary;
+  }
+
+  .dark .stat-card {
+    @apply bg-gradient-to-br from-gray-800 to-blue-950/20;
+  }
+
+  .table-header {
+    @apply bg-gradient-to-r from-primary/10 to-accent/10 text-foreground text-xs font-bold uppercase tracking-widest border-b-2 border-border;
+  }
+
+  .dark .table-header {
+    @apply bg-gradient-to-r from-blue-950/30 to-purple-950/30;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 text-sidebar-foreground/80 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-lg mx-2;
+  }
+
+  .sidebar-link-active {
+    @apply bg-gradient-to-r from-sidebar-primary to-sidebar-accent text-sidebar-primary-foreground shadow-lg;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-foreground/50 backdrop-blur-sm z-50;
+  }
+
+  .action-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border-2 border-border bg-card text-foreground px-4 py-2.5 text-sm font-medium transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground;
+  }
+
+  .dark .input-field {
+    @apply border-gray-700 bg-gray-900 focus:border-blue-500;
+  }
+
+  .barcode-container {
+    @apply bg-card p-4 rounded-lg border-2 border-border flex items-center justify-center;
+  }
+
+  .signature-pad {
+    @apply border-2 border-dashed border-border rounded-lg bg-card cursor-crosshair;
+  }
+
+  .section-header {
+    @apply mb-6 pb-4 border-b-2 border-border;
+  }
+
+  .section-title {
+    @apply text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-muted-foreground font-medium;
+  }
+}
