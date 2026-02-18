@@ -217,6 +217,31 @@ export function useReportGenerator() {
       console.warn('Error al obtener firmas de clientes:', error);
     }
 
+    // Cargar fechas reales de creacion de clientes desde BD (clientes.created_at)
+    const clienteCreatedAtMap = new Map<string, string>();
+    try {
+      const clienteIds = clientes.map(c => c.id);
+
+      if (clienteIds.length > 0) {
+        const { data: clientesCreatedAt, error } = await supabase
+          .from('clientes')
+          .select('id, created_at')
+          .in('id', clienteIds);
+
+        if (error) {
+          console.warn('Error al cargar created_at de clientes:', error);
+        } else if (clientesCreatedAt && clientesCreatedAt.length > 0) {
+          clientesCreatedAt.forEach((clienteRow: any) => {
+            if (clienteRow?.id && clienteRow?.created_at) {
+              clienteCreatedAtMap.set(clienteRow.id, clienteRow.created_at);
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Error al obtener created_at de clientes:', error);
+    }
+
     const worksheet = workbook.addWorksheet('Clientes', {
       views: [{ state: 'frozen', ySplit: 4 }],
     });
@@ -476,7 +501,8 @@ export function useReportGenerator() {
           .filter(Boolean)
           .join(' ')
       ).trim().toUpperCase();
-      const fechaEntrega = formatDateOrND(cliente.created_at ?? cliente.fecha_reclutamiento);
+      const fechaCreacionCliente = clienteCreatedAtMap.get(cliente.id) ?? cliente.created_at;
+      const fechaEntrega = formatDateOrND(fechaCreacionCliente);
 
       const rowData = [
         index + 1,
