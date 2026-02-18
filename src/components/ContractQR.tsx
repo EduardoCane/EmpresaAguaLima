@@ -9,8 +9,18 @@ interface ContractQRProps {
 export function ContractQR({ contractId }: ContractQRProps) {
   const publicBase = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
 
+  const normalizeBase = (value: string) => {
+    try {
+      const parsed = new URL(value);
+      const cleanPath = parsed.pathname.replace(/\/$/, '');
+      return `${parsed.origin}${cleanPath}`;
+    } catch {
+      return value.replace(/[#?].*$/, '').replace(/\/$/, '');
+    }
+  };
+
   const signUrl = useMemo(() => {
-    if (publicBase) return `${publicBase.replace(/\/$/, '')}/sign/${contractId}`;
+    if (publicBase) return `${normalizeBase(publicBase)}/sign/${contractId}`;
     return `${window.location.origin}/sign/${contractId}`;
   }, [contractId, publicBase]);
 
