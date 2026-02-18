@@ -146,6 +146,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <SistemaPensionarioForm
               client={zipRenderState.client}
               ficha={zipRenderState.fichaDatos}
+              sistemaPensionarioValues={zipRenderState.sistemaPensionario}
               signatureSrc={zipRenderState.signature}
               pensionChoice={zipRenderState.pensionChoice}
               onChangeChoice={() => {}}
@@ -155,6 +156,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {zipRenderState.activeForm === 'reglamentos' && (
             <ReglamentosForm
               client={zipRenderState.client}
+              reglamentosValues={zipRenderState.reglamentos}
               signatureSrc={zipRenderState.signature}
               pagePart="all"
             />
@@ -162,6 +164,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {zipRenderState.activeForm === 'consentimiento-informado' && (
             <ConsentimientoInformadoForm
               client={zipRenderState.client}
+              consentimientoInformadoValues={zipRenderState.consentimientoInformado}
               pagePart="all"
               signatureSrc={zipRenderState.signature || undefined}
             />
@@ -169,6 +172,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {zipRenderState.activeForm === 'cuenta-bancaria' && (
             <CuentaBancariaForm 
               client={zipRenderState.client}
+              cuentaBancariaValues={zipRenderState.cuentaBancaria}
               signatureSrc={zipRenderState.signature || undefined}
               entidadBancaria={zipRenderState.fichaDatos?.entidadBancaria}
               numeroCuenta={zipRenderState.fichaDatos?.numeroCuenta}
@@ -177,12 +181,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {zipRenderState.activeForm === 'declaracion-conflicto' && (
             <DeclaracionConflictoInteresesForm
               client={zipRenderState.client}
+              declaracionConflictoValues={zipRenderState.declaracionConflicto}
               signatureSrc={zipRenderState.signature || undefined}
             />
           )}
           {zipRenderState.activeForm === 'acuerdo-confidencialidad' && (
             <AcuerdoConfidencialidadForm
               client={zipRenderState.client}
+              acuerdoConfidencialidadValues={zipRenderState.acuerdoConfidencialidad}
               signatureSrc={zipRenderState.signature || undefined}
               cargo={zipRenderState.fichaDatos?.puesto}
             />
@@ -190,6 +196,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {zipRenderState.activeForm === 'carta-no-soborno' && (
             <CartaNoSobornoForm
               client={zipRenderState.client}
+              cartaNoSobornoValues={zipRenderState.cartaNoSoborno}
               signatureSrc={zipRenderState.signature || undefined}
               cargo={zipRenderState.fichaDatos?.puesto}
               unidadArea={zipRenderState.fichaDatos?.unidadArea}
@@ -206,10 +213,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <DjPatrimonialForm
               client={zipRenderState.client}
               signatureSrc={zipRenderState.signature || undefined}
+              djPatrimonialValues={zipRenderState.djPatrimonial}
+              pdfMode={true}
             />
           )}
           {zipRenderState.activeForm === 'induccion' && (
-            <InduccionForm />
+            <InduccionForm
+              client={zipRenderState.client}
+              cargo={zipRenderState.fichaDatos?.puesto}
+              unidadArea={zipRenderState.fichaDatos?.unidadArea}
+              codigo={zipRenderState.client?.cod || undefined}
+              signatureSrc={zipRenderState.signature || undefined}
+              pdfMode={true}
+            />
           )}
         </div>
       </div>

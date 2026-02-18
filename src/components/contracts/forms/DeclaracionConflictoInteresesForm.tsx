@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import type { Cliente } from "@/types";
 import logoAgualima from "@/img/logo_header_1.jpeg";
 
@@ -152,15 +152,28 @@ const formatDate = (value?: string) => {
 export function DeclaracionConflictoInteresesForm({
   client,
   fecha,
+  declaracionConflictoValues,
   signatureSrc,
 }: {
   client?: Cliente | null;
   fecha?: string;
+  declaracionConflictoValues?: Record<string, unknown> | null;
   signatureSrc?: string;
 }) {
+  const hasPersistedValues = !!(declaracionConflictoValues && typeof declaracionConflictoValues === "object");
+  const valuesObj = (declaracionConflictoValues && typeof declaracionConflictoValues === "object"
+    ? declaracionConflictoValues
+    : {}) as Record<string, unknown>;
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+
   const fullName = buildFullName(client);
   const dni = buildDni(client);
-  const fechaSlash = formatDate(fecha);
+  const fechaSlash = hasSavedDate ? formatDate(normalizedFechaRegistro) : (!hasPersistedValues ? formatDate(fecha) : "");
 
   return (
     <div className="w-full bg-white text-black print:bg-white print:p-0" style={{ margin: 0, padding: 0 }}>
@@ -289,3 +302,4 @@ export function DeclaracionConflictoInteresesForm({
     </div>
   );
 }
+

@@ -33,11 +33,11 @@ export function useConsultaDNI() {
       try {
         response = await doFetch(apiBase);
       } catch (err) {
-        if (apiBase.startsWith('/')) {
-          response = await doFetch('https://api.decolecta.com/v1/reniec');
-        } else {
-          throw err;
-        }
+        if (!apiBase.startsWith('/')) throw err;
+      }
+
+      if ((!response || !response.ok) && apiBase.startsWith('/')) {
+        response = await doFetch('https://api.decolecta.com/v1/reniec');
       }
 
       if (!response.ok) {

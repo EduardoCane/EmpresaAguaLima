@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import type { Cliente } from "@/types";
 import logoAgualima from "@/img/logo_header_1.jpeg";
 
@@ -95,19 +95,35 @@ const formatDate = (value?: string) => {
 export function CuentaBancariaForm({
   client,
   fecha,
+  cuentaBancariaValues,
   signatureSrc,
   entidadBancaria,
   numeroCuenta,
 }: {
   client?: Cliente | null;
   fecha?: string;
+  cuentaBancariaValues?: Record<string, unknown> | null;
   signatureSrc?: string;
   entidadBancaria?: string;
   numeroCuenta?: string;
 }) {
+  const hasPersistedValues = !!(cuentaBancariaValues && typeof cuentaBancariaValues === "object");
+  const valuesObj = (cuentaBancariaValues && typeof cuentaBancariaValues === "object"
+    ? cuentaBancariaValues
+    : {}) as Record<string, unknown>;
+  const savedCiudad = normalize(valuesObj.ciudad as string) || "Virú";
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const cuentaEntidad = normalize(entidadBancaria) || normalize(valuesObj.entidadBancaria as string);
+  const cuentaNumero = normalize(numeroCuenta) || normalize(valuesObj.numeroCuenta as string);
+
   const fullName = buildFullName(client);
   const dni = buildDni(client);
-  const fechaSlash = formatDate(fecha);
+  const fechaSlash = hasSavedDate ? formatDate(normalizedFechaRegistro) : (!hasPersistedValues ? formatDate(fecha) : "");
   const codigo = (client?.cod || '').trim();
 
   return (
@@ -155,27 +171,27 @@ export function CuentaBancariaForm({
             <div className="mt-12" style={{ width: "260px" }}>
               <div className="flex items-center justify-between py-2">
                 <p className="font-bold">BAN BIF</p>
-                <CheckBox checked={entidadBancaria === "BAN BIF"} />
+                <CheckBox checked={cuentaEntidad === "BAN BIF"} />
               </div>
               <div className="flex items-center justify-between py-2">
                 <p className="font-bold">BBVA (Continental)</p>
-                <CheckBox checked={entidadBancaria === "BBVA (Continental)"} />
+                <CheckBox checked={cuentaEntidad === "BBVA (Continental)"} />
               </div>
               <div className="flex items-center justify-between py-2">
                 <p className="font-bold">FINANCIERA CONFIANZA</p>
-                <CheckBox checked={entidadBancaria === "FINANCIERA CONFIANZA"} />
+                <CheckBox checked={cuentaEntidad === "FINANCIERA CONFIANZA"} />
               </div>
               <div className="flex items-center justify-between py-2">
                 <p className="font-bold">CAJA HUANCAYO</p>
-                <CheckBox checked={entidadBancaria === "CAJA HUANCAYO"} />
+                <CheckBox checked={cuentaEntidad === "CAJA HUANCAYO"} />
               </div>
               <div className="flex items-center justify-between py-2">
                 <p className="font-bold">CAJA AREQUIPA</p>
-                <CheckBox checked={entidadBancaria === "CAJA AREQUIPA"} />
+                <CheckBox checked={cuentaEntidad === "CAJA AREQUIPA"} />
               </div>
               <div className="flex items-center justify-between py-2">
                 <p className="font-bold">CAJA TRUJILLO</p>
-                <CheckBox checked={entidadBancaria === "CAJA TRUJILLO"} />
+                <CheckBox checked={cuentaEntidad === "CAJA TRUJILLO"} />
               </div>
             </div>
 
@@ -184,11 +200,11 @@ export function CuentaBancariaForm({
               <div className="flex items-end gap-2">
                 <span className="font-bold">Entregaré mi cuenta del banco:</span>
                 <div className="border-b border-black w-[210px] flex items-end justify-center pb-1">
-                  <span className="font-bold">{numeroCuenta || ""}</span>
+                  <span className="font-bold">{cuentaNumero}</span>
                 </div>
               </div>
 
-              <p className="font-bold">Virú, {fechaSlash}</p>
+              <p className="font-bold">{savedCiudad}, {fechaSlash}</p>
             </div>
           </div>
 
@@ -221,3 +237,4 @@ export function CuentaBancariaForm({
     </div>
   );
 }
+

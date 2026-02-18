@@ -94,15 +94,25 @@ function BulletO({ children }: { children: React.ReactNode }) {
   );
 }
 
+const normalize = (value?: string | number | null) => {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+};
+
 function formatDate(dateStr?: string, separator = "/"): string {
-  if (!dateStr) {
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${day}${separator}${month}${separator}${year}`;
+  if (!dateStr) return "";
+  const trimmed = dateStr.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("/")) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed.split("-").reverse().join(separator);
   }
-  return dateStr.split("-").reverse().join(separator);
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = parsed.getFullYear();
+  return `${day}${separator}${month}${separator}${year}`;
 }
 
 function buildFullName(client?: Cliente): string {
@@ -119,8 +129,9 @@ function buildDni(client?: Cliente): string {
   return client?.dni || "";
 }
 
-function formatFullDate(): string {
-  const today = new Date();
+function formatFullDate(dateValue?: Date | null): string {
+  if (!dateValue || Number.isNaN(dateValue.getTime())) return "";
+  const today = dateValue;
   const diasSemana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   
@@ -136,12 +147,25 @@ export function AcuerdoConfidencialidadForm({
   client,
   signatureSrc,
   cargo,
+  acuerdoConfidencialidadValues,
 }: {
   client?: Cliente;
   signatureSrc?: string;
   cargo?: string;
+  acuerdoConfidencialidadValues?: Record<string, unknown> | null;
 }) {
-  const fechaSlash = formatDate(undefined, "/");
+  const hasPersistedValues = !!(acuerdoConfidencialidadValues && typeof acuerdoConfidencialidadValues === "object");
+  const valuesObj = (acuerdoConfidencialidadValues && typeof acuerdoConfidencialidadValues === "object"
+    ? acuerdoConfidencialidadValues
+    : {}) as Record<string, unknown>;
+  const savedCiudad = normalize(valuesObj.ciudad as string) || "Virú";
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const fechaLarga = hasSavedDate ? formatFullDate(parsedSavedDate) : (!hasPersistedValues ? formatFullDate(new Date()) : "");
   const fullName = buildFullName(client);
   const dni = buildDni(client);
   const cargoDisplay = cargo || "";
@@ -298,7 +322,7 @@ export function AcuerdoConfidencialidadForm({
           </div>
 
           <p className="mt-6 text-[10px]">
-            Firmado en la ciudad de Virú, <span className="font-bold capitalize">{formatFullDate()}</span>
+            Firmado en la ciudad de {savedCiudad}, <span className="font-bold capitalize">{fechaLarga}</span>
           </p>
         </div>
 

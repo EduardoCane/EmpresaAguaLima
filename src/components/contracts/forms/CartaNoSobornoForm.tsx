@@ -92,15 +92,25 @@ function FieldRow({
   );
 }
 
+const normalize = (value?: string | number | null) => {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+};
+
 function formatDate(dateStr?: string, separator = "/"): string {
-  if (!dateStr) {
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${day}${separator}${month}${separator}${year}`;
+  if (!dateStr) return "";
+  const trimmed = dateStr.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("/")) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed.split("-").reverse().join(separator);
   }
-  return dateStr.split("-").reverse().join(separator);
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = parsed.getFullYear();
+  return `${day}${separator}${month}${separator}${year}`;
 }
 
 function buildFullName(client?: Cliente): string {
@@ -122,13 +132,25 @@ export function CartaNoSobornoForm({
   signatureSrc,
   cargo,
   unidadArea,
+  cartaNoSobornoValues,
 }: {
   client?: Cliente;
   signatureSrc?: string;
   cargo?: string;
   unidadArea?: string;
+  cartaNoSobornoValues?: Record<string, unknown> | null;
 }) {
-  const fechaSlash = formatDate(undefined, "/");
+  const hasPersistedValues = !!(cartaNoSobornoValues && typeof cartaNoSobornoValues === "object");
+  const valuesObj = (cartaNoSobornoValues && typeof cartaNoSobornoValues === "object"
+    ? cartaNoSobornoValues
+    : {}) as Record<string, unknown>;
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const fechaSlash = hasSavedDate ? formatDate(normalizedFechaRegistro, "/") : (!hasPersistedValues ? formatDate(new Date().toISOString().slice(0, 10), "/") : "");
   const fullName = buildFullName(client);
   const dni = buildDni(client);
   const cargoDisplay = cargo || "#N/D";

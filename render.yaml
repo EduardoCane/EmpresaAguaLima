@@ -1,0 +1,17 @@
+services:
+  - type: static_site
+    name: clientscan-hub
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_RENIEC_TOKEN
+        sync: false
+      - key: VITE_RENIEC_API_URL
+        value: https://api.decolecta.com/v1/reniec
+      - key: VITE_PUBLIC_APP_URL
+        sync: false

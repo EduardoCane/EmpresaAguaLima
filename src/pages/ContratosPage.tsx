@@ -502,6 +502,7 @@ export default function ContratosPage() {
       <SistemaPensionarioForm
         client={selectedClient}
         ficha={fichaDatosValues}
+        sistemaPensionarioValues={(viewingContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData}
         pensionChoice={pensionChoice}
         onChangeChoice={setPensionChoice}
@@ -510,6 +511,7 @@ export default function ContratosPage() {
     { id: 'reglamentos', label: 'Reglamentos', component: (
       <ReglamentosForm
         client={selectedClient}
+        reglamentosValues={(viewingContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData}
         pagePart={previewPage as 1 | 2 | "all"}
       />
@@ -517,14 +519,24 @@ export default function ContratosPage() {
     { id: 'consentimiento-informado', label: 'Consentimiento Informado', component: (
       <ConsentimientoInformadoForm
         client={selectedClient}
+        consentimientoInformadoValues={(viewingContract?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null}
         pagePart={previewPage as 1 | 2 | 3 | 4 | "all"}
         signatureSrc={signatureData || undefined}
       />
     ) },
-    { id: 'induccion', label: 'Inducción', component: <InduccionForm /> },
+    { id: 'induccion', label: 'Inducción', component: (
+      <InduccionForm
+        client={selectedClient}
+        cargo={fichaDatosValues.puesto}
+        unidadArea={fichaDatosValues.unidadArea}
+        codigo={selectedClient?.cod || undefined}
+        signatureSrc={signatureData || undefined}
+      />
+    ) },
     { id: 'cuenta-bancaria', label: 'Cuenta Bancaria', component: (
       <CuentaBancariaForm 
         client={selectedClient}
+        cuentaBancariaValues={(viewingContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData || undefined}
         entidadBancaria={fichaDatosValues.entidadBancaria}
         numeroCuenta={fichaDatosValues.numeroCuenta}
@@ -533,12 +545,14 @@ export default function ContratosPage() {
     { id: 'declaracion-conflicto', label: 'Declaración de Conflicto de Intereses', component: (
       <DeclaracionConflictoInteresesForm
         client={selectedClient}
+        declaracionConflictoValues={(viewingContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData || undefined}
       />
     ) },
     { id: 'acuerdo-confidencialidad', label: 'Acuerdo de Confidencialidad', component: (
       <AcuerdoConfidencialidadForm
         client={selectedClient}
+        acuerdoConfidencialidadValues={(viewingContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData || undefined}
         cargo={fichaDatosValues.puesto}
       />
@@ -546,6 +560,7 @@ export default function ContratosPage() {
     { id: 'carta-no-soborno', label: 'Carta de C. de No Soborno', component: (
       <CartaNoSobornoForm
         client={selectedClient}
+        cartaNoSobornoValues={(viewingContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData || undefined}
         cargo={fichaDatosValues.puesto}
         unidadArea={fichaDatosValues.unidadArea}
@@ -556,12 +571,14 @@ export default function ContratosPage() {
         client={selectedClient}
         signatureSrc={signatureData || undefined}
         parentescoValues={declaracionParentescoValues}
+        previewCurrentDate={!viewingContract}
       />
     ) },
     { id: 'dj-patrimonial', label: 'DJ Patrimonial', component: (
       <DjPatrimonialForm
         client={selectedClient}
         signatureSrc={signatureData || undefined}
+        djPatrimonialValues={(viewingContract?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null}
       />
     ) },
   ];
@@ -781,9 +798,21 @@ export default function ContratosPage() {
           }
         : { contrato_temporada_plan: {} };
 
+    const existingSistemaPensionario = (targetContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
+    const existingSistemaFechaRegistro =
+      typeof existingSistemaPensionario?.fecha_registro === 'string' && existingSistemaPensionario.fecha_registro.trim()
+        ? existingSistemaPensionario.fecha_registro
+        : '';
+    const existingSistemaCiudad =
+      typeof existingSistemaPensionario?.ciudad === 'string' && existingSistemaPensionario.ciudad.trim()
+        ? existingSistemaPensionario.ciudad
+        : '';
+
     const sistemaPensionarioPayload = {
       sistema_pensionario: {
         pensionChoice,
+        fecha_registro: existingSistemaFechaRegistro || new Date().toISOString(),
+        ciudad: existingSistemaCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -794,8 +823,20 @@ export default function ContratosPage() {
       }
     };
 
+    const existingReglamentos = (targetContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null;
+    const existingReglamentosFechaRegistro =
+      typeof existingReglamentos?.fecha_registro === 'string' && existingReglamentos.fecha_registro.trim()
+        ? existingReglamentos.fecha_registro
+        : '';
+    const existingReglamentosCiudad =
+      typeof existingReglamentos?.ciudad === 'string' && existingReglamentos.ciudad.trim()
+        ? existingReglamentos.ciudad
+        : '';
+
     const reglamentosPayload = {
       reglamentos: {
+        fecha_registro: existingReglamentosFechaRegistro || new Date().toISOString(),
+        ciudad: existingReglamentosCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -808,6 +849,16 @@ export default function ContratosPage() {
 
     const consentimientoInformadoPayload = {
       consentimiento_informado: {
+        fecha_registro:
+          (typeof (targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.fecha_registro === 'string' &&
+            ((targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.fecha_registro as string).trim())
+            ? ((targetContract?.consentimiento_informado as Record<string, unknown>).fecha_registro as string)
+            : new Date().toISOString(),
+        ciudad:
+          (typeof (targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.ciudad === 'string' &&
+            ((targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.ciudad as string).trim())
+            ? ((targetContract?.consentimiento_informado as Record<string, unknown>).ciudad as string)
+            : 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -830,8 +881,20 @@ export default function ContratosPage() {
       }
     };
 
+    const existingCuentaBancaria = (targetContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
+    const existingCuentaBancariaFechaRegistro =
+      typeof existingCuentaBancaria?.fecha_registro === 'string' && existingCuentaBancaria.fecha_registro.trim()
+        ? existingCuentaBancaria.fecha_registro
+        : '';
+    const existingCuentaBancariaCiudad =
+      typeof existingCuentaBancaria?.ciudad === 'string' && existingCuentaBancaria.ciudad.trim()
+        ? existingCuentaBancaria.ciudad
+        : '';
+
     const cuentaBancariaPayload = {
       cuenta_bancaria: {
+        fecha_registro: existingCuentaBancariaFechaRegistro || new Date().toISOString(),
+        ciudad: existingCuentaBancariaCiudad || 'Virú',
         entidadBancaria: fichaDatosValues.entidadBancaria,
         numeroCuenta: fichaDatosValues.numeroCuenta,
         clientSnapshot: {
@@ -844,8 +907,20 @@ export default function ContratosPage() {
       }
     };
 
+    const existingDeclaracionConflicto = (targetContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
+    const existingDeclaracionConflictoFechaRegistro =
+      typeof existingDeclaracionConflicto?.fecha_registro === 'string' && existingDeclaracionConflicto.fecha_registro.trim()
+        ? existingDeclaracionConflicto.fecha_registro
+        : '';
+    const existingDeclaracionConflictoCiudad =
+      typeof existingDeclaracionConflicto?.ciudad === 'string' && existingDeclaracionConflicto.ciudad.trim()
+        ? existingDeclaracionConflicto.ciudad
+        : '';
+
     const declaracionConflictoInteresesPayload = {
       declaracion_conflicto_intereses: {
+        fecha_registro: existingDeclaracionConflictoFechaRegistro || new Date().toISOString(),
+        ciudad: existingDeclaracionConflictoCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -856,8 +931,20 @@ export default function ContratosPage() {
       }
     };
 
+    const existingAcuerdoConfidencialidad = (targetContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
+    const existingAcuerdoConfidencialidadFechaRegistro =
+      typeof existingAcuerdoConfidencialidad?.fecha_registro === 'string' && existingAcuerdoConfidencialidad.fecha_registro.trim()
+        ? existingAcuerdoConfidencialidad.fecha_registro
+        : '';
+    const existingAcuerdoConfidencialidadCiudad =
+      typeof existingAcuerdoConfidencialidad?.ciudad === 'string' && existingAcuerdoConfidencialidad.ciudad.trim()
+        ? existingAcuerdoConfidencialidad.ciudad
+        : '';
+
     const acuerdoConfidencialidadPayload = {
       acuerdo_confidencialidad: {
+        fecha_registro: existingAcuerdoConfidencialidadFechaRegistro || new Date().toISOString(),
+        ciudad: existingAcuerdoConfidencialidadCiudad || 'Virú',
         cargo: fichaDatosValues.puesto,
         clientSnapshot: {
           dni: selectedClient.dni,
@@ -869,8 +956,20 @@ export default function ContratosPage() {
       }
     };
 
+    const existingCartaNoSoborno = (targetContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null;
+    const existingCartaNoSobornoFechaRegistro =
+      typeof existingCartaNoSoborno?.fecha_registro === 'string' && existingCartaNoSoborno.fecha_registro.trim()
+        ? existingCartaNoSoborno.fecha_registro
+        : '';
+    const existingCartaNoSobornoCiudad =
+      typeof existingCartaNoSoborno?.ciudad === 'string' && existingCartaNoSoborno.ciudad.trim()
+        ? existingCartaNoSoborno.ciudad
+        : '';
+
     const cartaNoSobornoPayload = {
       carta_no_soborno: {
+        fecha_registro: existingCartaNoSobornoFechaRegistro || new Date().toISOString(),
+        ciudad: existingCartaNoSobornoCiudad || 'Virú',
         cargo: fichaDatosValues.puesto,
         unidadArea: fichaDatosValues.unidadArea,
         clientSnapshot: {
@@ -883,9 +982,21 @@ export default function ContratosPage() {
       }
     };
 
-    const declaracionParentescoPayload = {
+    const existingDeclaracionParentesco = (targetContract?.declaracion_parentesco as Record<string, unknown> | null | undefined) ?? null;
+    const existingDeclaracionParentescoFechaRegistro =
+      typeof existingDeclaracionParentesco?.fecha_registro === 'string' && existingDeclaracionParentesco.fecha_registro.trim()
+        ? existingDeclaracionParentesco.fecha_registro
+        : '';
+    const existingDeclaracionParentescoCiudad =
+      typeof existingDeclaracionParentesco?.ciudad === 'string' && existingDeclaracionParentesco.ciudad.trim()
+        ? existingDeclaracionParentesco.ciudad
+        : '';
+
+    const declaracionParentescoPayload = { 
       declaracion_parentesco: {
         ...declaracionParentescoValues,
+        fecha_registro: existingDeclaracionParentescoFechaRegistro || new Date().toISOString(),
+        ciudad: existingDeclaracionParentescoCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -895,14 +1006,27 @@ export default function ContratosPage() {
         }
       }
     };
+    const existingDjPatrimonial = (targetContract?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null;
+    const existingFechaRegistro =
+      typeof existingDjPatrimonial?.fecha_registro === 'string' && existingDjPatrimonial.fecha_registro.trim()
+        ? existingDjPatrimonial.fecha_registro
+        : '';
+    const existingCiudad =
+      typeof existingDjPatrimonial?.ciudad === 'string' && existingDjPatrimonial.ciudad.trim()
+        ? existingDjPatrimonial.ciudad
+        : '';
 
     const djPatrimonialPayload = {
       dj_patrimonial: {
+        fecha_registro: existingFechaRegistro || new Date().toISOString(),
+        ciudad: existingCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           a_paterno: selectedClient.a_paterno,
           a_materno: selectedClient.a_materno,
           nombre: selectedClient.nombre,
+          estado_civil: selectedClient.estado_civil,
+          remuneracion: selectedClient.remuneracion,
           direccion: selectedClient.direccion,
           distrito: selectedClient.distrito,
           provincia: selectedClient.provincia,
@@ -1088,10 +1212,22 @@ export default function ContratosPage() {
           }
         : { contrato_temporada_plan: {} };
     
+    const existingSistemaPensionario = (targetContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
+    const existingSistemaFechaRegistro =
+      typeof existingSistemaPensionario?.fecha_registro === 'string' && existingSistemaPensionario.fecha_registro.trim()
+        ? existingSistemaPensionario.fecha_registro
+        : '';
+    const existingSistemaCiudad =
+      typeof existingSistemaPensionario?.ciudad === 'string' && existingSistemaPensionario.ciudad.trim()
+        ? existingSistemaPensionario.ciudad
+        : '';
+
     // Sistema pensionario: elecciÃ³n + datos del cliente + datos de ficha
     const sistemaPensionarioPayload = {
       sistema_pensionario: {
         pensionChoice,
+        fecha_registro: existingSistemaFechaRegistro || new Date().toISOString(),
+        ciudad: existingSistemaCiudad || 'Virú',
         // Snapshot de datos del cliente
         clientSnapshot: {
           dni: selectedClient.dni,
@@ -1110,9 +1246,21 @@ export default function ContratosPage() {
       }
     };
     
+    const existingReglamentos = (targetContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null;
+    const existingReglamentosFechaRegistro =
+      typeof existingReglamentos?.fecha_registro === 'string' && existingReglamentos.fecha_registro.trim()
+        ? existingReglamentos.fecha_registro
+        : '';
+    const existingReglamentosCiudad =
+      typeof existingReglamentos?.ciudad === 'string' && existingReglamentos.ciudad.trim()
+        ? existingReglamentos.ciudad
+        : '';
+
     // Reglamentos: snapshot de datos del cliente
     const reglamentosPayload = { 
       reglamentos: {
+        fecha_registro: existingReglamentosFechaRegistro || new Date().toISOString(),
+        ciudad: existingReglamentosCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -1126,6 +1274,16 @@ export default function ContratosPage() {
     // Consentimiento informado: snapshot de datos del cliente
     const consentimientoInformadoPayload = { 
       consentimiento_informado: {
+        fecha_registro:
+          (typeof (targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.fecha_registro === 'string' &&
+            ((targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.fecha_registro as string).trim())
+            ? ((targetContract?.consentimiento_informado as Record<string, unknown>).fecha_registro as string)
+            : new Date().toISOString(),
+        ciudad:
+          (typeof (targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.ciudad === 'string' &&
+            ((targetContract?.consentimiento_informado as Record<string, unknown> | null | undefined)?.ciudad as string).trim())
+            ? ((targetContract?.consentimiento_informado as Record<string, unknown>).ciudad as string)
+            : 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -1138,10 +1296,22 @@ export default function ContratosPage() {
     
     // InducciÃ³n no tiene datos editables, solo se visualiza
     const induccionPayload = { induccion: {} };
+
+    const existingCuentaBancaria = (targetContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
+    const existingCuentaBancariaFechaRegistro =
+      typeof existingCuentaBancaria?.fecha_registro === 'string' && existingCuentaBancaria.fecha_registro.trim()
+        ? existingCuentaBancaria.fecha_registro
+        : '';
+    const existingCuentaBancariaCiudad =
+      typeof existingCuentaBancaria?.ciudad === 'string' && existingCuentaBancaria.ciudad.trim()
+        ? existingCuentaBancaria.ciudad
+        : '';
     
     // Cuenta bancaria: entidad, nÃºmero + snapshot del cliente
     const cuentaBancariaPayload = {
       cuenta_bancaria: {
+        fecha_registro: existingCuentaBancariaFechaRegistro || new Date().toISOString(),
+        ciudad: existingCuentaBancariaCiudad || 'Virú',
         entidadBancaria: fichaDatosValues.entidadBancaria,
         numeroCuenta: fichaDatosValues.numeroCuenta,
         clientSnapshot: {
@@ -1155,8 +1325,20 @@ export default function ContratosPage() {
     };
     
     // DeclaraciÃ³n de conflicto de intereses: snapshot del cliente
+    const existingDeclaracionConflicto = (targetContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
+    const existingDeclaracionConflictoFechaRegistro =
+      typeof existingDeclaracionConflicto?.fecha_registro === 'string' && existingDeclaracionConflicto.fecha_registro.trim()
+        ? existingDeclaracionConflicto.fecha_registro
+        : '';
+    const existingDeclaracionConflictoCiudad =
+      typeof existingDeclaracionConflicto?.ciudad === 'string' && existingDeclaracionConflicto.ciudad.trim()
+        ? existingDeclaracionConflicto.ciudad
+        : '';
+
     const declaracionConflictoInteresesPayload = { 
       declaracion_conflicto_intereses: {
+        fecha_registro: existingDeclaracionConflictoFechaRegistro || new Date().toISOString(),
+        ciudad: existingDeclaracionConflictoCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -1168,8 +1350,20 @@ export default function ContratosPage() {
     };
     
     // Acuerdo de confidencialidad: cargo + snapshot del cliente
+    const existingAcuerdoConfidencialidad = (targetContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
+    const existingAcuerdoConfidencialidadFechaRegistro =
+      typeof existingAcuerdoConfidencialidad?.fecha_registro === 'string' && existingAcuerdoConfidencialidad.fecha_registro.trim()
+        ? existingAcuerdoConfidencialidad.fecha_registro
+        : '';
+    const existingAcuerdoConfidencialidadCiudad =
+      typeof existingAcuerdoConfidencialidad?.ciudad === 'string' && existingAcuerdoConfidencialidad.ciudad.trim()
+        ? existingAcuerdoConfidencialidad.ciudad
+        : '';
+
     const acuerdoConfidencialidadPayload = {
       acuerdo_confidencialidad: {
+        fecha_registro: existingAcuerdoConfidencialidadFechaRegistro || new Date().toISOString(),
+        ciudad: existingAcuerdoConfidencialidadCiudad || 'Virú',
         cargo: fichaDatosValues.puesto,
         clientSnapshot: {
           dni: selectedClient.dni,
@@ -1182,8 +1376,20 @@ export default function ContratosPage() {
     };
     
     // Carta no soborno: cargo, unidad/Ã¡rea + snapshot del cliente
+    const existingCartaNoSoborno = (targetContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null;
+    const existingCartaNoSobornoFechaRegistro =
+      typeof existingCartaNoSoborno?.fecha_registro === 'string' && existingCartaNoSoborno.fecha_registro.trim()
+        ? existingCartaNoSoborno.fecha_registro
+        : '';
+    const existingCartaNoSobornoCiudad =
+      typeof existingCartaNoSoborno?.ciudad === 'string' && existingCartaNoSoborno.ciudad.trim()
+        ? existingCartaNoSoborno.ciudad
+        : '';
+
     const cartaNoSobornoPayload = {
       carta_no_soborno: {
+        fecha_registro: existingCartaNoSobornoFechaRegistro || new Date().toISOString(),
+        ciudad: existingCartaNoSobornoCiudad || 'Virú',
         cargo: fichaDatosValues.puesto,
         unidadArea: fichaDatosValues.unidadArea,
         clientSnapshot: {
@@ -1197,9 +1403,21 @@ export default function ContratosPage() {
     };
     
     // DeclaraciÃ³n de parentesco: valores editables + snapshot del cliente
+    const existingDeclaracionParentesco = (targetContract?.declaracion_parentesco as Record<string, unknown> | null | undefined) ?? null;
+    const existingDeclaracionParentescoFechaRegistro =
+      typeof existingDeclaracionParentesco?.fecha_registro === 'string' && existingDeclaracionParentesco.fecha_registro.trim()
+        ? existingDeclaracionParentesco.fecha_registro
+        : '';
+    const existingDeclaracionParentescoCiudad =
+      typeof existingDeclaracionParentesco?.ciudad === 'string' && existingDeclaracionParentesco.ciudad.trim()
+        ? existingDeclaracionParentesco.ciudad
+        : '';
+
     const declaracionParentescoPayload = { 
       declaracion_parentesco: {
         ...declaracionParentescoValues,
+        fecha_registro: existingDeclaracionParentescoFechaRegistro || new Date().toISOString(),
+        ciudad: existingDeclaracionParentescoCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
@@ -1209,15 +1427,28 @@ export default function ContratosPage() {
         }
       }
     };
+    const existingDjPatrimonial = (targetContract?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null;
+    const existingFechaRegistro =
+      typeof existingDjPatrimonial?.fecha_registro === 'string' && existingDjPatrimonial.fecha_registro.trim()
+        ? existingDjPatrimonial.fecha_registro
+        : '';
+    const existingCiudad =
+      typeof existingDjPatrimonial?.ciudad === 'string' && existingDjPatrimonial.ciudad.trim()
+        ? existingDjPatrimonial.ciudad
+        : '';
     
     // DJ Patrimonial: snapshot del cliente
     const djPatrimonialPayload = { 
       dj_patrimonial: {
+        fecha_registro: existingFechaRegistro || new Date().toISOString(),
+        ciudad: existingCiudad || 'Virú',
         clientSnapshot: {
           dni: selectedClient.dni,
           a_paterno: selectedClient.a_paterno,
           a_materno: selectedClient.a_materno,
           nombre: selectedClient.nombre,
+          estado_civil: selectedClient.estado_civil,
+          remuneracion: selectedClient.remuneracion,
           direccion: selectedClient.direccion,
           distrito: selectedClient.distrito,
           provincia: selectedClient.provincia,
@@ -1469,6 +1700,73 @@ export default function ContratosPage() {
     return images;
   };
 
+  const trimWhiteMarginsFromImageData = async (imageData: string) => {
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('No se pudo cargar la imagen para recorte'));
+        img.src = imageData;
+      });
+
+      const sourceCanvas = document.createElement('canvas');
+      sourceCanvas.width = image.naturalWidth || image.width;
+      sourceCanvas.height = image.naturalHeight || image.height;
+      const sourceCtx = sourceCanvas.getContext('2d');
+      if (!sourceCtx) return imageData;
+
+      sourceCtx.drawImage(image, 0, 0);
+      const { width, height } = sourceCanvas;
+      const imagePixels = sourceCtx.getImageData(0, 0, width, height).data;
+
+      let minX = width;
+      let minY = height;
+      let maxX = -1;
+      let maxY = -1;
+      const threshold = 245;
+      const sampleStep = 2;
+
+      for (let y = 0; y < height; y += sampleStep) {
+        for (let x = 0; x < width; x += sampleStep) {
+          const idx = (y * width + x) * 4;
+          const r = imagePixels[idx];
+          const g = imagePixels[idx + 1];
+          const b = imagePixels[idx + 2];
+          const a = imagePixels[idx + 3];
+          const isContent = a > 0 && (r < threshold || g < threshold || b < threshold);
+          if (!isContent) continue;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+
+      if (maxX < minX || maxY < minY) return imageData;
+
+      const padding = 16;
+      const cropX = Math.max(0, minX - padding);
+      const cropY = Math.max(0, minY - padding);
+      const cropX2 = Math.min(width - 1, maxX + padding);
+      const cropY2 = Math.min(height - 1, maxY + padding);
+      const cropWidth = cropX2 - cropX + 1;
+      const cropHeight = cropY2 - cropY + 1;
+
+      if (cropWidth <= 0 || cropHeight <= 0) return imageData;
+      if (cropWidth >= width - 2 && cropHeight >= height - 2) return imageData;
+
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = cropWidth;
+      outputCanvas.height = cropHeight;
+      const outputCtx = outputCanvas.getContext('2d');
+      if (!outputCtx) return imageData;
+      outputCtx.drawImage(sourceCanvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      return outputCanvas.toDataURL('image/png');
+    } catch {
+      return imageData;
+    }
+  };
+
   const generatePdfFromRef = async (
     ref: React.RefObject<HTMLDivElement>,
     clientName: string,
@@ -1519,8 +1817,26 @@ export default function ContratosPage() {
       if (activeContractForm === 'ficha-datos') {
         await generatePdfFromRef(fullContractRef, safeName);
       } else {
-        setZipDocLabel(contractForms.find(form => form.id === activeContractForm)?.label || 'Contrato');
+        const currentForm = contractForms.find(form => form.id === activeContractForm);
+        setZipRenderState({
+          activeForm: activeContractForm as ContractFormId,
+          fichaDatos: fichaDatosValues,
+          pensionChoice,
+          sistemaPensionario: (viewingContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null,
+          reglamentos: (viewingContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null,
+          consentimientoInformado: (viewingContract?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null,
+          cuentaBancaria: (viewingContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null,
+          declaracionConflicto: (viewingContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null,
+          acuerdoConfidencialidad: (viewingContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null,
+          cartaNoSoborno: (viewingContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null,
+          declaracionParentesco: declaracionParentescoValues,
+          djPatrimonial: (viewingContract?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null,
+          signature: signatureData,
+          client: selectedClient,
+          docLabel: currentForm?.label || 'Contrato',
+        });
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        await new Promise(resolve => setTimeout(resolve, 0));
         await generatePdfFromRef(zipDocRef, `${safeName}_${activeContractForm}`);
       }
 
@@ -1530,6 +1846,24 @@ export default function ContratosPage() {
       toast.dismiss();
       toast.error('Error al generar el PDF');
       console.error(error);
+    } finally {
+      setZipRenderState({
+        activeForm: null,
+        fichaDatos: null,
+        pensionChoice: '',
+        sistemaPensionario: null,
+        reglamentos: null,
+        consentimientoInformado: null,
+        cuentaBancaria: null,
+        declaracionConflicto: null,
+        acuerdoConfidencialidad: null,
+        cartaNoSoborno: null,
+        declaracionParentesco: null,
+        djPatrimonial: null,
+        signature: '',
+        client: null,
+        docLabel: '',
+      });
     }
   };
 
@@ -1574,6 +1908,30 @@ export default function ContratosPage() {
     setSignatureData('');
     setSignatureSource(null);
     setViewMode('create');
+  };
+
+  const handleDeleteContract = (contrato: Contrato) => {
+    const cliente = getClienteById(contrato.cliente_id);
+    const clienteNombre = cliente ? getFullName(cliente) : `Cliente ${contrato.cliente_id}`;
+
+    openConfirm({
+      title: 'Eliminar contrato',
+      description: `Se eliminara el contrato de ${clienteNombre}. Esta accion no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteContrato(contrato.id);
+          if (viewingContract?.id === contrato.id) {
+            resetForm();
+          }
+          toast.success('Contrato eliminado correctamente');
+        } catch (error) {
+          console.error(error);
+          toast.error('No se pudo eliminar el contrato');
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -1633,9 +1991,12 @@ export default function ContratosPage() {
     }
 
     // Cargar sistema_pensionario
-    const sistemaPensionario = viewingContract.sistema_pensionario as any;
-    if (sistemaPensionario?.pensionChoice) {
-      setPensionChoice(sistemaPensionario.pensionChoice);
+    const sistemaPensionario = viewingContract.sistema_pensionario as Record<string, unknown> | null | undefined;
+    const pensionChoiceValue = typeof sistemaPensionario?.pensionChoice === 'string'
+      ? sistemaPensionario.pensionChoice
+      : '';
+    if (pensionChoiceValue === 'ONP' || pensionChoiceValue === 'AFP') {
+      setPensionChoice(pensionChoiceValue);
     } else {
       setPensionChoice('');
     }
@@ -1675,7 +2036,7 @@ export default function ContratosPage() {
       const next = { ...prev };
       const fill = (field: keyof FichaDatosValues, value?: string | null) => {
         if (!next[field] || (typeof next[field] === 'string' && next[field].trim() === '')) {
-          (next[field] as any) = (value ?? '');
+          (next as Record<keyof FichaDatosValues, unknown>)[field] = value ?? '';
         }
       };
       
@@ -1684,8 +2045,8 @@ export default function ContratosPage() {
       fill('domicilioActual', selectedClient.direccion);
       fill('distritoDomicilio', selectedClient.distrito);
       fill('provinciaDomicilio', selectedClient.provincia);
-      fill('fechaNacimiento', selectedClient.fecha_nac as any);
-      fill('estadoCivil', selectedClient.estado_civil as any);
+      fill('fechaNacimiento', selectedClient.fecha_nac);
+      fill('estadoCivil', selectedClient.estado_civil);
       
       return next;
     });
@@ -1838,7 +2199,15 @@ export default function ContratosPage() {
       toast.loading('Generando ZIP...');
       let fichaDatosForZip = fichaDatosValues;
       let pensionChoiceForZip = pensionChoice;
+      const sistemaPensionarioForZip = (targetContrato?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
+      const reglamentosForZip = (targetContrato?.reglamentos as Record<string, unknown> | null | undefined) ?? null;
+      const consentimientoInformadoForZip = (targetContrato?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null;
+      const cuentaBancariaForZip = (targetContrato?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
+      const declaracionConflictoForZip = (targetContrato?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
+      const acuerdoConfidencialidadForZip = (targetContrato?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
+      const cartaNoSobornoForZip = (targetContrato?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null;
       let declaracionParentescoForZip = declaracionParentescoValues;
+      const djPatrimonialForZip = (targetContrato?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null;
       let signatureForZip = signatureData;
 
       if (targetContrato) {
@@ -1860,9 +2229,12 @@ export default function ContratosPage() {
           };
         }
 
-        const sistemaPensionario = targetContrato.sistema_pensionario as any;
-        if (sistemaPensionario?.pensionChoice) {
-          pensionChoiceForZip = sistemaPensionario.pensionChoice;
+        const sistemaPensionario = targetContrato.sistema_pensionario as Record<string, unknown> | null | undefined;
+        const pensionChoiceValue = typeof sistemaPensionario?.pensionChoice === 'string'
+          ? sistemaPensionario.pensionChoice
+          : '';
+        if (pensionChoiceValue === 'ONP' || pensionChoiceValue === 'AFP') {
+          pensionChoiceForZip = pensionChoiceValue;
         }
 
         const declaracionParentesco = targetContrato.declaracion_parentesco as Partial<DeclaracionParentescoValues> | undefined;
@@ -1900,10 +2272,18 @@ export default function ContratosPage() {
         }
 
         setZipRenderState({
-          activeForm: form.id as any,
+          activeForm: form.id as ContractFormId,
           fichaDatos: fichaDatosForZip,
           pensionChoice: pensionChoiceForZip,
+          sistemaPensionario: sistemaPensionarioForZip,
+          reglamentos: reglamentosForZip,
+          consentimientoInformado: consentimientoInformadoForZip,
+          cuentaBancaria: cuentaBancariaForZip,
+          declaracionConflicto: declaracionConflictoForZip,
+          acuerdoConfidencialidad: acuerdoConfidencialidadForZip,
+          cartaNoSoborno: cartaNoSobornoForZip,
           declaracionParentesco: declaracionParentescoForZip,
+          djPatrimonial: djPatrimonialForZip,
           signature: signatureForZip,
           client: cliente,
           docLabel: form.label,
@@ -1936,7 +2316,15 @@ export default function ContratosPage() {
         activeForm: null,
         fichaDatos: null,
         pensionChoice: '',
+        sistemaPensionario: null,
+        reglamentos: null,
+        consentimientoInformado: null,
+        cuentaBancaria: null,
+        declaracionConflicto: null,
+        acuerdoConfidencialidad: null,
+        cartaNoSoborno: null,
         declaracionParentesco: null,
+        djPatrimonial: null,
         signature: '',
         client: null,
         docLabel: '',
@@ -1954,7 +2342,9 @@ export default function ContratosPage() {
   };
 
   const handleDownloadBulkFormPdf = async () => {
-    const selectedDocuments = bulkDocumentOptions.filter(form => bulkDocumentIds.includes(form.id as ContractFormId));
+    const selectedDocuments = bulkDocumentIds
+      .map(id => bulkDocumentOptions.find(form => form.id === id))
+      .filter((form): form is (typeof bulkDocumentOptions)[number] => !!form);
     if (selectedDocuments.length === 0) {
       toast.error('Seleccione al menos un documento');
       return false;
@@ -2025,44 +2415,87 @@ export default function ContratosPage() {
       });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
+      const shouldPairCuentaBancariaPages =
+        selectedDocuments.some(form => form.id === 'cuenta-bancaria') &&
+        contratosElegibles.length > 1;
+      const halfPageHeight = pdfHeight / 2;
+      const fitCuentaImageInHalfPage = (slotTop: number, imageData: string) => {
+        let imageAspectRatio = A4_PX_WIDTH / A4_PX_HEIGHT;
+        try {
+          const imageProps = pdf.getImageProperties(imageData);
+          if (imageProps?.width && imageProps?.height) {
+            imageAspectRatio = imageProps.width / imageProps.height;
+          }
+        } catch {
+          // Usa aspecto por defecto si no se pueden leer propiedades
+        }
+
+        let renderWidth = pdfWidth;
+        let renderHeight = renderWidth / imageAspectRatio;
+        if (renderHeight > halfPageHeight) {
+          renderHeight = halfPageHeight;
+          renderWidth = renderHeight * imageAspectRatio;
+        }
+        const renderX = (pdfWidth - renderWidth) / 2;
+        const renderY = slotTop + (halfPageHeight - renderHeight) / 2;
+        pdf.addImage(imageData, 'PNG', renderX, renderY, renderWidth, renderHeight);
+      };
+      let pendingCuentaImage: string | null = null;
+      const flushPendingCuentaImage = () => {
+        if (!pendingCuentaImage) return;
+        if (pdfPageCount > 0) {
+          pdf.addPage();
+        }
+        fitCuentaImageInHalfPage(0, pendingCuentaImage);
+        pdfPageCount++;
+        pendingCuentaImage = null;
+      };
       let pdfPageCount = 0;
       let currentStep = 0;
 
-      for (let i = 0; i < contratosElegibles.length; i++) {
-        const contrato = contratosElegibles[i];
-        const cliente = getClienteById(contrato.cliente_id);
-        if (!cliente) continue;
-
-        const rawFicha = contrato.ficha_datos as Partial<FichaDatosValues> | undefined;
-        const fichaDatosForZip = rawFicha
-          ? {
-              ...emptyFichaDatosValues,
-              ...rawFicha,
-              familiares: rawFicha.familiares?.length ? rawFicha.familiares : emptyFichaDatosValues.familiares,
-              experienciaLaboral: rawFicha.experienciaLaboral?.length ? rawFicha.experienciaLaboral : emptyFichaDatosValues.experienciaLaboral,
-              educacion: {
-                ...emptyFichaDatosValues.educacion,
-                ...(rawFicha.educacion || {}),
-                primaria: { ...emptyFichaDatosValues.educacion.primaria, ...(rawFicha.educacion?.primaria || {}) },
-                secundaria: { ...emptyFichaDatosValues.educacion.secundaria, ...(rawFicha.educacion?.secundaria || {}) },
-                tecnico: { ...emptyFichaDatosValues.educacion.tecnico, ...(rawFicha.educacion?.tecnico || {}) },
-                universitario: { ...emptyFichaDatosValues.educacion.universitario, ...(rawFicha.educacion?.universitario || {}) },
-              },
-            }
-          : emptyFichaDatosValues;
-
-        const sistemaPensionario = contrato.sistema_pensionario as { pensionChoice?: 'ONP' | 'AFP' | '' } | undefined;
-        const pensionChoiceForZip = sistemaPensionario?.pensionChoice || '';
-
-        const declaracionParentesco = contrato.declaracion_parentesco as Partial<DeclaracionParentescoValues> | undefined;
-        const declaracionParentescoForZip = declaracionParentesco
-          ? { ...emptyDeclaracionParentescoValues, ...declaracionParentesco }
-          : emptyDeclaracionParentescoValues;
-
-        for (const form of selectedDocuments) {
+      for (const form of selectedDocuments) {
+        for (let i = 0; i < contratosElegibles.length; i++) {
+          const contrato = contratosElegibles[i];
           if (mutuallyExclusiveContracts.has(form.id) && getSelectedExclusiveForm(contrato) !== form.id) {
             continue;
           }
+
+          const cliente = getClienteById(contrato.cliente_id);
+          if (!cliente) continue;
+
+          const rawFicha = contrato.ficha_datos as Partial<FichaDatosValues> | undefined;
+          const fichaDatosForZip = rawFicha
+            ? {
+                ...emptyFichaDatosValues,
+                ...rawFicha,
+                familiares: rawFicha.familiares?.length ? rawFicha.familiares : emptyFichaDatosValues.familiares,
+                experienciaLaboral: rawFicha.experienciaLaboral?.length ? rawFicha.experienciaLaboral : emptyFichaDatosValues.experienciaLaboral,
+                educacion: {
+                  ...emptyFichaDatosValues.educacion,
+                  ...(rawFicha.educacion || {}),
+                  primaria: { ...emptyFichaDatosValues.educacion.primaria, ...(rawFicha.educacion?.primaria || {}) },
+                  secundaria: { ...emptyFichaDatosValues.educacion.secundaria, ...(rawFicha.educacion?.secundaria || {}) },
+                  tecnico: { ...emptyFichaDatosValues.educacion.tecnico, ...(rawFicha.educacion?.tecnico || {}) },
+                  universitario: { ...emptyFichaDatosValues.educacion.universitario, ...(rawFicha.educacion?.universitario || {}) },
+                },
+              }
+            : emptyFichaDatosValues;
+
+          const sistemaPensionario = contrato.sistema_pensionario as { pensionChoice?: 'ONP' | 'AFP' | '' } | undefined;
+          const pensionChoiceForZip = sistemaPensionario?.pensionChoice || '';
+          const sistemaPensionarioForZip = (contrato.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
+          const reglamentosForZip = (contrato.reglamentos as Record<string, unknown> | null | undefined) ?? null;
+          const consentimientoInformadoForZip = (contrato.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null;
+          const cuentaBancariaForZip = (contrato.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
+          const declaracionConflictoForZip = (contrato.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
+          const acuerdoConfidencialidadForZip = (contrato.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
+          const cartaNoSobornoForZip = (contrato.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null;
+
+          const declaracionParentesco = contrato.declaracion_parentesco as Partial<DeclaracionParentescoValues> | undefined;
+          const declaracionParentescoForZip = declaracionParentesco
+            ? { ...emptyDeclaracionParentescoValues, ...declaracionParentesco }
+            : emptyDeclaracionParentescoValues;
+          const djPatrimonialForZip = (contrato.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null;
 
           currentStep += 1;
           setZipProgress({
@@ -2077,7 +2510,15 @@ export default function ContratosPage() {
             activeForm: form.id as ContractFormId,
             fichaDatos: fichaDatosForZip,
             pensionChoice: pensionChoiceForZip,
+            sistemaPensionario: sistemaPensionarioForZip,
+            reglamentos: reglamentosForZip,
+            consentimientoInformado: consentimientoInformadoForZip,
+            cuentaBancaria: cuentaBancariaForZip,
+            declaracionConflicto: declaracionConflictoForZip,
+            acuerdoConfidencialidad: acuerdoConfidencialidadForZip,
+            cartaNoSoborno: cartaNoSobornoForZip,
             declaracionParentesco: declaracionParentescoForZip,
+            djPatrimonial: djPatrimonialForZip,
             signature: firmaByContrato.get(contrato.id) || '',
             client: cliente,
             docLabel: form.label,
@@ -2087,14 +2528,40 @@ export default function ContratosPage() {
           await yieldToMainThread();
           const images = await capturePdfPageImagesFromRef(zipDocRef);
           for (const image of images) {
+            const normalizedImage =
+              shouldPairCuentaBancariaPages && form.id === 'cuenta-bancaria'
+                ? await trimWhiteMarginsFromImageData(image)
+                : image;
+
+            if (shouldPairCuentaBancariaPages && form.id === 'cuenta-bancaria') {
+              if (!pendingCuentaImage) {
+                pendingCuentaImage = normalizedImage;
+                continue;
+              }
+              if (pdfPageCount > 0) {
+                pdf.addPage();
+              }
+              fitCuentaImageInHalfPage(0, pendingCuentaImage);
+              fitCuentaImageInHalfPage(halfPageHeight, normalizedImage);
+              pdfPageCount++;
+              pendingCuentaImage = null;
+              continue;
+            }
+
             if (pdfPageCount > 0) {
               pdf.addPage();
             }
-            pdf.addImage(image, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(normalizedImage, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdfPageCount++;
           }
         }
+
+        if (form.id === 'cuenta-bancaria') {
+          flushPendingCuentaImage();
+        }
       }
+
+      flushPendingCuentaImage();
 
       if (pdfPageCount === 0) {
         throw new Error('No se pudieron renderizar paginas para el PDF consolidado');
@@ -2120,7 +2587,15 @@ export default function ContratosPage() {
         activeForm: null,
         fichaDatos: null,
         pensionChoice: '',
+        sistemaPensionario: null,
+        reglamentos: null,
+        consentimientoInformado: null,
+        cuentaBancaria: null,
+        declaracionConflicto: null,
+        acuerdoConfidencialidad: null,
+        cartaNoSoborno: null,
         declaracionParentesco: null,
+        djPatrimonial: null,
         signature: '',
         client: null,
         docLabel: '',
@@ -2868,14 +3343,19 @@ export default function ContratosPage() {
                         <SistemaPensionarioForm
                           client={selectedClient}
                           ficha={fichaDatosValues}
+                          sistemaPensionarioValues={(viewingContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null}
                           signatureSrc={signatureData}
                           pensionChoice={pensionChoice}
                           onChangeChoice={setPensionChoice}
                         />
                       </div>
                     ) : (
-                      <div className="h-full w-full overflow-x-hidden overflow-y-auto flex justify-center">
-                        <div className="w-full max-w-[794px] min-h-full bg-white text-black p-6">
+                      <div className="h-full w-full overflow-x-auto overflow-y-auto flex justify-center">
+                        <div
+                          className={`w-full max-w-[794px] min-h-full bg-white text-black ${
+                            activeContractForm === 'dj-patrimonial' ? 'p-0' : 'p-6'
+                          }`}
+                        >
                           {activeContractTab?.component}
                         </div>
                       </div>

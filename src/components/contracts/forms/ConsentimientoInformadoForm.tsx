@@ -135,17 +135,34 @@ export function ConsentimientoInformadoForm({
   client,
   pagePart = "all",
   fecha,
+  consentimientoInformadoValues,
   signatureSrc,
 }: {
   client?: Cliente | null;
   pagePart?: 1 | 2 | 3 | 4 | 5 | "all";
   fecha?: string;
+  consentimientoInformadoValues?: Record<string, unknown> | null;
   signatureSrc?: string;
 }) {
+  const hasPersistedValues = !!(consentimientoInformadoValues && typeof consentimientoInformadoValues === "object");
+  const valuesObj = (consentimientoInformadoValues && typeof consentimientoInformadoValues === "object"
+    ? consentimientoInformadoValues
+    : {}) as Record<string, unknown>;
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+
   const fullName = buildFullName(client);
   const dni = buildDni(client);
-  const fechaDot = formatDate(fecha, ".");
-  const fechaSlash = formatDate(fecha, "/");
+  const fechaDot = hasSavedDate
+    ? formatDate(normalizedFechaRegistro, ".")
+    : (!hasPersistedValues ? formatDate(fecha, ".") : "");
+  const fechaSlash = hasSavedDate
+    ? formatDate(normalizedFechaRegistro, "/")
+    : (!hasPersistedValues ? formatDate(fecha, "/") : "");
 
   console.log('ConsentimientoInformado - signatureSrc:', signatureSrc ? 'tiene firma' : 'NO tiene firma', 'pagePart:', pagePart);
 

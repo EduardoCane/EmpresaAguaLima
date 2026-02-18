@@ -22,7 +22,15 @@ export interface ZipRenderState {
   activeForm: ContractFormId | null;
   fichaDatos: FichaDatosValues | null;
   pensionChoice: string;
+  sistemaPensionario: Record<string, unknown> | null;
+  reglamentos: Record<string, unknown> | null;
+  consentimientoInformado: Record<string, unknown> | null;
+  cuentaBancaria: Record<string, unknown> | null;
+  declaracionConflicto: Record<string, unknown> | null;
+  acuerdoConfidencialidad: Record<string, unknown> | null;
+  cartaNoSoborno: Record<string, unknown> | null;
   declaracionParentesco: DeclaracionParentescoValues | null;
+  djPatrimonial: Record<string, unknown> | null;
   signature: string;
   client: Cliente | null;
   docLabel: string;
@@ -64,7 +72,15 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     activeForm: null,
     fichaDatos: null,
     pensionChoice: '',
+    sistemaPensionario: null,
+    reglamentos: null,
+    consentimientoInformado: null,
+    cuentaBancaria: null,
+    declaracionConflicto: null,
+    acuerdoConfidencialidad: null,
+    cartaNoSoborno: null,
     declaracionParentesco: null,
+    djPatrimonial: null,
     signature: '',
     client: null,
     docLabel: '',

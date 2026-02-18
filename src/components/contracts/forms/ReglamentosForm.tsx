@@ -370,14 +370,31 @@ function HigieneYPoliticaPagina({
 interface ReglamentosFormProps {
   client?: Cliente | null;
   fecha?: string;
+  reglamentosValues?: Record<string, unknown> | null;
   signatureSrc?: string;
   pagePart?: 1 | 2 | "all";
 }
 
-export function ReglamentosForm({ client, fecha, signatureSrc, pagePart = "all" }: ReglamentosFormProps) {
+export function ReglamentosForm({
+  client,
+  fecha,
+  reglamentosValues,
+  signatureSrc,
+  pagePart = "all",
+}: ReglamentosFormProps) {
+  const hasPersistedValues = !!(reglamentosValues && typeof reglamentosValues === "object");
   const apellidosNombres = buildFullName(client);
   const codigo = buildCodigo(client);
-  const fechaValue = formatDate(fecha);
+  const valuesObj = (reglamentosValues && typeof reglamentosValues === "object"
+    ? reglamentosValues
+    : {}) as Record<string, unknown>;
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const fechaValue = hasSavedDate ? formatDate(normalizedFechaRegistro) : (!hasPersistedValues ? formatDate(fecha) : "");
 
   return (
     <div className="w-full bg-white text-black print:bg-white print:p-0" style={{ margin: 0, padding: 0 }}>

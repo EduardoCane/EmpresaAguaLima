@@ -12,6 +12,8 @@ export type ParienteRow = {
 export type DeclaracionParentescoValues = {
   tieneParientes: 'si' | 'no' | '';
   parientes: ParienteRow[];
+  fecha_registro?: string;
+  ciudad?: string;
 };
 
 // ============ CONSTANTS ============
@@ -141,14 +143,19 @@ function TblCell({
 }
 
 function formatDate(dateStr?: string, separator = "/"): string {
-  if (!dateStr) {
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${day}${separator}${month}${separator}${year}`;
+  if (!dateStr) return "";
+  const trimmed = dateStr.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("/")) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed.split("-").reverse().join(separator);
   }
-  return dateStr.split("-").reverse().join(separator);
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = parsed.getFullYear();
+  return `${day}${separator}${month}${separator}${year}`;
 }
 
 function buildFullName(client?: Cliente): string {
@@ -170,12 +177,16 @@ export function DeclaracionParentescoForm({
   client,
   signatureSrc,
   parentescoValues,
+  previewCurrentDate = false,
 }: {
   client?: Cliente;
   signatureSrc?: string;
   parentescoValues?: DeclaracionParentescoValues;
+  previewCurrentDate?: boolean;
 }) {
-  const fechaSlash = formatDate(undefined, "/");
+  const fechaSlash = parentescoValues?.fecha_registro
+    ? formatDate(parentescoValues.fecha_registro, "/")
+    : (previewCurrentDate ? formatDate(new Date().toISOString().slice(0, 10), "/") : "");
   const fullName = buildFullName(client);
   const dni = buildDni(client);
   

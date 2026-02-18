@@ -104,6 +104,7 @@ function CellSmall({ children, gray = false, center = false }: { children?: Reac
 interface SistemaPensionarioFormProps {
   client?: Cliente | null;
   ficha?: FichaDatosValues;
+  sistemaPensionarioValues?: Record<string, unknown> | null;
   signatureSrc?: string;
   pensionChoice: 'ONP' | 'AFP' | '';
   onChangeChoice: (choice: 'ONP' | 'AFP') => void;
@@ -113,12 +114,18 @@ interface SistemaPensionarioFormProps {
 export function SistemaPensionarioForm({
   client,
   ficha,
+  sistemaPensionarioValues,
   signatureSrc,
   pensionChoice,
   onChangeChoice,
   pdfMode = false,
 }: SistemaPensionarioFormProps) {
   const codigo = (client?.cod || '').trim();
+  const hasPersistedValues = !!(sistemaPensionarioValues && typeof sistemaPensionarioValues === "object");
+  const fichaWithDepartamento = ficha as (FichaDatosValues & { departamentoDomicilio?: string | null }) | undefined;
+  const valuesObj = (sistemaPensionarioValues && typeof sistemaPensionarioValues === "object"
+    ? sistemaPensionarioValues
+    : {}) as Record<string, unknown>;
 
   const normalize = (value?: string | number | null) => {
     if (value === null || value === undefined) return "";
@@ -145,33 +152,51 @@ export function SistemaPensionarioForm({
     return `${day}/${month}/${d.getFullYear()}`;
   };
 
-  const apellidoPaterno =
-    normalize((client as any)?.a_paterno) || normalize(client?.apellido) || "";
-  const apellidoMaterno = normalize((client as any)?.a_materno) || "";
+  const apellidoPaterno = normalize(client?.a_paterno) || "";
+  const apellidoMaterno = normalize(client?.a_materno) || "";
   const nombres =
-    normalize((client as any)?.nombres) || normalize(client?.nombre) || normalize(client?.apellidos_y_nombres);
+    normalize(client?.nombre) || normalize(client?.apellidos_y_nombres);
   const dni = normalize(client?.dni);
   const fechaNacimiento = formatDate(ficha?.fechaNacimiento);
-  const sexo = normalize((client as any)?.sexo) || "";
+  const sexo = normalize(client?.sexo) || "";
   const sexMarkF = sexo.toUpperCase() === "F" ? "X" : "";
   const sexMarkM = sexo.toUpperCase() === "M" ? "X" : "";
 
   const domicilio = normalize(ficha?.domicilioActual);
   const distrito = normalize(ficha?.distritoDomicilio);
   const provincia = normalize(ficha?.provinciaDomicilio);
-  const departamento = normalize((ficha as any)?.departamentoDomicilio) || "";
+  const departamento = normalize(fichaWithDepartamento?.departamentoDomicilio) || "";
 
   const fechaInicio = formatDate(ficha?.periodoDesde);
   const remuneracion = normalize(ficha?.remuneracion) || "";
-  const hoy = (() => {
-    const s = new Date().toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  })();
+  const savedCiudad = normalize(valuesObj.ciudad as string) || "Virú";
+  const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
+    ? `${savedFechaRegistro}T00:00:00`
+    : savedFechaRegistro;
+  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
+  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const hoy = hasSavedDate
+    ? (() => {
+        const s = parsedSavedDate.toLocaleDateString("es-ES", {
+          weekday: "long",
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      })()
+    : !hasPersistedValues
+      ? (() => {
+          const s = new Date().toLocaleDateString("es-ES", {
+            weekday: "long",
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          });
+          return s.charAt(0).toUpperCase() + s.slice(1);
+        })()
+      : "";
 
   return (
     <PdfPage headerRight={codigo} pdfMode={pdfMode}>
@@ -382,7 +407,7 @@ export function SistemaPensionarioForm({
           </div>
 
           <div className="mt-1 flex justify-start">
-            <p className="text-[8px] font-bold">Ciudad de Virú</p>
+            <p className="text-[8px] font-bold">Ciudad de {savedCiudad}</p>
           </div>
         </div>
       </div>

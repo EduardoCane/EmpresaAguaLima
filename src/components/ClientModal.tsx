@@ -168,7 +168,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       return;
     }
     if (!reniecToken) return;
-
     const controller = new AbortController();
     reniecAbort.current?.abort();
     reniecAbort.current = controller;
@@ -190,11 +189,11 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         try {
           res = await doFetch(reniecApiBase);
         } catch (e) {
-          if (reniecApiBase.startsWith('/')) {
-            res = await doFetch('https://api.decolecta.com/v1/reniec');
-          } else {
-            throw e;
-          }
+          if (!reniecApiBase.startsWith('/')) throw e;
+        }
+
+        if ((!res || !res.ok) && reniecApiBase.startsWith('/')) {
+          res = await doFetch('https://api.decolecta.com/v1/reniec');
         }
 
         if (!res || !res.ok) throw new Error(`RENIEC respondió ${res?.status}`);
