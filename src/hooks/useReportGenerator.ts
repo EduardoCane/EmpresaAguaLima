@@ -469,7 +469,6 @@ export function useReportGenerator() {
     });
 
     // Agregar datos de los clientes
-    const fechaEntrega = format(new Date(), 'dd/MM/yyyy');
     clientes.forEach((cliente, index) => {
       const apellidosNombres = (
         cliente.apellidos_y_nombres ||
@@ -477,6 +476,7 @@ export function useReportGenerator() {
           .filter(Boolean)
           .join(' ')
       ).trim().toUpperCase();
+      const fechaEntrega = formatDateOrND(cliente.created_at ?? cliente.fecha_reclutamiento);
 
       const rowData = [
         index + 1,
