@@ -43,31 +43,24 @@ interface ValidationErrors {
 }
 
 export default function ContratosPage() {
-  const { getClienteById, getClienteByDni, getClienteByCod, clientes, addCliente } = useClientes();
+  const { getClienteById, getClienteByDni, getClienteByCod, clientes, addCliente, getNextCod } = useClientes();
   const {
     contratos, addContrato, updateContrato, deleteContrato, reloadContratos, firmarContrato,
     zipProgress, setZipProgress, zipRenderState, setZipRenderState, zipDocRef
   } = useContratos();
   const { consultarDNI, loading: dniLoading } = useConsultaDNI();
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
-  const [signatureData, setSignatureData] = useState('');
-  const [signatureSource, setSignatureSource] = useState<'capturada' | 'reutilizada' | null>(null);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const [viewingContract, setViewingContract] = useState<Contrato | null>(null);
-  const [pensionChoice, setPensionChoice] = useState<'ONP' | 'AFP' | ''>('');
-  const [selectionMethod, setSelectionMethod] = useState<'scanner' | 'manual' | null>(null);
-  const [showRegistroModal, setShowRegistroModal] = useState(false);
-  const [registroFormData, setRegistroFormData] = useState({
-    dni: '',
+  const createRegistroInitialState = (dni = '') => ({
+    dni,
+    cod: '',
     repetir_codigo: '',
     nombre: '',
     a_paterno: '',
     a_materno: '',
     fecha_nac: '',
+    edad: '',
+    fecha_reclutamiento: new Date().toISOString().split('T')[0],
     sexo: '',
     estado_civil: '',
-    codigogrupotrabajo: '',
     id_afp: '',
     cuspp: '',
     fecha_inicio_afiliacion: '',
@@ -78,7 +71,32 @@ export default function ContratosPage() {
     distrito: '',
     provincia: '',
     departamento: '',
+    codigogrupotrabajo: '',
+    area: '',
+    descripcion_zona: '',
+    asignacion: '',
+    estado_actual: '',
+    cargo: '',
+    fecha_inicio_contrato: '',
+    fecha_termino_contrato: '',
+    tipo_contrato: '',
+    remuneracion: '',
+    planilla: '',
+    referido: '',
+    lugar: '',
+    cooperador: '',
+    observaciones: '',
   });
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
+  const [signatureData, setSignatureData] = useState('');
+  const [signatureSource, setSignatureSource] = useState<'capturada' | 'reutilizada' | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [viewingContract, setViewingContract] = useState<Contrato | null>(null);
+  const [pensionChoice, setPensionChoice] = useState<'ONP' | 'AFP' | ''>('');
+  const [selectionMethod, setSelectionMethod] = useState<'scanner' | 'manual' | null>(null);
+  const [showRegistroModal, setShowRegistroModal] = useState(false);
+  const [registroFormData, setRegistroFormData] = useState(() => createRegistroInitialState());
   const [activeContractForm, setActiveContractForm] = useState('ficha-datos');
   const [lockedExclusiveContract, setLockedExclusiveContract] = useState<string | null>(null);
   const [fichaDatosValues, setFichaDatosValues] = useState<FichaDatosValues>(emptyFichaDatosValues);
@@ -2614,28 +2632,12 @@ export default function ContratosPage() {
 
   const handleOpenRegistro = async (prefillDni?: string) => {
     const cleanDni = prefillDni ? prefillDni.replace(/\D/g, '').slice(0, 8) : '';
-
-    setRegistroFormData({
-      dni: cleanDni,
-      repetir_codigo: '',
-      nombre: '',
-      a_paterno: '',
-      a_materno: '',
-      fecha_nac: '',
-      sexo: '',
-      estado_civil: '',
-      codigogrupotrabajo: '',
-      id_afp: '',
-      cuspp: '',
-      fecha_inicio_afiliacion: '',
-      porcentaje_comision: '',
-      nueva_afiliacion: false,
-      grado_instruccion: '',
-      direccion: '',
-      distrito: '',
-      provincia: '',
-      departamento: '',
-    });
+    setRegistroFormData(createRegistroInitialState(cleanDni));
+    void getNextCod()
+      .then((nextCod) => {
+        setRegistroFormData(prev => (prev.cod.trim() ? prev : { ...prev, cod: nextCod }));
+      })
+      .catch(() => undefined);
     setShowRegistroModal(true);
     setTimeout(() => registroDniRef.current?.focus(), 0);
 
@@ -2653,9 +2655,33 @@ export default function ContratosPage() {
     }
   };
 
+  useEffect(() => {
+    const fechaNacimiento = registroFormData.fecha_nac.trim();
+    if (!fechaNacimiento) {
+      setRegistroFormData(prev => (prev.edad ? { ...prev, edad: '' } : prev));
+      return;
+    }
+
+    try {
+      const birthDate = new Date(fechaNacimiento);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      if (age >= 0) {
+        const nextEdad = String(age);
+        setRegistroFormData(prev => (prev.edad === nextEdad ? prev : { ...prev, edad: nextEdad }));
+      }
+    } catch {
+      // Ignora fechas invalidas
+    }
+  }, [registroFormData.fecha_nac]);
+
   const normalizeLetters = (input: string) =>
     input
-      .replace(/[^a-zA-ZÃ¡Ã©Ã­Ã³ÃºÃÃ‰ÃÃ“ÃšÃ±Ã‘\s'-]/g, '')
+      .replace(/[^a-zA-ZÀ-ÿ\s'-]/g, '')
       .replace(/\s{2,}/g, ' ');
 
   const normalizeDigits = (input: string, maxLen: number) =>
@@ -2665,6 +2691,10 @@ export default function ContratosPage() {
     let newValue = value;
     if (field === 'dni') {
       newValue = normalizeDigits(value, 8);
+    } else if (field === 'cod') {
+      newValue = value.toUpperCase().replace(/\s+/g, '').slice(0, 30);
+    } else if (field === 'edad') {
+      newValue = normalizeDigits(value, 3);
     } else if (field === 'nombre' || field === 'a_paterno' || field === 'a_materno') {
       newValue = normalizeLetters(value);
     }
@@ -2709,19 +2739,37 @@ export default function ContratosPage() {
         return;
       }
     }
+    if (registroFormData.remuneracion.trim()) {
+      const value = Number(registroFormData.remuneracion);
+      if (Number.isNaN(value) || value < 0) {
+        toast.error('La remuneracion debe ser un numero mayor o igual a 0');
+        return;
+      }
+    }
+
+    const codManual = normalizeRegistroString(registroFormData.cod);
+    if (codManual && getClienteByCod(codManual)) {
+      toast.error('El codigo ya esta registrado');
+      return;
+    }
 
     try {
       setRegistroLoading(true);
       const nombre = registroFormData.nombre.trim();
       const aPaterno = registroFormData.a_paterno.trim();
       const aMaterno = registroFormData.a_materno.trim();
+      const apellidosYNombres = [aPaterno, aMaterno, nombre].filter(Boolean).join(' ').trim();
 
       await addCliente({
         dni: registroFormData.dni.toUpperCase(),
+        cod: codManual,
         repetir_codigo: normalizeRegistroString(registroFormData.repetir_codigo),
         nombre: nombre || null,
         a_paterno: aPaterno || null,
         a_materno: aMaterno || null,
+        apellidos_y_nombres: apellidosYNombres || null,
+        edad: registroFormData.edad.trim() ? parseInt(registroFormData.edad.trim(), 10) : null,
+        fecha_reclutamiento: normalizeRegistroString(registroFormData.fecha_reclutamiento),
         codigogrupotrabajo: normalizeRegistroString(registroFormData.codigogrupotrabajo),
         fecha_nac: normalizeRegistroString(registroFormData.fecha_nac),
         sexo: registroFormData.sexo ? (registroFormData.sexo as 'M' | 'F') : null,
@@ -2740,6 +2788,22 @@ export default function ContratosPage() {
         distrito: normalizeRegistroString(registroFormData.distrito),
         provincia: normalizeRegistroString(registroFormData.provincia),
         departamento: normalizeRegistroString(registroFormData.departamento),
+        area: normalizeRegistroString(registroFormData.area),
+        descripcion_zona: normalizeRegistroString(registroFormData.descripcion_zona),
+        asignacion: normalizeRegistroString(registroFormData.asignacion),
+        estado_actual: normalizeRegistroString(registroFormData.estado_actual),
+        cargo: normalizeRegistroString(registroFormData.cargo),
+        fecha_inicio_contrato: normalizeRegistroString(registroFormData.fecha_inicio_contrato),
+        fecha_termino_contrato: normalizeRegistroString(registroFormData.fecha_termino_contrato),
+        tipo_contrato: normalizeRegistroString(registroFormData.tipo_contrato),
+        remuneracion: registroFormData.remuneracion.trim()
+          ? Number(registroFormData.remuneracion)
+          : null,
+        planilla: normalizeRegistroString(registroFormData.planilla),
+        observaciones: normalizeRegistroString(registroFormData.observaciones),
+        referido: normalizeRegistroString(registroFormData.referido),
+        lugar: normalizeRegistroString(registroFormData.lugar),
+        cooperador: normalizeRegistroString(registroFormData.cooperador),
       });
 
       toast.success('Trabajador registrado correctamente');
@@ -2750,27 +2814,7 @@ export default function ContratosPage() {
       }
 
       setShowRegistroModal(false);
-      setRegistroFormData({
-        dni: '',
-        repetir_codigo: '',
-        nombre: '',
-        a_paterno: '',
-        a_materno: '',
-        fecha_nac: '',
-        sexo: '',
-        estado_civil: '',
-        codigogrupotrabajo: '',
-        id_afp: '',
-        cuspp: '',
-        fecha_inicio_afiliacion: '',
-        porcentaje_comision: '',
-        nueva_afiliacion: false,
-        grado_instruccion: '',
-        direccion: '',
-        distrito: '',
-        provincia: '',
-        departamento: '',
-      });
+      setRegistroFormData(createRegistroInitialState());
     } catch (error) {
       toast.error('Error al registrar trabajador');
       console.error(error);
@@ -3565,18 +3609,6 @@ export default function ContratosPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Repetir codigo</label>
-                <input
-                  type="text"
-                  value={registroFormData.repetir_codigo}
-                  onChange={(e) => handleRegistroChange('repetir_codigo', e.target.value)}
-                  placeholder="Ej: 44000"
-                  className="input-field w-full"
-                  maxLength={20}
-                />
-              </div>
-
               <div className="md:col-span-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Datos personales</p>
               </div>
@@ -3628,6 +3660,29 @@ export default function ContratosPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Edad</label>
+                <input
+                  type="number"
+                  value={registroFormData.edad}
+                  onChange={(e) => handleRegistroChange('edad', e.target.value)}
+                  placeholder="Se calcula automaticamente"
+                  className="input-field w-full"
+                  min={0}
+                  max={150}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Fecha de reclutamiento</label>
+                <input
+                  type="date"
+                  value={registroFormData.fecha_reclutamiento}
+                  onChange={(e) => handleRegistroChange('fecha_reclutamiento', e.target.value)}
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Sexo</label>
                 <select
                   value={registroFormData.sexo}
@@ -3654,6 +3709,30 @@ export default function ContratosPage() {
                   <option value="CONVIVIENTE">Conviviente</option>
                   <option value="DIVORCIADO">Divorciado</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Repetir codigo</label>
+                <input
+                  type="text"
+                  value={registroFormData.repetir_codigo}
+                  onChange={(e) => handleRegistroChange('repetir_codigo', e.target.value)}
+                  placeholder="Ej: 44000"
+                  className="input-field w-full"
+                  maxLength={20}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Codigo</label>
+                <input
+                  type="text"
+                  value={registroFormData.cod}
+                  onChange={(e) => handleRegistroChange('cod', e.target.value)}
+                  placeholder="Se autogenera si lo dejas vacio"
+                  className="input-field w-full"
+                  maxLength={30}
+                />
               </div>
 
               <div className="md:col-span-2">
@@ -3735,22 +3814,6 @@ export default function ContratosPage() {
               </div>
 
               <div className="md:col-span-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Informacion Laboral</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">CÃ³digo Grupo Trabajo</label>
-                <input
-                  type="text"
-                  value={registroFormData.codigogrupotrabajo}
-                  onChange={(e) => handleRegistroChange('codigogrupotrabajo', e.target.value)}
-                  placeholder="Ej: 001"
-                  className="input-field w-full"
-                  maxLength={20}
-                />
-              </div>
-
-              <div className="md:col-span-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Direccion</p>
               </div>
 
@@ -3795,6 +3858,183 @@ export default function ContratosPage() {
                   onChange={(e) => handleRegistroChange('departamento', e.target.value)}
                   placeholder="Ej: Lima"
                   className="input-field w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Informacion laboral</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Codigo Grupo Trabajo</label>
+                <input
+                  type="text"
+                  value={registroFormData.codigogrupotrabajo}
+                  onChange={(e) => handleRegistroChange('codigogrupotrabajo', e.target.value)}
+                  placeholder="Ej: 001"
+                  className="input-field w-full"
+                  maxLength={20}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Area</label>
+                <input
+                  type="text"
+                  value={registroFormData.area}
+                  onChange={(e) => handleRegistroChange('area', e.target.value)}
+                  placeholder="Ej: Ventas"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Descripcion de Zona</label>
+                <input
+                  type="text"
+                  value={registroFormData.descripcion_zona}
+                  onChange={(e) => handleRegistroChange('descripcion_zona', e.target.value)}
+                  placeholder="Ej: Zona Norte"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Asignacion</label>
+                <input
+                  type="text"
+                  value={registroFormData.asignacion}
+                  onChange={(e) => handleRegistroChange('asignacion', e.target.value)}
+                  placeholder="Ej: Planta Norte"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Estado Actual</label>
+                <input
+                  type="text"
+                  value={registroFormData.estado_actual}
+                  onChange={(e) => handleRegistroChange('estado_actual', e.target.value)}
+                  placeholder="Ej: Activo"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Cargo</label>
+                <input
+                  type="text"
+                  value={registroFormData.cargo}
+                  onChange={(e) => handleRegistroChange('cargo', e.target.value)}
+                  placeholder="Ej: Operario"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Informacion de contrato</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Fecha Inicio Contrato</label>
+                <input
+                  type="date"
+                  value={registroFormData.fecha_inicio_contrato}
+                  onChange={(e) => handleRegistroChange('fecha_inicio_contrato', e.target.value)}
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Fecha Termino Contrato</label>
+                <input
+                  type="date"
+                  value={registroFormData.fecha_termino_contrato}
+                  onChange={(e) => handleRegistroChange('fecha_termino_contrato', e.target.value)}
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Tipo de Contrato</label>
+                <input
+                  type="text"
+                  value={registroFormData.tipo_contrato}
+                  onChange={(e) => handleRegistroChange('tipo_contrato', e.target.value)}
+                  placeholder="Ej: Plazo fijo"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Remuneracion</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={registroFormData.remuneracion}
+                  onChange={(e) => handleRegistroChange('remuneracion', e.target.value)}
+                  placeholder="Ej: 1500.00"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-foreground mb-2">Planilla</label>
+                <input
+                  type="text"
+                  value={registroFormData.planilla}
+                  onChange={(e) => handleRegistroChange('planilla', e.target.value)}
+                  placeholder="Ej: Planilla Principal"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Informacion adicional</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Referido</label>
+                <input
+                  type="text"
+                  value={registroFormData.referido}
+                  onChange={(e) => handleRegistroChange('referido', e.target.value)}
+                  placeholder="Ej: Juan Perez"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Lugar</label>
+                <input
+                  type="text"
+                  value={registroFormData.lugar}
+                  onChange={(e) => handleRegistroChange('lugar', e.target.value)}
+                  placeholder="Ej: Oficina Central"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Cooperador</label>
+                <input
+                  type="text"
+                  value={registroFormData.cooperador}
+                  onChange={(e) => handleRegistroChange('cooperador', e.target.value)}
+                  placeholder="Ej: Maria Lopez"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-foreground mb-2">Observaciones</label>
+                <textarea
+                  value={registroFormData.observaciones}
+                  onChange={(e) => handleRegistroChange('observaciones', e.target.value)}
+                  placeholder="Observaciones generales..."
+                  className="input-field w-full"
+                  rows={3}
                 />
               </div>
             </div>

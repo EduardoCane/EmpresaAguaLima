@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 interface ClientContextType {
   clientes: Cliente[];
-  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'apellidos_y_nombres' | 'cod'>) => Promise<void>;
+  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'cod'> & { cod?: string | null }) => Promise<void>;
   updateCliente: (id: string, cliente: Partial<Cliente>) => Promise<void>;
   deleteCliente: (id: string) => Promise<void>;
   getClienteByDni: (dni: string) => Cliente | undefined;
@@ -75,10 +75,11 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     loadClientes();
   }, []);
 
-  const addCliente = async (clienteData: Omit<Cliente, 'id' | 'created_at' | 'apellidos_y_nombres' | 'cod'>) => {
+  const addCliente = async (clienteData: Omit<Cliente, 'id' | 'created_at' | 'cod'> & { cod?: string | null }) => {
     try {
       // Obtener el próximo código
-      const nextCod = await getNextCod();
+      const codIngresado = (clienteData.cod ?? '').trim();
+      const cod = codIngresado || await getNextCod();
       
       // Si no hay fecha_reclutamiento, usar la fecha actual
       const fechaReclutamiento = clienteData.fecha_reclutamiento || new Date().toISOString().split('T')[0];
@@ -88,8 +89,8 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       
       const repetirCodigo = (clienteData.repetir_codigo ?? '').trim();
       const payload = {
-        cod: nextCod,
-        repetir_codigo: repetirCodigo || nextCod,
+        cod,
+        repetir_codigo: repetirCodigo || cod,
         dni: clienteData.dni,
         a_paterno: clienteData.a_paterno ?? null,
         a_materno: clienteData.a_materno ?? null,
@@ -147,6 +148,10 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     try {
       const updateData: Record<string, unknown> = {};
       
+      if ('cod' in clienteData && typeof clienteData.cod === 'string') {
+        const cod = clienteData.cod.trim();
+        if (cod) updateData.cod = cod;
+      }
       if ('dni' in clienteData) updateData.dni = clienteData.dni ?? null;
       if ('repetir_codigo' in clienteData) updateData.repetir_codigo = clienteData.repetir_codigo ?? null;
       if ('a_paterno' in clienteData) updateData.a_paterno = clienteData.a_paterno ?? null;

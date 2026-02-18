@@ -14,9 +14,10 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps) {
-  const { addCliente, updateCliente, getClienteByDni } = useClientes();
+  const { addCliente, updateCliente, getClienteByDni, getClienteByCod, getNextCod } = useClientes();
   const [formData, setFormData] = useState({
     dni: '',
+    cod: '',
     repetir_codigo: '',
     nombre: '',
     a_paterno: '',
@@ -66,10 +67,23 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
   };
 
   useEffect(() => {
+    let cancelled = false;
+    const loadNextCodInField = async () => {
+      try {
+        const nextCod = await getNextCod();
+        if (!cancelled) {
+          setFormData(prev => (prev.cod.trim() ? prev : { ...prev, cod: nextCod }));
+        }
+      } catch {
+        // Ignora error de preview de codigo
+      }
+    };
+
     if (editingClient) {
       const fallbackApellidos = splitApellido(editingClient.a_paterno);
       setFormData({
         dni: editingClient.dni ?? '',
+        cod: editingClient.cod ?? '',
         repetir_codigo: editingClient.repetir_codigo ?? '',
         nombre: editingClient.nombre ?? '',
         a_paterno: editingClient.a_paterno ?? fallbackApellidos.paterno,
@@ -113,6 +127,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       const today = new Date().toISOString().split('T')[0];
       setFormData({
         dni: '',
+        cod: '',
         repetir_codigo: '',
         nombre: '',
         a_paterno: '',
@@ -148,9 +163,16 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         lugar: '',
         cooperador: '',
       });
+      if (isOpen) {
+        void loadNextCodInField();
+      }
       setTimeout(() => dniInputRef.current?.focus(), 0);
     }
     setErrors({});
+
+    return () => {
+      cancelled = true;
+    };
   }, [editingClient, isOpen]);
 
   const setField = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
@@ -244,6 +266,14 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       }
     }
 
+    const cod = formData.cod.trim().toUpperCase();
+    if (cod) {
+      const existingClienteByCod = getClienteByCod(cod);
+      if (existingClienteByCod && existingClienteByCod.id !== editingClient?.id) {
+        newErrors.cod = 'Este codigo ya esta registrado';
+      }
+    }
+
     if (formData.porcentaje_comision.trim()) {
       const value = Number(formData.porcentaje_comision);
       if (Number.isNaN(value) || value < 0 || value > 100) {
@@ -268,12 +298,14 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     const nombre = formData.nombre.trim();
     const aPaterno = formData.a_paterno.trim();
     const aMaterno = formData.a_materno.trim();
+    const codigo = normalizeString(formData.cod)?.toUpperCase() ?? null;
 
     try {
       if (editingClient) {
         // Para actualizar, no incluimos apellidos_y_nombres (se genera automáticamente)
         const updatePayload: Partial<Cliente> = {
           dni: formData.dni.trim(),
+          cod: codigo,
           repetir_codigo: normalizeString(formData.repetir_codigo),
           nombre: nombre || null,
           a_paterno: aPaterno || null,
@@ -323,6 +355,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         const apellidosYNombres = [aPaterno, aMaterno, nombre].filter(Boolean).join(' ').trim();
         const createPayload: Partial<Cliente> = {
           dni: formData.dni.trim(),
+          cod: codigo,
           repetir_codigo: normalizeString(formData.repetir_codigo),
           nombre: nombre || null,
           a_paterno: aPaterno || null,
@@ -572,6 +605,23 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   placeholder="Ej: 44000"
                   maxLength={20}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Codigo
+                </label>
+                <input
+                  type="text"
+                  value={formData.cod}
+                  onChange={(e) => setField('cod', e.target.value.toUpperCase().replace(/\s+/g, '').slice(0, 30))}
+                  className={`input-field ${errors.cod ? 'border-destructive' : ''}`}
+                  placeholder="Se autogenera si lo dejas vacio"
+                  maxLength={30}
+                />
+                {errors.cod && (
+                  <p className="mt-1 text-sm text-destructive">{errors.cod}</p>
+                )}
               </div>
 
               {/* AFP */}
