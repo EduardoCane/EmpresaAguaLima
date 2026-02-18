@@ -5,6 +5,7 @@ import { Cliente } from '@/types';
 import { useClientes } from '@/contexts/ClientContext';
 import { ClientBarcode } from '@/components/ClientBarcode';
 import { toast } from 'sonner';
+import { lookupReniecByDni } from '@/lib/reniec';
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -55,8 +56,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
   const [reniecLoading, setReniecLoading] = useState(false);
   const [reniecError, setReniecError] = useState<string | null>(null);
   const reniecAbort = useRef<AbortController | null>(null);
-  const reniecToken = import.meta.env.VITE_RENIEC_TOKEN || 'sk_12933.HGJ0GrDZjKEOundZardFPZCTJZhCBlAy';
-  const reniecApiBase = import.meta.env.VITE_RENIEC_API_URL || '/reniec';
   const dniInputRef = useRef<HTMLInputElement>(null);
 
   const splitApellido = (apellido?: string | null) => {
@@ -167,7 +166,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       reniecAbort.current?.abort();
       return;
     }
-    if (!reniecToken) return;
     const controller = new AbortController();
     reniecAbort.current?.abort();
     reniecAbort.current = controller;
@@ -176,40 +174,17 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       try {
         setReniecLoading(true);
         setReniecError(null);
-        const doFetch = async (base: string) => fetch(`${base}/dni?numero=${dni}`, {
-          headers: {
-            Authorization: `Bearer ${reniecToken}`,
-            token: reniecToken,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          signal: controller.signal,
-        });
-        let res: Response | null = null;
-        try {
-          res = await doFetch(reniecApiBase);
-        } catch (e) {
-          if (!reniecApiBase.startsWith('/')) throw e;
-        }
-
-        if ((!res || !res.ok) && reniecApiBase.startsWith('/')) {
-          res = await doFetch('https://api.decolecta.com/v1/reniec');
-        }
-
-        if (!res || !res.ok) throw new Error(`RENIEC respondió ${res?.status}`);
-        const payload = await res.json();
-        const data = payload?.data || payload;
-        const nombres = (data?.first_name || data?.nombres || data?.nombre || '').trim();
-        const apPat = (data?.first_last_name || data?.a_paterno || data?.apepat || '').trim();
-        const apMat = (data?.second_last_name || data?.a_materno || data?.apemat || '').trim();
-        if (!nombres && !apPat && !apMat) throw new Error('Respuesta sin nombres');
+        const data = await lookupReniecByDni(dni, controller.signal);
+        const nombres = data.nombre.trim();
+        const apPat = data.apellidoPaterno.trim();
+        const apMat = data.apellidoMaterno.trim();
 
         setFormData(prev => ({
           ...prev,
           nombre: nombres || prev.nombre,
           a_paterno: apPat || prev.a_paterno,
           a_materno: apMat || prev.a_materno,
-          dni: data?.document_number ? String(data.document_number).trim() : prev.dni,
+          dni: data.documentNumber || prev.dni,
         }));
       } catch (err) {
         if (controller.signal.aborted) return;
@@ -981,6 +956,3 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     </div>
   );
 }
-
-
-

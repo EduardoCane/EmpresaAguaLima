@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { lookupReniecByDni } from '@/lib/reniec';
 
 export function useConsultaDNI() {
   const [loading, setLoading] = useState(false);
@@ -9,51 +10,20 @@ export function useConsultaDNI() {
 
     try {
       setLoading(true);
+      const payload = await lookupReniecByDni(dni);
 
-      const token = import.meta.env.VITE_RENIEC_TOKEN || 'sk_12933.HGJ0GrDZjKEOundZardFPZCTJZhCBlAy';
-      const apiBase = import.meta.env.VITE_RENIEC_API_URL || '/reniec';
-
-      if (!token) {
-        console.warn('Token de API no configurado');
-        toast.error('Token de API no configurado. Ingresa los datos manualmente.');
-        return null;
-      }
-
-      const doFetch = async (base: string) =>
-        fetch(`${base}/dni?numero=${dni}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-            token,
-          },
-        });
-
-      let response: Response | null = null;
-      try {
-        response = await doFetch(apiBase);
-      } catch (err) {
-        if (!apiBase.startsWith('/')) throw err;
-      }
-
-      if ((!response || !response.ok) && apiBase.startsWith('/')) {
-        response = await doFetch('https://api.decolecta.com/v1/reniec');
-      }
-
-      if (!response.ok) {
-        console.warn('API respondió con error:', response.status);
-        if (response.status === 404) {
-          toast.error('DNI no encontrado en la base de datos');
-        }
-        return null;
-      }
-
-      const data = await response.json();
-      const payload = data?.data || data;
       return {
-        nombre: payload?.first_name || payload?.nombres || payload?.nombre || '',
-        apellido: `${payload?.first_last_name || payload?.apellido_paterno || ''} ${payload?.second_last_name || payload?.apellido_materno || ''}`.trim(),
+        nombre: payload.nombre,
+        apellido: `${payload.apellidoPaterno} ${payload.apellidoMaterno}`.trim(),
       };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error consultando RENIEC';
+      if (message.toLowerCase().includes('dni no encontrado')) {
+        toast.error('DNI no encontrado en la base de datos');
+      } else {
+        toast.error('No se pudo consultar RENIEC. Puedes llenar los datos manualmente.');
+      }
+      return null;
     } finally {
       setLoading(false);
     }
