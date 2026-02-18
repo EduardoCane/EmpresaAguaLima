@@ -1,9 +1,13 @@
 services:
-  - type: static_site
+  - type: web
     name: clientscan-hub
-    env: static
-    buildCommand: npm install && npm run build
+    runtime: static
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_SUPABASE_URL
         sync: false
