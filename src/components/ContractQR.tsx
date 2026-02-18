@@ -10,8 +10,8 @@ export function ContractQR({ contractId }: ContractQRProps) {
   const publicBase = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
 
   const signUrl = useMemo(() => {
-    if (publicBase) return `${publicBase.replace(/\/$/, '')}/#/sign/${contractId}`;
-    return `${window.location.origin}/#/sign/${contractId}`;
+    if (publicBase) return `${publicBase.replace(/\/$/, '')}/sign/${contractId}`;
+    return `${window.location.origin}/sign/${contractId}`;
   }, [contractId, publicBase]);
 
   return (

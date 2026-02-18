@@ -21,6 +21,9 @@ const resolveReniecBase = () => {
   return "/reniec";
 };
 
+const isSupabaseEdgeFunctionUrl = (base: string) =>
+  /\/functions\/v1\/[^/?#]+$/i.test(base);
+
 export interface ReniecLookupResult {
   nombre: string;
   apellidoPaterno: string;
@@ -34,7 +37,11 @@ export async function lookupReniecByDni(dni: string, signal?: AbortSignal): Prom
   }
 
   const base = resolveReniecBase();
-  const response = await fetch(`${base}/dni?numero=${encodeURIComponent(dni)}`, {
+  const requestUrl = isSupabaseEdgeFunctionUrl(base)
+    ? `${base}?numero=${encodeURIComponent(dni)}`
+    : `${base}/dni?numero=${encodeURIComponent(dni)}`;
+
+  const response = await fetch(requestUrl, {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
