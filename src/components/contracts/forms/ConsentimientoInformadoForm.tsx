@@ -26,6 +26,10 @@ const buildDni = (client?: Cliente | null) => {
   return normalize(client?.dni) || "#N/D";
 };
 
+const buildCodigo = (client?: Cliente | null) => {
+  return normalize(client?.cod) || "#N/D";
+};
+
 const formatDate = (value?: string, separator: "/" | "." = "/") => {
   if (!value) {
     const now = new Date();
@@ -37,19 +41,23 @@ const formatDate = (value?: string, separator: "/" | "." = "/") => {
   const trimmed = value.trim();
   if (!trimmed) return "";
 
-  if (trimmed.includes("/") || trimmed.includes(".")) {
-    const parts = trimmed.split(/[/.]/);
-    if (parts.length >= 3) {
-      const day = String(parts[0]).padStart(2, "0");
-      const month = String(parts[1]).padStart(2, "0");
-      const year = String(parts[2]).slice(0, 4);
-      return `${day}${separator}${month}${separator}${year}`;
-    }
-    return trimmed;
+  const ddMmYyyy = trimmed.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/);
+  if (ddMmYyyy) {
+    const [, dayRaw, monthRaw, yearRaw] = ddMmYyyy;
+    const day = String(dayRaw).padStart(2, "0");
+    const month = String(monthRaw).padStart(2, "0");
+    const year = yearRaw.length === 2 ? `20${yearRaw}` : yearRaw.slice(0, 4);
+    return `${day}${separator}${month}${separator}${year}`;
+  }
+
+  const yyyyMmDd = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (yyyyMmDd) {
+    const [, year, month, day] = yyyyMmDd;
+    return `${day}${separator}${month}${separator}${year}`;
   }
 
   const parsed = new Date(trimmed);
-  if (Number.isNaN(parsed.getTime())) return trimmed;
+  if (Number.isNaN(parsed.getTime())) return "";
 
   const day = String(parsed.getDate()).padStart(2, "0");
   const month = String(parsed.getMonth() + 1).padStart(2, "0");
@@ -149,22 +157,19 @@ export function ConsentimientoInformadoForm({
     ? consentimientoInformadoValues
     : {}) as Record<string, unknown>;
   const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
-  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
-    ? `${savedFechaRegistro}T00:00:00`
-    : savedFechaRegistro;
-  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
-  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const savedFechaDot = savedFechaRegistro ? formatDate(savedFechaRegistro, ".") : "";
+  const savedFechaSlash = savedFechaRegistro ? formatDate(savedFechaRegistro, "/") : "";
+  const hasSavedDate = !!savedFechaSlash;
 
   const fullName = buildFullName(client);
   const dni = buildDni(client);
+  const codigo = buildCodigo(client);
   const fechaDot = hasSavedDate
-    ? formatDate(normalizedFechaRegistro, ".")
+    ? savedFechaDot
     : (!hasPersistedValues ? formatDate(fecha, ".") : "");
   const fechaSlash = hasSavedDate
-    ? formatDate(normalizedFechaRegistro, "/")
+    ? savedFechaSlash
     : (!hasPersistedValues ? formatDate(fecha, "/") : "");
-
-  console.log('ConsentimientoInformado - signatureSrc:', signatureSrc ? 'tiene firma' : 'NO tiene firma', 'pagePart:', pagePart);
 
   return (
     <div className="w-full bg-white text-black print:bg-white print:p-0" style={{ margin: 0, padding: 0 }}>
@@ -760,7 +765,7 @@ export function ConsentimientoInformadoForm({
               {/* Código + autorizo */}
               <div className="mt-6 grid grid-cols-[220px_1fr] gap-x-10 items-baseline">
                 <p className="text-center">
-                  y Código <span className="font-bold">#N/D</span>
+                  y Código <span className="font-bold">{codigo}</span>
                 </p>
                 <p className="text-justify">
                   solicito y <span className="font-bold uppercase">AUTORIZO</span> se proceda a

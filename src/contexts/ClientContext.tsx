@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 interface ClientContextType {
   clientes: Cliente[];
-  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'cod'> & { cod?: string | null }) => Promise<void>;
+  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'cod'> & { cod?: string | null }) => Promise<Cliente>;
   updateCliente: (id: string, cliente: Partial<Cliente>) => Promise<void>;
   deleteCliente: (id: string) => Promise<void>;
   getClienteByDni: (dni: string) => Cliente | undefined;
@@ -75,7 +75,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     loadClientes();
   }, []);
 
-  const addCliente = async (clienteData: Omit<Cliente, 'id' | 'created_at' | 'cod'> & { cod?: string | null }) => {
+  const addCliente = async (clienteData: Omit<Cliente, 'id' | 'created_at' | 'cod'> & { cod?: string | null }): Promise<Cliente> => {
     try {
       // Obtener el próximo código
       const codIngresado = (clienteData.cod ?? '').trim();
@@ -85,7 +85,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       const fechaReclutamiento = clienteData.fecha_reclutamiento || new Date().toISOString().split('T')[0];
       
       // Generar apellidos_y_nombres si viene en el clienteData
-      const apellidosYNombres = (clienteData as any).apellidos_y_nombres || '';
+      const apellidosYNombres = (clienteData.apellidos_y_nombres ?? '').trim();
       
       const repetirCodigo = (clienteData.repetir_codigo ?? '').trim();
       const payload = {
@@ -127,15 +127,24 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         lugar: clienteData.lugar ?? null,
         cooperador: clienteData.cooperador ?? null,
       };
-      const { error: insertError } = await supabase
+      const { data: insertedCliente, error: insertError } = await supabase
         .from('clientes')
-        .insert([payload]);
+        .insert([payload])
+        .select('*')
+        .single();
 
       if (insertError) {
         throw insertError;
       }
+      if (!insertedCliente) {
+        throw new Error('No se pudo obtener el cliente insertado');
+      }
 
       await loadClientes();
+      return {
+        ...insertedCliente,
+        created_at: insertedCliente.created_at ? new Date(insertedCliente.created_at) : undefined,
+      } as Cliente;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error al agregar cliente';
       console.error('Error adding cliente:', err);

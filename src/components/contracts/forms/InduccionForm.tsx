@@ -51,11 +51,25 @@ const formatDate = (value?: string) => {
 	}
 
 	const trimmed = value.trim();
-	if (!trimmed) return "#N/D";
-	if (trimmed.includes("/")) return trimmed;
+	if (!trimmed) return "";
+
+	const ddMmYyyy = trimmed.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/);
+	if (ddMmYyyy) {
+		const [, dayRaw, monthRaw, yearRaw] = ddMmYyyy;
+		const day = String(dayRaw).padStart(2, "0");
+		const month = String(monthRaw).padStart(2, "0");
+		const year = yearRaw.length === 2 ? `20${yearRaw}` : yearRaw.slice(0, 4);
+		return `${day}/${month}/${year}`;
+	}
+
+	const yyyyMmDd = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+	if (yyyyMmDd) {
+		const [, year, month, day] = yyyyMmDd;
+		return `${day}/${month}/${year}`;
+	}
 
 	const parsed = new Date(trimmed);
-	if (Number.isNaN(parsed.getTime())) return trimmed;
+	if (Number.isNaN(parsed.getTime())) return "";
 
 	const day = String(parsed.getDate()).padStart(2, "0");
 	const month = String(parsed.getMonth() + 1).padStart(2, "0");
@@ -205,6 +219,7 @@ interface InduccionFormProps {
 	unidadArea?: string;
 	codigo?: string;
 	fecha?: string;
+	induccionValues?: Record<string, unknown> | null;
 	signatureSrc?: string;
 	pdfMode?: boolean;
 }
@@ -216,15 +231,22 @@ export function InduccionPuestoTrabajo({
 			 unidadArea,
 			 codigo,
 			 fecha,
+			 induccionValues,
 			 signatureSrc,
 			 pdfMode = false,
 }: InduccionFormProps = {}) {
+			 const hasPersistedValues = !!(induccionValues && typeof induccionValues === "object");
+			 const valuesObj = (induccionValues && typeof induccionValues === "object"
+			 	? induccionValues
+			 	: {}) as Record<string, unknown>;
+			 const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
+			 const savedFechaDisplay = savedFechaRegistro ? formatDate(savedFechaRegistro) : "";
 			 const fullName = buildFullName(client);
 			 const cargoDisplay = normalize(cargo) || normalize(client?.cargo) || "#N/D";
 			 const areaDisplay = normalize(unidadArea) || normalize(client?.area) || "#N/D";
 			 const codigoDisplay = normalize(codigo) || normalize(client?.cod) || "#N/D";
 			 const dniDisplay = normalize(client?.dni) || "#N/D";
-			 const fechaDisplay = formatDate(fecha);
+			 const fechaDisplay = savedFechaDisplay || (!hasPersistedValues ? formatDate(fecha) : "");
 
 			 return (
 							<div

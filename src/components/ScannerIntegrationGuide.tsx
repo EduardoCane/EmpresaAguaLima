@@ -106,3 +106,4 @@ export function ScannerIntegrationGuide() {
 }
 
 export default ScannerIntegrationGuide;
+

@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Cliente } from '@/types';
 import { useClientes } from '@/contexts/ClientContext';
+import { useContratos } from '@/contexts/ContractContext';
 import { ClientBarcode } from '@/components/ClientBarcode';
 import { toast } from 'sonner';
 import { lookupReniecByDni } from '@/lib/reniec';
@@ -15,6 +16,17 @@ interface ClientModalProps {
 
 export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps) {
   const { addCliente, updateCliente, getClienteByDni, getClienteByCod, getNextCod } = useClientes();
+  const { addContrato } = useContratos();
+  const PLANILLA_OPTIONS = [
+    'OBREROS AGRARIO',
+    'EMP.REG.GRAL. VIRU',
+    'EMPLEADOS AGRARIO',
+    'OBRERO R. GENERAL',
+  ] as const;
+  const TIPO_CONTRATO_OPTIONS = [
+    'Contrato Intermitente',
+    'Contrato por Temporada',
+  ] as const;
   const [formData, setFormData] = useState({
     dni: '',
     cod: '',
@@ -66,6 +78,41 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     return { paterno: parts[0] ?? '', materno: parts.slice(1).join(' ') };
   };
 
+  const normalizeEstadoActual = (estado?: string | null) => {
+    const trimmed = (estado ?? '').trim();
+    if (!trimmed) return '';
+    if (trimmed === 'ReIngresante' || trimmed === 'Re Ingresante') return 'Reingresante';
+    return trimmed;
+  };
+
+  const normalizePlanilla = (planilla?: string | null) => {
+    const trimmed = (planilla ?? '').trim();
+    if (!trimmed) return '';
+    if (trimmed.toUpperCase() === 'OBREROS AGRARIO') return 'OBREROS AGRARIO';
+    if (trimmed.toUpperCase() === 'EMP.REG.GRAL. VIRU') return 'EMP.REG.GRAL. VIRU';
+    if (trimmed.toUpperCase() === 'EMPLEADOS AGRARIO') return 'EMPLEADOS AGRARIO';
+    if (trimmed.toUpperCase() === 'OBRERO R. GENERAL') return 'OBRERO R. GENERAL';
+    return trimmed;
+  };
+
+  const normalizeTipoContrato = (tipoContrato?: string | null) => {
+    const trimmed = (tipoContrato ?? '').trim();
+    if (!trimmed) return '';
+    const upper = trimmed.toUpperCase();
+    if (upper === 'CONTRATO INTERMITENTE' || upper === 'INTERMITENTE') {
+      return 'Contrato Intermitente';
+    }
+    if (
+      upper === 'CONTRATO POR TEMPORADA' ||
+      upper === 'CONTRATO POR TEMPORADA PLAN' ||
+      upper === 'TEMPORADA' ||
+      upper === 'TEMPORADA PLAN'
+    ) {
+      return 'Contrato por Temporada';
+    }
+    return trimmed;
+  };
+
   useEffect(() => {
     let cancelled = false;
     const loadNextCodInField = async () => {
@@ -109,15 +156,15 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         area: editingClient.area ?? '',
         descripcion_zona: editingClient.descripcion_zona ?? '',
         asignacion: editingClient.asignacion ?? '',
-        estado_actual: editingClient.estado_actual ?? '',
+        estado_actual: normalizeEstadoActual(editingClient.estado_actual),
         cargo: editingClient.cargo ?? '',
         fecha_inicio_contrato: editingClient.fecha_inicio_contrato ?? '',
         fecha_termino_contrato: editingClient.fecha_termino_contrato ?? '',
-        tipo_contrato: editingClient.tipo_contrato ?? '',
+        tipo_contrato: normalizeTipoContrato(editingClient.tipo_contrato),
         remuneracion: editingClient.remuneracion !== null && editingClient.remuneracion !== undefined
           ? String(editingClient.remuneracion)
           : '',
-        planilla: editingClient.planilla ?? '',
+        planilla: normalizePlanilla(editingClient.planilla),
         observaciones: editingClient.observaciones ?? '',
         referido: editingClient.referido ?? '',
         lugar: editingClient.lugar ?? '',
@@ -337,7 +384,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
           cargo: normalizeString(formData.cargo),
           fecha_inicio_contrato: normalizeString(formData.fecha_inicio_contrato),
           fecha_termino_contrato: normalizeString(formData.fecha_termino_contrato),
-          tipo_contrato: normalizeString(formData.tipo_contrato),
+          tipo_contrato: normalizeString(normalizeTipoContrato(formData.tipo_contrato)),
           remuneracion: formData.remuneracion.trim()
             ? Number(formData.remuneracion)
             : null,
@@ -388,7 +435,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
           cargo: normalizeString(formData.cargo),
           fecha_inicio_contrato: normalizeString(formData.fecha_inicio_contrato),
           fecha_termino_contrato: normalizeString(formData.fecha_termino_contrato),
-          tipo_contrato: normalizeString(formData.tipo_contrato),
+          tipo_contrato: normalizeString(normalizeTipoContrato(formData.tipo_contrato)),
           remuneracion: formData.remuneracion.trim()
             ? Number(formData.remuneracion)
             : null,
@@ -399,8 +446,28 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
           cooperador: normalizeString(formData.cooperador),
         };
         
-        await addCliente(createPayload);
-        toast.success('Cliente creado correctamente');
+        const createdClient = await addCliente(createPayload);
+        const fullName =
+          createdClient.apellidos_y_nombres?.trim() ||
+          [createdClient.a_paterno, createdClient.a_materno, createdClient.nombre]
+            .filter(Boolean)
+            .join(' ')
+            .trim() ||
+          formData.dni.trim();
+
+        try {
+          await addContrato({
+            cliente_id: createdClient.id,
+            contenido: `Contrato de trabajo para ${fullName} - Borrador`,
+            estado: 'borrador',
+            firmado: false,
+            firmado_at: undefined,
+          });
+          toast.success('Cliente y contrato borrador creados correctamente');
+        } catch (contractError) {
+          console.error('Error creando borrador automatico de contrato:', contractError);
+          toast.error('Cliente creado, pero no se pudo crear el contrato borrador');
+        }
       }
 
       onClose();
@@ -834,13 +901,15 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Estado Actual
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.estado_actual}
                   onChange={(e) => setField('estado_actual', e.target.value)}
                   className="input-field"
-                  placeholder="Ej: Activo"
-                />
+                >
+                  <option value="">Seleccione una opción</option>
+                  <option value="Nuevo">Nuevo</option>
+                  <option value="Reingresante">Reingresante</option>
+                </select>
               </div>
 
               <div>
@@ -889,13 +958,19 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Tipo de Contrato
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.tipo_contrato}
                   onChange={(e) => setField('tipo_contrato', e.target.value)}
                   className="input-field"
-                  placeholder="Ej: Plazo fijo"
-                />
+                >
+                  <option value="">Seleccione una opción</option>
+                  {TIPO_CONTRATO_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                  {formData.tipo_contrato && !TIPO_CONTRATO_OPTIONS.some(option => option === formData.tipo_contrato) && (
+                    <option value={formData.tipo_contrato}>Actual: {formData.tipo_contrato}</option>
+                  )}
+                </select>
               </div>
 
               <div>
@@ -916,13 +991,19 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Planilla
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.planilla}
                   onChange={(e) => setField('planilla', e.target.value)}
                   className="input-field"
-                  placeholder="Ej: Planilla Principal"
-                />
+                >
+                  <option value="">Seleccione una opción</option>
+                  {PLANILLA_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                  {formData.planilla && !PLANILLA_OPTIONS.some(option => option === formData.planilla) && (
+                    <option value={formData.planilla}>Actual: {formData.planilla}</option>
+                  )}
+                </select>
               </div>
 
               {/* Información Adicional */}

@@ -6,32 +6,31 @@ import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
 
 export function useReportGenerator() {
+  const toDateTimeOrNull = (value?: string | Date | null) => {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day);
+      return Number.isNaN(localDate.getTime()) ? null : localDate;
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
   const filterClientesByDate = (clientes: Cliente[], startDate: Date, endDate: Date): Cliente[] => {
-    const toDateKey = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const startKey = toDateKey(startDate);
-    const endKey = toDateKey(endDate);
-
-    const getClientDateKey = (value: string | Date | null | undefined) => {
-      if (!value) return '';
-      if (typeof value === 'string') {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-        const parsed = new Date(value);
-        if (!Number.isNaN(parsed.getTime())) return toDateKey(parsed);
-        return '';
-      }
-      return toDateKey(value);
-    };
+    const startTime = startDate.getTime();
+    const endTime = endDate.getTime();
 
     return clientes.filter(cliente => {
-      const clientKey = getClientDateKey(cliente.created_at);
-      if (!clientKey) return false;
-      return clientKey >= startKey && clientKey <= endKey;
+      const createdAt = toDateTimeOrNull(cliente.created_at);
+      if (!createdAt) return false;
+      const createdAtTime = createdAt.getTime();
+      return createdAtTime >= startTime && createdAtTime <= endTime;
     });
   };
 

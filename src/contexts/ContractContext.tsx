@@ -25,6 +25,7 @@ export interface ZipRenderState {
   sistemaPensionario: Record<string, unknown> | null;
   reglamentos: Record<string, unknown> | null;
   consentimientoInformado: Record<string, unknown> | null;
+  induccion: Record<string, unknown> | null;
   cuentaBancaria: Record<string, unknown> | null;
   declaracionConflicto: Record<string, unknown> | null;
   acuerdoConfidencialidad: Record<string, unknown> | null;
@@ -75,6 +76,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     sistemaPensionario: null,
     reglamentos: null,
     consentimientoInformado: null,
+    induccion: null,
     cuentaBancaria: null,
     declaracionConflicto: null,
     acuerdoConfidencialidad: null,

@@ -130,19 +130,23 @@ const formatDate = (value?: string) => {
   const trimmed = value.trim();
   if (!trimmed) return "";
 
-  if (trimmed.includes("/") || trimmed.includes(".")) {
-    const parts = trimmed.split(/[/.]/);
-    if (parts.length >= 3) {
-      const day = String(parts[0]).padStart(2, "0");
-      const month = String(parts[1]).padStart(2, "0");
-      const year = String(parts[2]).slice(0, 4);
-      return `${day}/${month}/${year}`;
-    }
-    return trimmed;
+  const ddMmYyyy = trimmed.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/);
+  if (ddMmYyyy) {
+    const [, dayRaw, monthRaw, yearRaw] = ddMmYyyy;
+    const day = String(dayRaw).padStart(2, "0");
+    const month = String(monthRaw).padStart(2, "0");
+    const year = yearRaw.length === 2 ? `20${yearRaw}` : yearRaw.slice(0, 4);
+    return `${day}/${month}/${year}`;
+  }
+
+  const yyyyMmDd = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (yyyyMmDd) {
+    const [, year, month, day] = yyyyMmDd;
+    return `${day}/${month}/${year}`;
   }
 
   const parsed = new Date(trimmed);
-  if (Number.isNaN(parsed.getTime())) return trimmed;
+  if (Number.isNaN(parsed.getTime())) return "";
 
   const day = String(parsed.getDate()).padStart(2, "0");
   const month = String(parsed.getMonth() + 1).padStart(2, "0");
@@ -165,15 +169,12 @@ export function DeclaracionConflictoInteresesForm({
     ? declaracionConflictoValues
     : {}) as Record<string, unknown>;
   const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
-  const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
-    ? `${savedFechaRegistro}T00:00:00`
-    : savedFechaRegistro;
-  const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
-  const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
+  const savedFechaSlash = savedFechaRegistro ? formatDate(savedFechaRegistro) : "";
+  const hasSavedDate = !!savedFechaSlash;
 
   const fullName = buildFullName(client);
   const dni = buildDni(client);
-  const fechaSlash = hasSavedDate ? formatDate(normalizedFechaRegistro) : (!hasPersistedValues ? formatDate(fecha) : "");
+  const fechaSlash = hasSavedDate ? savedFechaSlash : (!hasPersistedValues ? formatDate(fecha) : "");
 
   return (
     <div className="w-full bg-white text-black print:bg-white print:p-0" style={{ margin: 0, padding: 0 }}>

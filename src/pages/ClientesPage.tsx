@@ -46,6 +46,24 @@ export default function ClientesPage() {
     return apellidosYNombre || combined || nombre || apellidos || '-';
   };
 
+  const formatDateOnly = (value?: string | Date | null) => {
+    if (!value) return '-';
+    if (value instanceof Date) return value.toLocaleDateString('es-ES');
+
+    const raw = String(value).trim();
+    if (!raw) return '-';
+
+    const isoDateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoDateOnly) {
+      const [, year, month, day] = isoDateOnly;
+      return `${Number(day)}/${Number(month)}/${year}`;
+    }
+
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return raw;
+    return parsed.toLocaleDateString('es-ES');
+  };
+
   const filteredClientes = clientes.filter(cliente =>
     getFullName(cliente).toLowerCase().includes(searchTerm.toLowerCase()) ||
     (cliente.cod?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
@@ -374,13 +392,13 @@ export default function ClientesPage() {
 
         {/* Clients Table */}
         <div className="dashboard-card overflow-hidden">
-          <div className="p-6 border-b border-border bg-gradient-to-r from-muted/30 to-muted/10">
+          <div className="border-b border-slate-200 bg-slate-50/80 p-6 dark:border-gray-700 dark:bg-gray-800/70">
             <p className="text-sm text-muted-foreground mt-1">Total: {clientes.length} cliente(s)</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="table-header border-b border-border">
+                <tr className="table-header">
                   <th className="text-left px-6 py-4 font-semibold">Nombre Completo</th>
                   <th className="text-left px-6 py-4 font-semibold">DNI</th>
                   <th className="text-left px-6 py-4 hidden lg:table-cell font-semibold">COD</th>
@@ -399,7 +417,7 @@ export default function ClientesPage() {
                   filteredClientes.map((cliente, index) => (
                     <tr
                       key={cliente.id}
-                      className="border-b border-border last:border-0 hover:bg-muted/50 transition-all duration-200 motion-safe:animate-slide-in"
+                      className="border-b border-slate-100 last:border-0 transition-all duration-200 hover:bg-slate-50/70 dark:border-gray-800 dark:hover:bg-gray-800/60 motion-safe:animate-slide-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <td className="px-6 py-4">
@@ -651,9 +669,7 @@ export default function ClientesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Fecha de Nacimiento</p>
                     <p className="text-foreground">
-                      {viewingClient.fecha_nac 
-                        ? new Date(viewingClient.fecha_nac).toLocaleDateString('es-ES')
-                        : '-'}
+                      {formatDateOnly(viewingClient.fecha_nac)}
                     </p>
                   </div>
                   <div>
@@ -711,9 +727,7 @@ export default function ClientesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Fecha de Reclutamiento</p>
                     <p className="text-foreground">
-                      {viewingClient.fecha_reclutamiento 
-                        ? new Date(viewingClient.fecha_reclutamiento).toLocaleDateString('es-ES')
-                        : '-'}
+                      {formatDateOnly(viewingClient.fecha_reclutamiento)}
                     </p>
                   </div>
                   <div>
@@ -754,17 +768,13 @@ export default function ClientesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Fecha Inicio Contrato</p>
                     <p className="text-foreground">
-                      {viewingClient.fecha_inicio_contrato 
-                        ? new Date(viewingClient.fecha_inicio_contrato).toLocaleDateString('es-ES')
-                        : '-'}
+                      {formatDateOnly(viewingClient.fecha_inicio_contrato)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Fecha Término Contrato</p>
                     <p className="text-foreground">
-                      {viewingClient.fecha_termino_contrato 
-                        ? new Date(viewingClient.fecha_termino_contrato).toLocaleDateString('es-ES')
-                        : '-'}
+                      {formatDateOnly(viewingClient.fecha_termino_contrato)}
                     </p>
                   </div>
                   <div>
@@ -803,9 +813,7 @@ export default function ClientesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Fecha Inicio Afiliación</p>
                     <p className="text-foreground">
-                      {viewingClient.fecha_inicio_afiliacion 
-                        ? new Date(viewingClient.fecha_inicio_afiliacion).toLocaleDateString('es-ES')
-                        : '-'}
+                      {formatDateOnly(viewingClient.fecha_inicio_afiliacion)}
                     </p>
                   </div>
                   <div>

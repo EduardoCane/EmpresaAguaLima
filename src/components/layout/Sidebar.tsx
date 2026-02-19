@@ -7,7 +7,6 @@ import {
   Menu, 
   X,
   ChevronLeft,
-  Building2,
   Moon,
   Sun
 } from 'lucide-react';
@@ -78,13 +77,26 @@ export function Sidebar() {
             : 'border-gray-200 bg-white'}
         `}>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-              <Building2 className="w-7 h-7 text-white" />
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+                isDarkMode
+                  ? 'bg-gray-700/70 border border-gray-500/70'
+                  : 'bg-white/65 backdrop-blur-md border border-white/90 ring-1 ring-gray-200/80'
+              }`}
+            >
+              <span
+                className={`text-2xl leading-none rounded-full w-8 h-8 inline-flex items-center justify-center ${
+                  isDarkMode ? 'text-emerald-300 bg-gray-800/70' : 'text-emerald-600 bg-white/70'
+                }`}
+                aria-hidden="true"
+              >
+                {'\u{1F331}'}
+              </span>
             </div>
             {!isCollapsed && (
               <div className="motion-safe:animate-fade-in">
-                <h1 className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>ClientScan</h1>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Hub Pro</p>
+                <h1 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>AGUALIMA</h1>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Sistema Reclutamiento</p>
               </div>
             )}
           </div>
@@ -111,7 +123,9 @@ export function Sidebar() {
                   className={`
                     group flex items-center gap-3 px-4 py-4 rounded-xl transition-all duration-300 relative font-semibold
                     ${isActive(item.path) 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl scale-105' 
+                      ? isDarkMode
+                        ? 'bg-gray-700 text-white shadow-xl scale-105 border border-gray-600'
+                        : 'bg-white/75 backdrop-blur-sm border border-white/90 ring-1 ring-gray-200/90 text-gray-900 shadow-md'
                       : isDarkMode
                       ? 'text-gray-300 hover:bg-gray-800 hover:text-white hover:translate-x-1'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:translate-x-1'}
@@ -123,7 +137,7 @@ export function Sidebar() {
                       <span className="text-base font-bold block">{item.label}</span>
                       <span className={`text-xs ${
                         isActive(item.path) 
-                          ? 'text-white/80' 
+                          ? isDarkMode ? 'text-gray-300' : 'text-gray-600'
                           : isDarkMode 
                           ? 'text-gray-500' 
                           : 'text-gray-500'
@@ -147,7 +161,11 @@ export function Sidebar() {
         `}>
           <button
             onClick={toggleTheme}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white transition-all duration-300 text-sm font-semibold hover:shadow-lg"
+            className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-all duration-300 text-sm font-semibold ${
+              isDarkMode
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 border-transparent text-white hover:opacity-90'
+                : 'bg-white/80 backdrop-blur-sm border-white/90 ring-1 ring-gray-200/90 text-gray-800 hover:bg-white'
+            }`}
           >
             {isDarkMode ? (
               <>

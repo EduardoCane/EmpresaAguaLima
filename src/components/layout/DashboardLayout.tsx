@@ -30,7 +30,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen flex w-full bg-background">
       <Sidebar />
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col bg-gradient-to-b from-slate-50/80 via-white/50 to-slate-100/70 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="flex-1 overflow-auto">
           <div className="p-6 lg:p-8 pt-20 lg:pt-6">
             <div className="mx-auto w-full max-w-7xl">
@@ -223,6 +223,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               cargo={zipRenderState.fichaDatos?.puesto}
               unidadArea={zipRenderState.fichaDatos?.unidadArea}
               codigo={zipRenderState.client?.cod || undefined}
+              induccionValues={zipRenderState.induccion}
               signatureSrc={zipRenderState.signature || undefined}
               pdfMode={true}
             />

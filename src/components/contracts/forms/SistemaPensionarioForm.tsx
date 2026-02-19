@@ -165,7 +165,14 @@ export function SistemaPensionarioForm({
   const domicilio = normalize(ficha?.domicilioActual);
   const distrito = normalize(ficha?.distritoDomicilio);
   const provincia = normalize(ficha?.provinciaDomicilio);
-  const departamento = normalize(fichaWithDepartamento?.departamentoDomicilio) || "";
+  const departamento = (
+    normalize(fichaWithDepartamento?.departamentoDomicilio) ||
+    normalize(valuesObj.departamento_domicilio as string) ||
+    normalize(valuesObj.departamentoDomicilio as string) ||
+    normalize(valuesObj.departamento as string) ||
+    normalize(client?.departamento) ||
+    normalize(ficha?.departamentoNacimiento)
+  );
 
   const fechaInicio = formatDate(ficha?.periodoDesde);
   const remuneracion = normalize(ficha?.remuneracion) || "";

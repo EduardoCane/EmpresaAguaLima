@@ -317,9 +317,6 @@ export function DjPatrimonialForm({
   const distrito = normalize(snapshot.distrito as string) || normalize(client?.distrito);
   const provincia = normalize(snapshot.provincia as string) || normalize(client?.provincia);
   const departamento = normalize(snapshot.departamento as string) || normalize(client?.departamento);
-  const estadoCivilRaw = (
-    normalize(snapshot.estado_civil as string) || normalize(client?.estado_civil)
-  ).toUpperCase();
   const remuneracion = formatAmount(
     (snapshot.remuneracion as number | string | undefined) ?? client?.remuneracion ?? null,
   );
@@ -332,10 +329,11 @@ export function DjPatrimonialForm({
   const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
   const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
   const previewNow = new Date();
-  const dateToShow = hasSavedDate ? parsedSavedDate! : (!hasPersistedValues ? previewNow : null);
+  const dateToShow = hasSavedDate ? parsedSavedDate! : previewNow;
   const currentDay = dateToShow ? String(dateToShow.getDate()).padStart(2, "0") : "";
   const currentMonth = dateToShow ? String(dateToShow.getMonth() + 1).padStart(2, "0") : "";
   const currentYear = dateToShow ? String(dateToShow.getFullYear()) : "";
+  const currentDateSlash = dateToShow ? `${currentDay}/${currentMonth}/${currentYear}` : "";
   const renderLocationCell = (value: string, label: string) => (
     <Cell pad="0">
       <div style={{ padding: pdfMode ? "0px 4px 4px" : "3px 4px" }}>
@@ -434,12 +432,12 @@ export function DjPatrimonialForm({
             <Row cols="22% 18% 28% 32%">
               <Cell bold bg={C_GREEN} fontSize={9.5}>Documento de Identidad:</Cell>
               <Cell center bold fontSize={9.5}>D.N.I.</Cell>
-              <Cell center bold fontSize={9.5}>{dni}</Cell>
+              <Cell center bold fontSize={9.5}>{currentDateSlash}</Cell>
               <Cell bold fontSize={9.5}>País (De ser extranjero):</Cell>
             </Row>
             <Row cols="22% 18% 28% 32%">
               <Cell bold bg={C_GREEN} fontSize={9.5}> </Cell>
-              <Cell center bold fontSize={9.5}>#N/D</Cell>
+              <Cell center bold fontSize={9.5}>{dni}</Cell>
               <Cell bold fontSize={9.5}>Nacionalidad:</Cell>
               <Cell fontSize={9.5}>{""}</Cell>
             </Row>
@@ -450,19 +448,19 @@ export function DjPatrimonialForm({
               <Cell fontSize={9.5} pad="3px 6px">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 4 }}>
                   <div>
-                    a. Soltero <Checkbox checked={estadoCivilRaw === "SOLTERO"} />
+                    a. Soltero <Checkbox checked={false} />
                   </div>
                   <div>
-                    b. Casado <Checkbox checked={estadoCivilRaw === "CASADO"} />
+                    b. Casado <Checkbox checked={false} />
                   </div>
                   <div>
-                    c. Conviviente <Checkbox checked={estadoCivilRaw === "CONVIVIENTE"} />
+                    c. Conviviente <Checkbox checked={false} />
                   </div>
                   <div>
-                    d. Viudo <Checkbox checked={estadoCivilRaw === "VIUDO"} />
+                    d. Viudo <Checkbox checked={false} />
                   </div>
                   <div>
-                    e. Divorciado <Checkbox checked={estadoCivilRaw === "DIVORCIADO"} />
+                    e. Divorciado <Checkbox checked={false} />
                   </div>
                 </div>
               </Cell>
@@ -611,7 +609,7 @@ export function DjPatrimonialForm({
                   <Cell bold fontSize={9.5} pad="2px 4px">
                     Remuneración bruta mensual (En planilla del Empleador)
                   </Cell>
-                  <Cell bold fontSize={9.5} pad="2px 4px">{remuneracion ? `S/. ${remuneracion}` : "S/."}</Cell>
+                  <Cell bold fontSize={9.5} pad="2px 4px">S/.</Cell>
                 </Row>
                 <Row cols="32px 1fr 70px">
                   <Cell center bold fontSize={9.5} pad="2px 4px">2.</Cell>

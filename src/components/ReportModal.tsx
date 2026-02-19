@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Cliente } from '@/types';
 import { useContratos } from '@/contexts/ContractContext';
 import { useReportGenerator } from '@/hooks/useReportGenerator';
+import { toast } from 'sonner';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -25,49 +26,71 @@ export function ReportModal({ isOpen, onClose, clientes }: ReportModalProps) {
   const { contratos } = useContratos();
   const [startDate, setStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [startTime, setStartTime] = useState<string>('00:00');
+  const [endTime, setEndTime] = useState<string>('23:59');
   const [mode, setMode] = useState<'single' | 'range'>('single');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const parseLocalDate = (value: string) => {
-    const [year, month, day] = value.split('-').map(Number);
-    if (!year || !month || !day) return new Date(value);
-    return new Date(year, month - 1, day);
+  const parseLocalDateTime = (dateValue: string, timeValue: string, endOfMinute = false) => {
+    const [year, month, day] = dateValue.split('-').map(Number);
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const safeHours = Number.isNaN(hours) ? 0 : hours;
+    const safeMinutes = Number.isNaN(minutes) ? 0 : minutes;
+
+    const parsed = (!year || !month || !day)
+      ? new Date(`${dateValue}T${timeValue || '00:00'}`)
+      : new Date(year, month - 1, day, safeHours, safeMinutes, 0, 0);
+
+    if (endOfMinute && !Number.isNaN(parsed.getTime())) {
+      parsed.setSeconds(59, 999);
+    }
+
+    return parsed;
   };
 
   useEffect(() => {
     if (mode === 'single') {
-      setStartDate(format(new Date(), 'yyyy-MM-dd'));
+      const today = format(new Date(), 'yyyy-MM-dd');
+      setStartDate(today);
+      setEndDate(today);
     }
   }, [mode]);
 
   const handleGenerateReport = async () => {
     try {
       setIsGenerating(true);
-      const start = parseLocalDate(startDate);
-      const end = mode === 'single' ? parseLocalDate(startDate) : parseLocalDate(endDate);
+      const start = parseLocalDateTime(startDate, startTime);
+      const end = mode === 'single'
+        ? parseLocalDateTime(startDate, endTime, true)
+        : parseLocalDateTime(endDate, endTime, true);
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        toast.error('Debes ingresar una fecha y hora validas');
+        return;
+      }
 
       if (start > end) {
-        alert('La fecha de inicio no puede ser mayor que la fecha de fin');
+        toast.error('La fecha y hora de inicio no puede ser mayor que la fecha y hora de fin');
         return;
       }
 
       const filteredClientes = filterClientesByDate(clientes, start, end);
 
       if (filteredClientes.length === 0) {
-        alert('No hay clientes registrados en el rango de fechas seleccionado');
+        toast.warning('No hay clientes registrados en el rango de fechas y horas seleccionado');
         return;
       }
 
       const reportName = mode === 'single'
-        ? `Reporte_Clientes_${startDate}`
-        : `Reporte_Clientes_${startDate}_a_${endDate}`;
+        ? `Reporte_Clientes_${startDate}_${startTime.replace(':', '-')}_a_${endTime.replace(':', '-')}`
+        : `Reporte_Clientes_${startDate}_${startTime.replace(':', '-')}_a_${endDate}_${endTime.replace(':', '-')}`;
 
       await generateExcelReport(filteredClientes, reportName, contratos);
 
       onClose();
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Error al generar el reporte. Por favor intenta de nuevo.');
+      toast.error('Error al generar el reporte. Por favor intenta de nuevo.');
     } finally {
       setIsGenerating(false);
     }
@@ -79,7 +102,7 @@ export function ReportModal({ isOpen, onClose, clientes }: ReportModalProps) {
         <DialogHeader>
           <DialogTitle>Generar Reporte de Clientes</DialogTitle>
           <DialogDescription>
-            Selecciona un rango de fechas para generar el reporte de clientes registrados en Excel
+            Selecciona un rango de fecha y hora para generar el reporte de clientes registrados en Excel
           </DialogDescription>
         </DialogHeader>
 
@@ -140,8 +163,31 @@ export function ReportModal({ isOpen, onClose, clientes }: ReportModalProps) {
             </div>
           )}
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="start-time">Hora de Inicio</Label>
+              <input
+                id="start-time"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="input-field w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="end-time">Hora de Fin</Label>
+              <input
+                id="end-time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="input-field w-full"
+              />
+            </div>
+          </div>
+
           <div className="bg-muted p-3 rounded-lg text-sm text-muted-foreground">
-            Se generará un reporte con {clientes.length} cliente(s) potencialmente registrado(s) en el rango seleccionado.
+            Se generara un reporte con {clientes.length} cliente(s) potencialmente registrado(s) en el rango seleccionado.
           </div>
         </div>
 
@@ -158,7 +204,7 @@ export function ReportModal({ isOpen, onClose, clientes }: ReportModalProps) {
             disabled={isGenerating}
             className="gap-2"
           >
-            {isGenerating ? '...' : '📊 Descargar Excel'}
+            {isGenerating ? '...' : 'Descargar Excel'}
           </Button>
         </div>
       </DialogContent>

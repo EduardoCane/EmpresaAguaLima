@@ -166,6 +166,15 @@ function FirmaTemporadaFinal({ signatureSrc }: { signatureSrc?: string }) {
           <p className="font-bold uppercase text-[10px]">EL TRABAJADOR</p>
 
           <div className="mx-auto mt-8" style={{ width: "90mm" }}>
+            <div className="relative h-[18mm] w-full">
+              {signatureSrc ? (
+                <img
+                  src={signatureSrc}
+                  alt="Firma de recepcion del trabajador"
+                  className="absolute bottom-0 left-0 right-0 mx-auto h-full w-full object-contain px-1"
+                />
+              ) : null}
+            </div>
             <div className="border-b border-black mb-1" />
             <p className="font-bold uppercase text-[10px] leading-[12px]">
               DECLARO HABER RECIBIDO LA COPIA DE MI
@@ -215,16 +224,18 @@ export function ContratoTemporadaPlanForm({
 
   const dni = normalize(client?.dni);
   const address = normalize(client?.direccion);
-  const district = normalize(client?.distrito);
-  const province = normalize(client?.provincia);
-  const department = normalize(client?.departamento);
-  const fullAddress = [address, district, province, department].filter(Boolean).join(", ");
+  const fullAddress = address;
   const puestoValue = normalize(puesto);
 
   const formatDate = (value?: string) => {
     if (!value) return "";
     const trimmed = value.trim();
     if (!trimmed) return "";
+    const isoDateOnly = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoDateOnly) {
+      const [, year, month, day] = isoDateOnly;
+      return `${day}/${month}/${year}`;
+    }
     if (trimmed.includes("/")) return trimmed;
     const parsed = new Date(trimmed);
     if (Number.isNaN(parsed.getTime())) return trimmed;

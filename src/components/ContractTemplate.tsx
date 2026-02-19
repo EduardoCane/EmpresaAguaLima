@@ -187,6 +187,32 @@ export const PersonalDataSheetTemplate = forwardRef<HTMLDivElement, Props>(
       const month = String(parsed.getMonth() + 1).padStart(2, "0");
       return `${day}/${month}/${parsed.getFullYear()}`;
     };
+    const formatDateDash = (value?: string | number | null) => {
+      if (value === null || value === undefined) return undefined;
+      const trimmed = String(value).trim();
+      if (!trimmed) return undefined;
+
+      const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) {
+        const [, year, month, day] = isoMatch;
+        return `${day}-${month}-${year}`;
+      }
+
+      const slashMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (slashMatch) {
+        const [, day, month, year] = slashMatch;
+        return `${day}-${month}-${year}`;
+      }
+
+      const dashMatch = trimmed.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if (dashMatch) return trimmed;
+
+      const parsed = new Date(trimmed);
+      if (Number.isNaN(parsed.getTime())) return trimmed;
+      const day = String(parsed.getDate()).padStart(2, "0");
+      const month = String(parsed.getMonth() + 1).padStart(2, "0");
+      return `${day}-${month}-${parsed.getFullYear()}`;
+    };
 
     const Box = ({ checked }: { checked?: boolean }) => (
       <span className="inline-flex items-center justify-center w-[13px] h-[13px] border border-black">
@@ -231,7 +257,6 @@ export const PersonalDataSheetTemplate = forwardRef<HTMLDivElement, Props>(
     const distritoNacimiento = data?.distritoNacimiento ?? client?.distrito;
     const provinciaNacimiento = data?.provinciaNacimiento ?? client?.provincia;
     const departamentoNacimiento = data?.departamentoNacimiento ?? client?.departamento;
-    const estadoCivil = data?.estadoCivil ?? client?.estado_civil ?? undefined;
     const domicilioActual = data?.domicilioActual ?? client?.direccion;
     const cpDistrito = data?.cpDistrito ?? client?.distrito;
     const provinciaDomicilio = data?.provinciaDomicilio ?? client?.provincia;
@@ -312,9 +337,9 @@ export const PersonalDataSheetTemplate = forwardRef<HTMLDivElement, Props>(
               </td>
             </tr>
             <tr>
-              <td className={tdValue}>{val(data?.periodoDesde)}</td>
+              <td className={tdValue}>{val(formatDateDash(data?.periodoDesde))}</td>
               <td className={tdCenter}>hasta</td>
-              <td className={tdValue}>{val(data?.periodoHasta)}</td>
+              <td className={tdValue}>{val(formatDateDash(data?.periodoHasta))}</td>
 
               <td className={th} style={{ width: "140px" }}>
                 Entidad Bancaria
@@ -414,19 +439,19 @@ export const PersonalDataSheetTemplate = forwardRef<HTMLDivElement, Props>(
               <td className={td}>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px]">
                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                    <span>SOLTERO</span> <Box checked={estadoCivil === "SOLTERO"} />
+                    <span>SOLTERO</span> <Box checked={false} />
                   </span>
                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                    <span>CASADO</span> <Box checked={estadoCivil === "CASADO"} />
+                    <span>CASADO</span> <Box checked={false} />
                   </span>
                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                    <span>VIUDO</span> <Box checked={estadoCivil === "VIUDO"} />
+                    <span>VIUDO</span> <Box checked={false} />
                   </span>
                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                    <span>CONVIVIENTE</span> <Box checked={estadoCivil === "CONVIVIENTE"} />
+                    <span>CONVIVIENTE</span> <Box checked={false} />
                   </span>
                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                    <span>DIVORCIADO</span> <Box checked={estadoCivil === "DIVORCIADO"} />
+                    <span>DIVORCIADO</span> <Box checked={false} />
                   </span>
                 </div>
               </td>

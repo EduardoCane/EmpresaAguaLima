@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Plus, FileText, Clock, CheckCircle2, AlertCircle, Download, Lock, Edit3, Eye, Trash2, FileArchive } from 'lucide-react';
 import html2canvas, { type Options as Html2CanvasOptions } from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -49,6 +49,16 @@ export default function ContratosPage() {
     zipProgress, setZipProgress, zipRenderState, setZipRenderState, zipDocRef
   } = useContratos();
   const { consultarDNI, loading: dniLoading } = useConsultaDNI();
+  const PLANILLA_OPTIONS = [
+    'OBREROS AGRARIO',
+    'EMP.REG.GRAL. VIRU',
+    'EMPLEADOS AGRARIO',
+    'OBRERO R. GENERAL',
+  ] as const;
+  const TIPO_CONTRATO_OPTIONS = [
+    'Contrato Intermitente',
+    'Contrato por Temporada',
+  ] as const;
   const createRegistroInitialState = (dni = '') => ({
     dni,
     cod: '',
@@ -548,6 +558,7 @@ export default function ContratosPage() {
         cargo={fichaDatosValues.puesto}
         unidadArea={fichaDatosValues.unidadArea}
         codigo={selectedClient?.cod || undefined}
+        induccionValues={(viewingContract?.induccion as Record<string, unknown> | null | undefined) ?? null}
         signatureSrc={signatureData || undefined}
       />
     ) },
@@ -887,14 +898,30 @@ export default function ContratosPage() {
       }
     };
 
+    const existingInduccion = (targetContract?.induccion as Record<string, unknown> | null | undefined) ?? null;
+    const existingInduccionFechaRegistro =
+      typeof existingInduccion?.fecha_registro === 'string' && existingInduccion.fecha_registro.trim()
+        ? existingInduccion.fecha_registro
+        : '';
+    const existingInduccionCiudad =
+      typeof existingInduccion?.ciudad === 'string' && existingInduccion.ciudad.trim()
+        ? existingInduccion.ciudad
+        : '';
+
     const induccionPayload = {
       induccion: {
+        fecha_registro: existingInduccionFechaRegistro || new Date().toISOString(),
+        ciudad: existingInduccionCiudad || 'VirÃº',
+        cargo: fichaDatosValues.puesto,
+        unidadArea: fichaDatosValues.unidadArea,
+        codigo: selectedClient.cod,
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
           a_paterno: selectedClient.a_paterno,
           a_materno: selectedClient.a_materno,
           nombre: selectedClient.nombre,
+          cod: selectedClient.cod,
         }
       }
     };
@@ -1240,7 +1267,7 @@ export default function ContratosPage() {
         ? existingSistemaPensionario.ciudad
         : '';
 
-    // Sistema pensionario: elecciÃ³n + datos del cliente + datos de ficha
+    // Sistema pensionario: elección + datos del cliente + datos de ficha
     const sistemaPensionarioPayload = {
       sistema_pensionario: {
         pensionChoice,
@@ -1312,8 +1339,34 @@ export default function ContratosPage() {
       }
     };
     
-    // InducciÃ³n no tiene datos editables, solo se visualiza
-    const induccionPayload = { induccion: {} };
+    // Inducción no tiene datos editables, solo se visualiza
+    const existingInduccion = (targetContract?.induccion as Record<string, unknown> | null | undefined) ?? null;
+    const existingInduccionFechaRegistro =
+      typeof existingInduccion?.fecha_registro === 'string' && existingInduccion.fecha_registro.trim()
+        ? existingInduccion.fecha_registro
+        : '';
+    const existingInduccionCiudad =
+      typeof existingInduccion?.ciudad === 'string' && existingInduccion.ciudad.trim()
+        ? existingInduccion.ciudad
+        : '';
+
+    const induccionPayload = {
+      induccion: {
+        fecha_registro: existingInduccionFechaRegistro || new Date().toISOString(),
+        ciudad: existingInduccionCiudad || 'VirÃº',
+        cargo: fichaDatosValues.puesto,
+        unidadArea: fichaDatosValues.unidadArea,
+        codigo: selectedClient.cod,
+        clientSnapshot: {
+          dni: selectedClient.dni,
+          apellidos_y_nombres: selectedClient.apellidos_y_nombres,
+          a_paterno: selectedClient.a_paterno,
+          a_materno: selectedClient.a_materno,
+          nombre: selectedClient.nombre,
+          cod: selectedClient.cod,
+        }
+      }
+    };
 
     const existingCuentaBancaria = (targetContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
     const existingCuentaBancariaFechaRegistro =
@@ -1325,7 +1378,7 @@ export default function ContratosPage() {
         ? existingCuentaBancaria.ciudad
         : '';
     
-    // Cuenta bancaria: entidad, nÃºmero + snapshot del cliente
+    // Cuenta bancaria: entidad, número + snapshot del cliente
     const cuentaBancariaPayload = {
       cuenta_bancaria: {
         fecha_registro: existingCuentaBancariaFechaRegistro || new Date().toISOString(),
@@ -1342,7 +1395,7 @@ export default function ContratosPage() {
       }
     };
     
-    // DeclaraciÃ³n de conflicto de intereses: snapshot del cliente
+    // Declaración de conflicto de intereses: snapshot del cliente
     const existingDeclaracionConflicto = (targetContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
     const existingDeclaracionConflictoFechaRegistro =
       typeof existingDeclaracionConflicto?.fecha_registro === 'string' && existingDeclaracionConflicto.fecha_registro.trim()
@@ -1393,7 +1446,7 @@ export default function ContratosPage() {
       }
     };
     
-    // Carta no soborno: cargo, unidad/Ã¡rea + snapshot del cliente
+    // Carta no soborno: cargo, unidad/área + snapshot del cliente
     const existingCartaNoSoborno = (targetContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null;
     const existingCartaNoSobornoFechaRegistro =
       typeof existingCartaNoSoborno?.fecha_registro === 'string' && existingCartaNoSoborno.fecha_registro.trim()
@@ -1420,7 +1473,7 @@ export default function ContratosPage() {
       }
     };
     
-    // DeclaraciÃ³n de parentesco: valores editables + snapshot del cliente
+    // Declaración de parentesco: valores editables + snapshot del cliente
     const existingDeclaracionParentesco = (targetContract?.declaracion_parentesco as Record<string, unknown> | null | undefined) ?? null;
     const existingDeclaracionParentescoFechaRegistro =
       typeof existingDeclaracionParentesco?.fecha_registro === 'string' && existingDeclaracionParentesco.fecha_registro.trim()
@@ -1788,13 +1841,22 @@ export default function ContratosPage() {
   const generatePdfFromRef = async (
     ref: React.RefObject<HTMLDivElement>,
     clientName: string,
-    options?: { returnBlob?: boolean }
+    options?: {
+      returnBlob?: boolean;
+      orientation?: 'portrait' | 'landscape';
+      trimWhiteMargins?: boolean;
+    }
   ) => {
     const images = await capturePdfPageImagesFromRef(ref);
     if (images.length === 0) return;
 
+    const orientation = options?.orientation || 'portrait';
+    const normalizedImages = options?.trimWhiteMargins
+      ? await Promise.all(images.map(img => trimWhiteMarginsFromImageData(img)))
+      : images;
+
     const pdf = new jsPDF({
-      orientation: 'portrait',
+      orientation,
       unit: 'mm',
       format: 'a4',
     });
@@ -1802,9 +1864,30 @@ export default function ContratosPage() {
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    images.forEach((imgData, index) => {
+    normalizedImages.forEach((imgData, index) => {
       if (index > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      let renderWidth = pdfWidth;
+      let renderHeight = pdfHeight;
+      try {
+        const props = pdf.getImageProperties(imgData);
+        if (props?.width && props?.height) {
+          const imageAspect = props.width / props.height;
+          const pageAspect = pdfWidth / pdfHeight;
+          if (imageAspect > pageAspect) {
+            renderWidth = pdfWidth;
+            renderHeight = renderWidth / imageAspect;
+          } else {
+            renderHeight = pdfHeight;
+            renderWidth = renderHeight * imageAspect;
+          }
+        }
+      } catch {
+        // fallback: usar tamaño completo de página
+      }
+
+      const offsetX = (pdfWidth - renderWidth) / 2;
+      const offsetY = (pdfHeight - renderHeight) / 2;
+      pdf.addImage(imgData, 'PNG', offsetX, offsetY, renderWidth, renderHeight);
     });
 
     if (options?.returnBlob) {
@@ -1812,6 +1895,18 @@ export default function ContratosPage() {
     }
 
     pdf.save(`contrato_${clientName.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  const getPdfExportOptions = (formId?: string, returnBlob = false) => {
+    if (formId === 'sistema-pensionario') {
+      return {
+        returnBlob,
+        orientation: 'landscape' as const,
+        trimWhiteMargins: true,
+      };
+    }
+
+    return returnBlob ? { returnBlob } : undefined;
   };
 
 
@@ -1843,6 +1938,7 @@ export default function ContratosPage() {
           sistemaPensionario: (viewingContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null,
           reglamentos: (viewingContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null,
           consentimientoInformado: (viewingContract?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null,
+          induccion: (viewingContract?.induccion as Record<string, unknown> | null | undefined) ?? null,
           cuentaBancaria: (viewingContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null,
           declaracionConflicto: (viewingContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null,
           acuerdoConfidencialidad: (viewingContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null,
@@ -1855,7 +1951,11 @@ export default function ContratosPage() {
         });
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         await new Promise(resolve => setTimeout(resolve, 0));
-        await generatePdfFromRef(zipDocRef, `${safeName}_${activeContractForm}`);
+        await generatePdfFromRef(
+          zipDocRef,
+          `${safeName}_${activeContractForm}`,
+          getPdfExportOptions(activeContractForm)
+        );
       }
 
       toast.dismiss();
@@ -1872,6 +1972,7 @@ export default function ContratosPage() {
         sistemaPensionario: null,
         reglamentos: null,
         consentimientoInformado: null,
+        induccion: null,
         cuentaBancaria: null,
         declaracionConflicto: null,
         acuerdoConfidencialidad: null,
@@ -1958,7 +2059,7 @@ export default function ContratosPage() {
     }
   }, [viewMode, viewingContract]);
 
-  // Al cambiar de trabajador (o limpiar selecciÃ³n) resetea la ficha para evitar datos congelados
+  // Al cambiar de trabajador (o limpiar selección) resetea la ficha para evitar datos congelados
   useEffect(() => {
     if (viewMode !== 'create') return;
     if (!selectedClient) {
@@ -2030,7 +2131,7 @@ export default function ContratosPage() {
       setDeclaracionParentescoValues(emptyDeclaracionParentescoValues);
     }
     
-    // En modo ver, bloquear el contrato exclusivo segÃºn lo guardado
+    // En modo ver, bloquear el contrato exclusivo según lo guardado
     if (viewMode === 'view') {
       const intermitenteData = viewingContract.contrato_intermitente as Record<string, unknown> | null | undefined;
       const temporadaData = viewingContract.contrato_temporada_plan as Record<string, unknown> | null | undefined;
@@ -2046,7 +2147,7 @@ export default function ContratosPage() {
     }
   }, [viewingContract, viewMode]);
 
-  // Prefill ficha de datos SOLO con informaciÃ³n bÃ¡sica del cliente (NO con datos de contratos anteriores)
+  // Prefill ficha de datos SOLO con información básica del cliente (NO con datos de contratos anteriores)
   useEffect(() => {
     if (!selectedClient || viewMode !== 'create' || viewingContract) return;
     
@@ -2058,8 +2159,8 @@ export default function ContratosPage() {
         }
       };
       
-      // SOLO pre-rellenar con datos bÃ¡sicos del cliente de la base de datos
-      // NO con datos de contratos anteriores (puesto, remuneraciÃ³n, fechas, etc.)
+      // SOLO pre-rellenar con datos básicos del cliente de la base de datos
+      // NO con datos de contratos anteriores (puesto, remuneración, fechas, etc.)
       fill('domicilioActual', selectedClient.direccion);
       fill('distritoDomicilio', selectedClient.distrito);
       fill('provinciaDomicilio', selectedClient.provincia);
@@ -2220,6 +2321,7 @@ export default function ContratosPage() {
       const sistemaPensionarioForZip = (targetContrato?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
       const reglamentosForZip = (targetContrato?.reglamentos as Record<string, unknown> | null | undefined) ?? null;
       const consentimientoInformadoForZip = (targetContrato?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null;
+      const induccionForZip = (targetContrato?.induccion as Record<string, unknown> | null | undefined) ?? null;
       const cuentaBancariaForZip = (targetContrato?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
       const declaracionConflictoForZip = (targetContrato?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
       const acuerdoConfidencialidadForZip = (targetContrato?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
@@ -2296,6 +2398,7 @@ export default function ContratosPage() {
           sistemaPensionario: sistemaPensionarioForZip,
           reglamentos: reglamentosForZip,
           consentimientoInformado: consentimientoInformadoForZip,
+          induccion: induccionForZip,
           cuentaBancaria: cuentaBancariaForZip,
           declaracionConflicto: declaracionConflictoForZip,
           acuerdoConfidencialidad: acuerdoConfidencialidadForZip,
@@ -2309,7 +2412,11 @@ export default function ContratosPage() {
 
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         await new Promise(resolve => setTimeout(resolve, 0));
-        const blob = await generatePdfFromRef(zipDocRef, `${safeName}_${form.id}`, { returnBlob: true });
+        const blob = await generatePdfFromRef(
+          zipDocRef,
+          `${safeName}_${form.id}`,
+          getPdfExportOptions(form.id, true)
+        );
         if (blob instanceof Blob) {
           const fileName = `${safeName}_${form.label.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_')}.pdf`;
           zip.file(fileName, blob);
@@ -2337,6 +2444,7 @@ export default function ContratosPage() {
         sistemaPensionario: null,
         reglamentos: null,
         consentimientoInformado: null,
+        induccion: null,
         cuentaBancaria: null,
         declaracionConflicto: null,
         acuerdoConfidencialidad: null,
@@ -2504,6 +2612,7 @@ export default function ContratosPage() {
           const sistemaPensionarioForZip = (contrato.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
           const reglamentosForZip = (contrato.reglamentos as Record<string, unknown> | null | undefined) ?? null;
           const consentimientoInformadoForZip = (contrato.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null;
+          const induccionForZip = (contrato.induccion as Record<string, unknown> | null | undefined) ?? null;
           const cuentaBancariaForZip = (contrato.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
           const declaracionConflictoForZip = (contrato.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
           const acuerdoConfidencialidadForZip = (contrato.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
@@ -2531,6 +2640,7 @@ export default function ContratosPage() {
             sistemaPensionario: sistemaPensionarioForZip,
             reglamentos: reglamentosForZip,
             consentimientoInformado: consentimientoInformadoForZip,
+            induccion: induccionForZip,
             cuentaBancaria: cuentaBancariaForZip,
             declaracionConflicto: declaracionConflictoForZip,
             acuerdoConfidencialidad: acuerdoConfidencialidadForZip,
@@ -2608,6 +2718,7 @@ export default function ContratosPage() {
         sistemaPensionario: null,
         reglamentos: null,
         consentimientoInformado: null,
+        induccion: null,
         cuentaBancaria: null,
         declaracionConflicto: null,
         acuerdoConfidencialidad: null,
@@ -2723,6 +2834,30 @@ export default function ContratosPage() {
     return trimmed ? trimmed : null;
   };
 
+  const normalizeRegistroEstadoActual = (value: string) => {
+    const normalized = normalizeRegistroString(value);
+    if (normalized === 'ReIngresante' || normalized === 'Re Ingresante') return 'Reingresante';
+    return normalized;
+  };
+
+  const normalizeRegistroTipoContrato = (value: string) => {
+    const normalized = normalizeRegistroString(value);
+    if (!normalized) return null;
+    const upper = normalized.toUpperCase();
+    if (upper === 'CONTRATO INTERMITENTE' || upper === 'INTERMITENTE') {
+      return 'Contrato Intermitente';
+    }
+    if (
+      upper === 'CONTRATO POR TEMPORADA' ||
+      upper === 'CONTRATO POR TEMPORADA PLAN' ||
+      upper === 'TEMPORADA' ||
+      upper === 'TEMPORADA PLAN'
+    ) {
+      return 'Contrato por Temporada';
+    }
+    return normalized;
+  };
+
   const handleSaveNewClient = async () => {
     if (!/^\d{8}$/.test(registroFormData.dni.trim())) {
       toast.error('El DNI debe tener 8 digitos');
@@ -2791,11 +2926,11 @@ export default function ContratosPage() {
         area: normalizeRegistroString(registroFormData.area),
         descripcion_zona: normalizeRegistroString(registroFormData.descripcion_zona),
         asignacion: normalizeRegistroString(registroFormData.asignacion),
-        estado_actual: normalizeRegistroString(registroFormData.estado_actual),
+        estado_actual: normalizeRegistroEstadoActual(registroFormData.estado_actual),
         cargo: normalizeRegistroString(registroFormData.cargo),
         fecha_inicio_contrato: normalizeRegistroString(registroFormData.fecha_inicio_contrato),
         fecha_termino_contrato: normalizeRegistroString(registroFormData.fecha_termino_contrato),
-        tipo_contrato: normalizeRegistroString(registroFormData.tipo_contrato),
+        tipo_contrato: normalizeRegistroTipoContrato(registroFormData.tipo_contrato),
         remuneracion: registroFormData.remuneracion.trim()
           ? Number(registroFormData.remuneracion)
           : null,
@@ -2936,7 +3071,7 @@ export default function ContratosPage() {
             )}
 
             <div className="dashboard-card p-6 space-y-4">
-              <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-muted/30 p-2">
+              <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-muted/30 p-2 dark:border-slate-700 dark:bg-slate-900/70">
                 {contractForms.map(form => {
                   const isDisabled =
                     ((viewMode === 'create' || viewMode === 'view') &&
@@ -2960,16 +3095,16 @@ export default function ContratosPage() {
                         }
                       }}
                       disabled={isDisabled}
-                      className={`px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-colors rounded-lg ${
+                      className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${
                         activeContractForm === form.id
-                          ? 'bg-white text-foreground shadow-sm border border-success/40'
+                          ? 'border border-success/40 bg-white text-slate-900 shadow-sm ring-1 ring-success/20 dark:border-emerald-400/60 dark:bg-emerald-500/20 dark:text-emerald-100 dark:ring-emerald-400/30'
                           : isDisabled
-                            ? 'text-muted-foreground/40 border border-border/40 cursor-not-allowed'
+                            ? 'cursor-not-allowed border border-border/40 text-muted-foreground/40 dark:border-slate-700/50 dark:bg-slate-900/40 dark:text-slate-500'
                             : formCompleteStatus === true
-                              ? 'text-success border border-success/40'
+                              ? 'border border-success/40 text-success dark:border-emerald-700/60 dark:bg-emerald-500/10 dark:text-emerald-300'
                               : formCompleteStatus === false
-                                ? 'text-destructive border border-destructive/40'
-                                : 'text-muted-foreground hover:text-foreground'
+                                ? 'border border-destructive/40 text-destructive dark:border-red-700/60 dark:bg-red-500/10 dark:text-red-300'
+                                : 'text-muted-foreground hover:bg-white/80 hover:text-foreground dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white'
                       }`}
                     >
                       {form.label}
@@ -2997,7 +3132,7 @@ export default function ContratosPage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-1 space-y-6">
-                {/* Si el contrato estÃ¡ firmado, solo muestra datos del cliente */}
+                {/* Si el contrato está firmado, solo muestra datos del cliente */}
                 {isContractLocked && selectedClient ? (
                   <div className="dashboard-card p-6 bg-success/5 border border-success/30">
                     <h3 className="font-semibold text-foreground mb-4">Datos del Cliente</h3>
@@ -3413,7 +3548,7 @@ export default function ContratosPage() {
 
         {viewMode === 'list' && (
           <div className="dashboard-card">
-            <div className="p-6 border-b border-border bg-gradient-to-r from-muted/30 to-muted/10">
+            <div className="border-b border-slate-200 bg-slate-50/80 p-6 dark:border-gray-700 dark:bg-gray-800/70">
               <h3 className="font-semibold text-foreground text-lg">Contratos Registrados</h3>
               <p className="text-sm text-muted-foreground mt-1">Total: {contratos.length} ficha(s)</p>
               <div className="mt-4">
@@ -3429,7 +3564,7 @@ export default function ContratosPage() {
             <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                  <tr className="table-header border-b border-border">
+                  <tr className="table-header">
                     <th className="text-left px-6 py-4 font-semibold">Titulo</th>
                     <th className="text-left px-6 py-4 font-semibold">Trabajador</th>
                     <th className="text-left px-6 py-4 hidden md:table-cell font-semibold">Tipo</th>
@@ -3454,7 +3589,7 @@ export default function ContratosPage() {
                         const isExpanded = !!expandedGroups[clienteId];
                         const headerRow = (
                           <tr key={`header-${cliente?.id || 'unknown'}`}>
-                            <td colSpan={6} className="px-6 py-3 bg-muted/40 border-b border-border">
+                            <td colSpan={6} className="border-b border-slate-200 bg-slate-50/80 px-6 py-3 dark:border-gray-700 dark:bg-gray-800/70">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                   <div className="text-sm font-semibold text-foreground">
@@ -3487,6 +3622,7 @@ export default function ContratosPage() {
                           return (
                             <tr
                               key={contrato.id}
+                              className="border-b border-slate-100 transition-colors hover:bg-slate-50/70 dark:border-gray-800 dark:hover:bg-gray-800/60"
                               style={{ animationDelay: `${index * 50}ms` }}
                             >
                               <td className="px-6 py-4">
@@ -3912,13 +4048,15 @@ export default function ContratosPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Estado Actual</label>
-                <input
-                  type="text"
+                <select
+                  className="input-field w-full"
                   value={registroFormData.estado_actual}
                   onChange={(e) => handleRegistroChange('estado_actual', e.target.value)}
-                  placeholder="Ej: Activo"
-                  className="input-field w-full"
-                />
+                >
+                  <option value="">Seleccione una opción</option>
+                  <option value="Nuevo">Nuevo</option>
+                  <option value="Reingresante">Reingresante</option>
+                </select>
               </div>
 
               <div>
@@ -3958,13 +4096,16 @@ export default function ContratosPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Tipo de Contrato</label>
-                <input
-                  type="text"
+                <select
                   value={registroFormData.tipo_contrato}
                   onChange={(e) => handleRegistroChange('tipo_contrato', e.target.value)}
-                  placeholder="Ej: Plazo fijo"
                   className="input-field w-full"
-                />
+                >
+                  <option value="">Seleccione una opción</option>
+                  {TIPO_CONTRATO_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -3981,13 +4122,16 @@ export default function ContratosPage() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">Planilla</label>
-                <input
-                  type="text"
+                <select
+                  className="input-field w-full"
                   value={registroFormData.planilla}
                   onChange={(e) => handleRegistroChange('planilla', e.target.value)}
-                  placeholder="Ej: Planilla Principal"
-                  className="input-field w-full"
-                />
+                >
+                  <option value="">Seleccione una opción</option>
+                  {PLANILLA_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="md:col-span-2">
