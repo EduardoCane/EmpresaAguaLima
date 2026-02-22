@@ -20,24 +20,24 @@ function LineField({ value = "#N/D", widthMm = 60 }: { value?: string; widthMm?:
   );
 }
 
+const PAGE_WIDTH_PX = 794; // A4 ~210mm @96dpi
+const PAGE_HEIGHT_PX = 1123; // A4 height @96dpi
+const PADDING_PX = 52; // ~14mm
+
 function PdfPage({
   headerLeft,
   headerRight,
   pageNumber,
   isLast = false,
-  paddingTopMm = 6,
-  paddingBottomMm = 6,
-  bodyTopMarginMm = 4,
-  bodyLineHeight = 1.5,
+  bodyTopMarginPx = 16,
+  bodyLineHeight = 1.45,
   children,
 }: {
   headerLeft?: string;
   headerRight?: string;
   pageNumber: number;
   isLast?: boolean;
-  paddingTopMm?: number;
-  paddingBottomMm?: number;
-  bodyTopMarginMm?: number;
+  bodyTopMarginPx?: number;
   bodyLineHeight?: number;
   children: React.ReactNode;
 }) {
@@ -46,13 +46,12 @@ function PdfPage({
       className="pdf-page mx-auto bg-white text-black shadow-sm print:shadow-none"
       data-pdf-page={pageNumber}
       style={{
-        width: "100%",
-        maxWidth: "210mm",
-        minHeight: "297mm",
-        paddingTop: `${paddingTopMm}mm`,
-        paddingBottom: `${paddingBottomMm}mm`,
-        paddingLeft: "14mm",
-        paddingRight: "14mm",
+        width: `${PAGE_WIDTH_PX}px`,
+        minHeight: `${PAGE_HEIGHT_PX}px`,
+        paddingTop: `${PADDING_PX}px`,
+        paddingBottom: `${PADDING_PX}px`,
+        paddingLeft: `${PADDING_PX}px`,
+        paddingRight: `${PADDING_PX}px`,
         fontFamily: '"Times New Roman", Times, serif',
         boxSizing: "border-box",
         ...(isLast ? {} : { breakAfter: "page", pageBreakAfter: "always" }),
@@ -64,7 +63,15 @@ function PdfPage({
       </div>
       <div
         className="text-[9.5px]"
-        style={{ lineHeight: String(bodyLineHeight), marginTop: `${bodyTopMarginMm}mm` }}
+        style={{
+          lineHeight: String(bodyLineHeight),
+          marginTop: `${bodyTopMarginPx}px`,
+          hyphens: "none",
+          WebkitHyphens: "none",
+          msHyphens: "none",
+          wordBreak: "normal",
+          overflowWrap: "normal",
+        }}
       >
         {children}
       </div>
@@ -75,12 +82,20 @@ function PdfPage({
 function P({ children, center, tight }: { children: React.ReactNode; center?: boolean; tight?: boolean }) {
   return (
     <p
-      className={[
-        tight ? "mt-0" : "mt-2",
-        center ? "text-center" : "text-justify",
-        "hyphens-auto",
-      ].join(" ")}
-      style={{ hyphens: "auto" }}
+      className={[tight ? "mt-0" : "mt-2", center ? "text-center" : ""].join(" ")}
+      style={{
+        hyphens: "none",
+        WebkitHyphens: "none",
+        msHyphens: "none",
+        textAlign: center ? "center" : "justify",
+        textJustify: "inter-word",
+        wordBreak: "normal",
+        overflowWrap: "normal",
+        whiteSpace: "normal",
+        wordSpacing: "normal",
+        letterSpacing: "0px",
+        marginTop: tight ? "0" : "8px",
+      }}
     >
       {children}
     </p>
@@ -153,25 +168,25 @@ function FirmaTemporadaFinal({ signatureSrc }: { signatureSrc?: string }) {
         </div>
 
         <div className="text-center">
-          <div className="mx-auto relative h-[20mm] w-[70mm] mb-2">
+          <div className="mx-auto relative h-[20mm] w-[70mm] mb-2 flex items-end justify-center">
             <div className="absolute bottom-0 left-0 right-0 h-px bg-black" />
             {signatureSrc ? (
               <img
                 src={signatureSrc}
                 alt="Firma del trabajador"
-                className="absolute bottom-[1mm] left-0 right-0 mx-auto h-[18mm] w-full object-contain px-1"
+                className="h-[16mm] w-auto max-w-[66mm] object-contain"
               />
             ) : null}
           </div>
           <p className="font-bold uppercase text-[10px]">EL TRABAJADOR</p>
 
           <div className="mx-auto mt-8" style={{ width: "90mm" }}>
-            <div className="relative h-[18mm] w-full">
+            <div className="relative h-[18mm] w-full flex items-end justify-center">
               {signatureSrc ? (
                 <img
                   src={signatureSrc}
                   alt="Firma de recepcion del trabajador"
-                  className="absolute bottom-0 left-0 right-0 mx-auto h-full w-full object-contain px-1"
+                  className="h-[16mm] w-auto max-w-[88mm] object-contain"
                 />
               ) : null}
             </div>
@@ -219,8 +234,7 @@ export function ContratoTemporadaPlanForm({
 
   const fullName =
     normalize(client?.apellidos_y_nombres) ||
-    normalize([client?.a_paterno, client?.a_materno, client?.nombre].filter(Boolean).join(" ")) ||
-    normalize([client?.apellido, client?.nombre].filter(Boolean).join(" "));
+    normalize([client?.a_paterno, client?.a_materno, client?.nombre].filter(Boolean).join(" "));
 
   const dni = normalize(client?.dni);
   const address = normalize(client?.direccion);
@@ -258,8 +272,8 @@ export function ContratoTemporadaPlanForm({
   const remuneracionValue = parseAmount(remuneracion);
   const remuneracionMensual = remuneracionValue !== "" ? formatAmount(remuneracionValue) : "#N/D";
   const remuneracionDiaria = remuneracionValue !== "" ? formatAmount(remuneracionValue / 30) : "#N/D";
-  const celularValue = normalize(celular) || normalize(client?.celular) || "________________________";
-  const celularValueUnderline = normalize(celular) || normalize(client?.celular) || "";
+  const celularValue = normalize(celular) || "________________________";
+  const celularValueUnderline = normalize(celular) || "";
 
   const page1 = (
     <PdfPage headerLeft="Version 02" headerRight={codigo} pageNumber={1}>
@@ -657,7 +671,6 @@ export function ContratoTemporadaPlanForm({
       headerRight={codigo}
       pageNumber={3}
       isLast={true}
-      paddingBottomMm={12}
     >
       <div className="flex flex-col" style={{ minHeight: "240mm" }}>
         <P>

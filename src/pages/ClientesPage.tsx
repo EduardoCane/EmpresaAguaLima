@@ -1,17 +1,25 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, Search, ScanBarcode, FileDown, PenTool, CheckCircle2, Eye } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Edit2, Trash2, Search, ScanBarcode, FileDown, PenTool, CheckCircle2, Eye, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientModal } from '@/components/ClientModal';
 import { ReportModal } from '@/components/ReportModal';
 import { SignaturePad } from '@/components/SignaturePad';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useClientes } from '@/contexts/ClientContext';
+import { useContratos } from '@/contexts/ContractContext';
 import { Cliente, ClienteFirma } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
 export default function ClientesPage() {
+        const [showDateModal, setShowDateModal] = useState(false);
+      const [filterDate, setFilterDate] = useState<string>(''); // fecha aplicada
+  const [filterDateInput, setFilterDateInput] = useState<string>(''); // fecha seleccionada en el popover
+  const [showAll, setShowAll] = useState(false);
+  const [showAllDates, setShowAllDates] = useState(false);
   const { clientes, deleteCliente, getClienteByDni, getClienteByCod } = useClientes();
+  const { addContrato, contratos } = useContratos();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Cliente | null>(null);
@@ -64,11 +72,67 @@ export default function ClientesPage() {
     return parsed.toLocaleDateString('es-ES');
   };
 
-  const filteredClientes = clientes.filter(cliente =>
-    getFullName(cliente).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (cliente.cod?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-    (cliente.dni?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-  );
+  const contratosByCliente = useMemo(() => {
+    const map = new Map<string, Date[]>();
+    contratos.forEach(c => {
+      const list = map.get(c.cliente_id) ?? [];
+      list.push(new Date(c.created_at));
+      map.set(c.cliente_id, list);
+    });
+    // ordenar desc para optimizar búsquedas posteriores
+    map.forEach(list => list.sort((a, b) => b.getTime() - a.getTime()));
+    return map;
+  }, [contratos]);
+
+  const getClienteFechas = (cliente: Cliente): Date[] => {
+    const contractDates = contratosByCliente.get(cliente.id) ?? [];
+    if (contractDates.length > 0) return contractDates;
+    if (cliente.created_at) return [new Date(cliente.created_at)];
+    return [];
+  };
+
+  const dateKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  const sameDay = (a: Date, b: Date) => dateKey(a) === dateKey(b);
+
+  const selectedDate = useMemo(() => {
+    if (showAll) return null;
+    if (filterDate) {
+      // parse como fecha local para evitar desfase por UTC en ISO strings (yyyy-mm-dd)
+      const [year, month, day] = filterDate.split('-').map(Number);
+      const d = new Date(year, (month || 1) - 1, day || 1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }, [showAll, filterDate]);
+
+  const filteredClientes = clientes.filter(cliente => {
+    const fechas = getClienteFechas(cliente);
+    const dateMatch = showAll
+      ? true
+      : fechas.some(fecha => selectedDate && sameDay(fecha, selectedDate));
+
+    const textMatch =
+      getFullName(cliente).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (cliente.cod?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (cliente.dni?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+
+    return dateMatch && textMatch;
+  });
+
+  const selectedDateForCount = selectedDate;
+
+  const totalClientes = clientes.length;
+
+  const totalClientesEnDia = clientes.filter(cliente => {
+    const fechas = getClienteFechas(cliente);
+    if (!selectedDateForCount) return true; // cuando se muestran todos
+    return fechas.some(fecha => sameDay(fecha, selectedDateForCount));
+  }).length;
 
   const handleEdit = (cliente: Cliente) => {
     setEditingClient(cliente);
@@ -273,6 +337,23 @@ export default function ClientesPage() {
     setEditingSignatureValue(firma.firma_url);
   };
 
+  const handleCreateNewContrato = async (cliente: Cliente) => {
+    try {
+      const fullName = getFullName(cliente) || 'cliente';
+      await addContrato({
+        cliente_id: cliente.id,
+        contenido: `Contrato de reingreso - ${fullName}`,
+        estado: 'borrador',
+        firmado: false,
+        firmado_at: undefined,
+      });
+      toast.success('Nuevo contrato (borrador) creado para reingreso');
+    } catch (err) {
+      console.error('Error creando nuevo contrato de reingreso:', err);
+      toast.error('No se pudo crear el nuevo contrato');
+    }
+  };
+
   const handleSaveEditedSignature = async () => {
     if (!signaturesClient || !editingSignatureId) return;
     if (!editingSignatureValue) {
@@ -373,8 +454,84 @@ export default function ClientesPage() {
 
         {/* Search */}
         <div className="dashboard-card p-6">
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground mb-4">Buscar y Filtrar</h3>
+            <Popover
+              open={showDateModal}
+              onOpenChange={(open) => {
+                setShowDateModal(open);
+                if (open) {
+                  setFilterDateInput(filterDate);
+                }
+              }}
+            >
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Filtrar opciones
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0">
+                <div className="p-4 space-y-4">
+                  <h3 className="text-lg font-bold text-center">Opciones de filtrado</h3>
+                  <input
+                    type="date"
+                    value={filterDateInput}
+                    onChange={e => setFilterDateInput(e.target.value)}
+                    className="input-field text-base w-full"
+                    style={{ minWidth: 140 }}
+                  />
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => {
+                        setFilterDate(filterDateInput);
+                        setShowAll(false);
+                        setShowDateModal(false);
+                      }}
+                      disabled={!filterDateInput}
+                    >
+                      Filtrar por fecha
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => {
+                        setFilterDate('');
+                        setFilterDateInput('');
+                        setShowAll(false);
+                        setShowDateModal(false);
+                      }}
+                    >
+                      Mostrar solo hoy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => {
+                        setFilterDate('');
+                        setFilterDateInput('');
+                        setShowAll(true);
+                        setShowDateModal(false);
+                      }}
+                    >
+                      Mostrar todos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setShowDateModal(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -393,7 +550,18 @@ export default function ClientesPage() {
         {/* Clients Table */}
         <div className="dashboard-card overflow-hidden">
           <div className="border-b border-slate-200 bg-slate-50/80 p-6 dark:border-gray-700 dark:bg-gray-800/70">
-            <p className="text-sm text-muted-foreground mt-1">Total: {clientes.length} cliente(s)</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Total base: {totalClientes} cliente(s)
+              {!showAll && (
+                <>
+                  {' '}|{' '}
+                  En fecha {selectedDateForCount?.toLocaleDateString('es-ES')}: {totalClientesEnDia} cliente(s)
+                </>
+              )}
+              {showAll && (
+                <> | Mostrando todos: {totalClientesEnDia} cliente(s)</>
+              )}
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -733,7 +901,7 @@ export default function ClientesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Código Grupo Trabajo</p>
                     <p className="text-foreground">
-                      {viewingClient.codigogrupotrabajo || (viewingClient as any).codigo_grupo_trabajo || '-'}
+                      {viewingClient.codigogrupotrabajo || (viewingClient as { codigo_grupo_trabajo?: string }).codigo_grupo_trabajo || '-'}
                     </p>
                   </div>
                   <div>

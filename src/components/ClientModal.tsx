@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Cliente } from '@/types';
+import { emptyFichaDatosValues } from '@/components/contracts/forms/FichaDatosForm';
 import { useClientes } from '@/contexts/ClientContext';
 import { useContratos } from '@/contexts/ContractContext';
 import { ClientBarcode } from '@/components/ClientBarcode';
@@ -65,17 +66,46 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     lugar: '',
     cooperador: '',
   });
+  const [reingresoQuery, setReingresoQuery] = useState('');
+  const [reingresoCliente, setReingresoCliente] = useState<Cliente | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [reniecLoading, setReniecLoading] = useState(false);
   const [reniecError, setReniecError] = useState<string | null>(null);
   const reniecAbort = useRef<AbortController | null>(null);
   const dniInputRef = useRef<HTMLInputElement>(null);
+  // Fecha local en formato YYYY-MM-DD (evita desfase por UTC)
+  const todayIso = () => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000; // ms
+    const local = new Date(now.getTime() - tzOffset);
+    return local.toISOString().split('T')[0];
+  };
+  const isReingreso = formData.estado_actual === 'Reingresante';
+  const isEstadoSelected = formData.estado_actual === 'Nuevo' || formData.estado_actual === 'Reingresante';
+  const isFormLocked = !isEstadoSelected;
 
   const splitApellido = (apellido?: string | null) => {
     const trimmed = (apellido ?? '').trim();
     if (!trimmed) return { paterno: '', materno: '' };
     const parts = trimmed.split(/\s+/);
     return { paterno: parts[0] ?? '', materno: parts.slice(1).join(' ') };
+  };
+
+  const getFullName = (cliente: Cliente) => {
+    const apellidos = [cliente.a_paterno, cliente.a_materno].filter(Boolean).join(' ').trim();
+    const nombre = (cliente.nombre ?? '').trim();
+    const apellidosYNombre = (cliente.apellidos_y_nombres ?? '').trim();
+    const combined = [apellidos, nombre].filter(Boolean).join(' ').trim();
+    return apellidosYNombre || combined || nombre || apellidos || cliente.dni || 'Cliente';
+  };
+
+  const fetchAndSetNextCod = async () => {
+    try {
+      const nextCod = await getNextCod();
+      setFormData(prev => (prev.cod.trim() ? prev : { ...prev, cod: nextCod }));
+    } catch {
+      // silencioso: solo previsualización de código
+    }
   };
 
   const normalizeEstadoActual = (estado?: string | null) => {
@@ -114,18 +144,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
   };
 
   useEffect(() => {
-    let cancelled = false;
-    const loadNextCodInField = async () => {
-      try {
-        const nextCod = await getNextCod();
-        if (!cancelled) {
-          setFormData(prev => (prev.cod.trim() ? prev : { ...prev, cod: nextCod }));
-        }
-      } catch {
-        // Ignora error de preview de codigo
-      }
-    };
-
     if (editingClient) {
       const fallbackApellidos = splitApellido(editingClient.a_paterno);
       setFormData({
@@ -156,7 +174,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         area: editingClient.area ?? '',
         descripcion_zona: editingClient.descripcion_zona ?? '',
         asignacion: editingClient.asignacion ?? '',
-        estado_actual: normalizeEstadoActual(editingClient.estado_actual),
+        estado_actual: normalizeEstadoActual(editingClient.estado_actual) || '',
         cargo: editingClient.cargo ?? '',
         fecha_inicio_contrato: editingClient.fecha_inicio_contrato ?? '',
         fecha_termino_contrato: editingClient.fecha_termino_contrato ?? '',
@@ -170,8 +188,10 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         lugar: editingClient.lugar ?? '',
         cooperador: editingClient.cooperador ?? '',
       });
+      setReingresoCliente(null);
+      setReingresoQuery('');
     } else {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayIso();
       setFormData({
         dni: '',
         cod: '',
@@ -210,16 +230,14 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         lugar: '',
         cooperador: '',
       });
-      if (isOpen) {
-        void loadNextCodInField();
+      setReingresoCliente(null);
+      setReingresoQuery('');
+      if (isOpen && formData.estado_actual !== 'Reingresante') {
+        void fetchAndSetNextCod();
       }
       setTimeout(() => dniInputRef.current?.focus(), 0);
     }
     setErrors({});
-
-    return () => {
-      cancelled = true;
-    };
   }, [editingClient, isOpen]);
 
   const setField = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
@@ -297,6 +315,13 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    const isReingreso = formData.estado_actual === 'Reingresante';
+    const isCreateFlow = !editingClient;
+    const requireText = (field: keyof typeof formData, label: string) => {
+      if (!String(formData[field] ?? '').trim()) {
+        newErrors[field] = `${label} es obligatorio`;
+      }
+    };
 
     if (!formData.nombre.trim()) {
       newErrors.nombre = 'El nombre es obligatorio';
@@ -306,7 +331,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       newErrors.dni = 'El DNI es obligatorio';
     } else if (!/^\d{8}$/.test(formData.dni.trim())) {
       newErrors.dni = 'El DNI debe tener exactamente 8 dígitos';
-    } else {
+    } else if (!isReingreso) {
       const existingCliente = getClienteByDni(formData.dni);
       if (existingCliente && existingCliente.id !== editingClient?.id) {
         newErrors.dni = 'Este DNI ya está registrado';
@@ -314,11 +339,50 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     }
 
     const cod = formData.cod.trim().toUpperCase();
-    if (cod) {
+    if (cod && !isReingreso) {
       const existingClienteByCod = getClienteByCod(cod);
       if (existingClienteByCod && existingClienteByCod.id !== editingClient?.id) {
         newErrors.cod = 'Este codigo ya esta registrado';
       }
+    }
+
+    if (formData.estado_actual === '') {
+      newErrors.estado_actual = 'Selecciona Estado Actual';
+    }
+
+    if (isReingreso && !reingresoCliente) {
+      newErrors.reingreso = 'Busca y selecciona un cliente existente (DNI o COD)';
+    }
+
+    if (isCreateFlow) {
+      // Datos personales
+      requireText('a_paterno', 'Apellido paterno');
+      requireText('a_materno', 'Apellido materno');
+      requireText('fecha_nac', 'Fecha de nacimiento');
+      requireText('edad', 'Edad');
+      requireText('fecha_reclutamiento', 'Fecha de reclutamiento');
+      requireText('sexo', 'Sexo');
+      requireText('estado_civil', 'Estado civil');
+
+      // Dirección
+      requireText('direccion', 'Dirección');
+      requireText('distrito', 'Distrito');
+      requireText('provincia', 'Provincia');
+      requireText('departamento', 'Departamento');
+
+      // Información Laboral
+      requireText('codigogrupotrabajo', 'Código Grupo Trabajo');
+      requireText('area', 'Área');
+      requireText('descripcion_zona', 'Descripción de Zona');
+      requireText('asignacion', 'Asignación');
+      requireText('cargo', 'Cargo');
+
+      // Información de Contrato
+      requireText('fecha_inicio_contrato', 'Fecha Inicio Contrato');
+      requireText('fecha_termino_contrato', 'Fecha Término Contrato');
+      requireText('tipo_contrato', 'Tipo de Contrato');
+      requireText('remuneracion', 'Remuneración');
+      requireText('planilla', 'Planilla');
     }
 
     if (formData.porcentaje_comision.trim()) {
@@ -329,12 +393,144 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error(Object.values(newErrors)[0]);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const normalizeString = (value: string) => {
     const trimmed = value.trim();
     return trimmed && trimmed.length > 0 ? trimmed : null;
+  };
+
+  const hydrateFormFromCliente = (cliente: Cliente, forceTodayReclutamiento = false) => {
+    const fallbackApellidos = splitApellido(cliente.a_paterno);
+    const isReingresoFlow = forceTodayReclutamiento || formData.estado_actual === 'Reingresante';
+
+    const base = {
+      dni: cliente.dni ?? formData.dni,
+      cod: cliente.cod ?? formData.cod,
+      repetir_codigo: cliente.repetir_codigo ?? cliente.cod ?? formData.repetir_codigo,
+      nombre: cliente.nombre ?? formData.nombre,
+      a_paterno: cliente.a_paterno ?? fallbackApellidos.paterno,
+      a_materno: cliente.a_materno ?? fallbackApellidos.materno,
+      fecha_nac: cliente.fecha_nac ?? formData.fecha_nac,
+      edad: cliente.edad ? String(cliente.edad) : formData.edad,
+      sexo: cliente.sexo ?? formData.sexo,
+      estado_civil: cliente.estado_civil ?? formData.estado_civil,
+      estado_actual: formData.estado_actual || normalizeEstadoActual(cliente.estado_actual) || '',
+      fecha_reclutamiento: forceTodayReclutamiento ? todayIso() : (cliente.fecha_reclutamiento ?? formData.fecha_reclutamiento),
+      codigogrupotrabajo: cliente.codigogrupotrabajo ?? formData.codigogrupotrabajo,
+      id_afp: cliente.id_afp ?? formData.id_afp,
+      cuspp: cliente.cuspp ?? formData.cuspp,
+      fecha_inicio_afiliacion: cliente.fecha_inicio_afiliacion ?? formData.fecha_inicio_afiliacion,
+      porcentaje_comision: cliente.porcentaje_comision !== null && cliente.porcentaje_comision !== undefined
+        ? String(cliente.porcentaje_comision)
+        : formData.porcentaje_comision,
+      nueva_afiliacion: cliente.nueva_afiliacion ?? formData.nueva_afiliacion,
+      grado_instruccion: cliente.grado_instruccion ?? formData.grado_instruccion,
+      direccion: cliente.direccion ?? formData.direccion,
+      distrito: cliente.distrito ?? formData.distrito,
+      provincia: cliente.provincia ?? formData.provincia,
+      departamento: cliente.departamento ?? formData.departamento,
+      area: cliente.area ?? formData.area,
+      descripcion_zona: cliente.descripcion_zona ?? formData.descripcion_zona,
+      asignacion: cliente.asignacion ?? formData.asignacion,
+      cargo: cliente.cargo ?? formData.cargo,
+      fecha_inicio_contrato: cliente.fecha_inicio_contrato ?? formData.fecha_inicio_contrato,
+      fecha_termino_contrato: cliente.fecha_termino_contrato ?? formData.fecha_termino_contrato,
+      tipo_contrato: normalizeTipoContrato(cliente.tipo_contrato) ?? formData.tipo_contrato,
+      remuneracion: cliente.remuneracion !== null && cliente.remuneracion !== undefined
+        ? String(cliente.remuneracion)
+        : formData.remuneracion,
+      planilla: normalizePlanilla(cliente.planilla) ?? formData.planilla,
+      observaciones: cliente.observaciones ?? formData.observaciones,
+      referido: cliente.referido ?? formData.referido,
+      lugar: cliente.lugar ?? formData.lugar,
+      cooperador: cliente.cooperador ?? formData.cooperador,
+    };
+
+    // En reingreso queremos que ciertos campos se llenen nuevamente para el nuevo contrato
+    const clearedOnReingreso: Array<keyof typeof formData> = [
+      // Datos que deben renovarse para el nuevo contrato
+      'id_afp',
+      'cuspp',
+      'fecha_inicio_afiliacion',
+      'porcentaje_comision',
+      'nueva_afiliacion',
+      // Información laboral debe ingresarse nuevamente en reingreso
+      'area',
+      'descripcion_zona',
+      'asignacion',
+      'codigogrupotrabajo',
+      'cargo',
+      'fecha_inicio_contrato',
+      'fecha_termino_contrato',
+      'tipo_contrato',
+      'remuneracion',
+      'planilla',
+      'observaciones',
+      'referido',
+      'lugar',
+      'cooperador',
+    ];
+
+    const finalData = isReingresoFlow
+      ? clearedOnReingreso.reduce((acc, field) => {
+          (acc as any)[field] = field === 'nueva_afiliacion' ? false : '';
+          return acc;
+        }, { ...base, fecha_reclutamiento: todayIso() })
+      : base;
+
+    setFormData(prev => ({ ...prev, ...finalData }));
+  };
+
+  const buildFichaDatosSnapshot = (source: typeof formData) => {
+    const base = { ...emptyFichaDatosValues };
+    const copyString = (key: keyof typeof base, val?: string | null) => {
+      (base as any)[key] = val?.toString().trim() || '';
+    };
+
+    copyString('remuneracion', source.remuneracion);
+    copyString('unidadArea', source.area);
+    copyString('puesto', source.cargo);
+    copyString('periodoDesde', source.fecha_inicio_contrato);
+    copyString('periodoHasta', source.fecha_termino_contrato);
+    copyString('fechaNacimiento', source.fecha_nac);
+    copyString('estadoCivil', source.estado_civil);
+    copyString('domicilioActual', source.direccion);
+    copyString('distritoDomicilio', source.distrito);
+    copyString('provinciaDomicilio', source.provincia);
+    // copyString('departamentoDomicilio', source.departamento); // Remove or fix if not in emptyFichaDatosValues
+    // Campos de educación, contactos y cuentas se dejan vacíos por defecto
+    return base;
+  };
+
+  const handleBuscarReingreso = () => {
+    const query = (reingresoQuery || formData.dni || formData.cod).trim();
+    if (!query) {
+      toast.error('Ingresa DNI o COD para buscar reingreso');
+      return;
+    }
+
+    let found = getClienteByDni(query);
+    if (!found) {
+      found = getClienteByCod(query.toUpperCase());
+    }
+
+    if (!found) {
+      toast.error('No se encontró un cliente con ese DNI o COD');
+      setReingresoCliente(null);
+      return;
+    }
+
+    setReingresoCliente(found);
+    hydrateFormFromCliente(found, formData.estado_actual === 'Reingresante');
+    // Mantén visible exactamente lo que el usuario escribió (DNI o COD), no lo sustituyas por el DNI encontrado
+    setReingresoQuery(query);
+    setErrors(prev => ({ ...prev, reingreso: undefined }));
+    toast.success(`Cliente encontrado: ${getFullName(found)}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -348,7 +544,67 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     const codigo = normalizeString(formData.cod)?.toUpperCase() ?? null;
 
     try {
-      if (editingClient) {
+      if (isReingreso) {
+        if (!reingresoCliente) {
+          toast.error('Busca y selecciona un cliente existente para reingreso');
+          return;
+        }
+
+        const updatePayload: Partial<Cliente> = {
+          repetir_codigo: normalizeString(formData.repetir_codigo) ?? reingresoCliente.repetir_codigo ?? reingresoCliente.cod,
+          nombre: nombre || reingresoCliente.nombre || null,
+          a_paterno: aPaterno || reingresoCliente.a_paterno || null,
+          a_materno: aMaterno || reingresoCliente.a_materno || null,
+          fecha_nac: normalizeString(formData.fecha_nac) ?? reingresoCliente.fecha_nac ?? null,
+          edad: formData.edad.trim()
+            ? parseInt(formData.edad.trim(), 10)
+            : reingresoCliente.edad ?? null,
+          fecha_reclutamiento: normalizeString(formData.fecha_reclutamiento) ?? todayIso(),
+          sexo: formData.sexo ? (formData.sexo as 'M' | 'F') : reingresoCliente.sexo ?? null,
+          estado_civil: formData.estado_civil
+            ? (formData.estado_civil as 'SOLTERO' | 'CASADO' | 'VIUDO' | 'CONVIVIENTE' | 'DIVORCIADO')
+            : reingresoCliente.estado_civil ?? null,
+          // Campos laborales/afiliación se rellenan de nuevo para el reingreso; si se dejan vacíos se guardan como null
+          codigogrupotrabajo: normalizeString(formData.codigogrupotrabajo),
+          id_afp: normalizeString(formData.id_afp),
+          cuspp: normalizeString(formData.cuspp),
+          fecha_inicio_afiliacion: normalizeString(formData.fecha_inicio_afiliacion),
+          porcentaje_comision: formData.porcentaje_comision.trim() ? Number(formData.porcentaje_comision) : null,
+          nueva_afiliacion: formData.nueva_afiliacion ?? null,
+          grado_instruccion: normalizeString(formData.grado_instruccion),
+          direccion: normalizeString(formData.direccion),
+          distrito: normalizeString(formData.distrito),
+          provincia: normalizeString(formData.provincia),
+          departamento: normalizeString(formData.departamento),
+          area: normalizeString(formData.area),
+        descripcion_zona: normalizeString(formData.descripcion_zona),
+        asignacion: normalizeString(formData.asignacion),
+          estado_actual: isReingreso ? 'Reingresante' : 'Nuevo',
+          cargo: normalizeString(formData.cargo),
+          fecha_inicio_contrato: normalizeString(formData.fecha_inicio_contrato),
+          fecha_termino_contrato: normalizeString(formData.fecha_termino_contrato),
+          tipo_contrato: normalizeString(normalizeTipoContrato(formData.tipo_contrato)),
+          remuneracion: formData.remuneracion.trim() ? Number(formData.remuneracion) : null,
+          planilla: normalizeString(formData.planilla),
+          observaciones: normalizeString(formData.observaciones),
+          referido: normalizeString(formData.referido),
+          lugar: normalizeString(formData.lugar),
+          cooperador: normalizeString(formData.cooperador),
+        };
+
+        await updateCliente(reingresoCliente.id, updatePayload);
+
+        const fullName = getFullName(reingresoCliente);
+        await addContrato({
+          cliente_id: reingresoCliente.id,
+          contenido: `Contrato de trabajo para ${fullName} - Borrador`,
+          estado: 'borrador',
+          firmado: false,
+          firmado_at: undefined,
+          ficha_datos: buildFichaDatosSnapshot(formData),
+        });
+        toast.success('Reingreso registrado y contrato borrador creado');
+      } else if (editingClient) {
         // Para actualizar, no incluimos apellidos_y_nombres (se genera automáticamente)
         const updatePayload: Partial<Cliente> = {
           dni: formData.dni.trim(),
@@ -380,7 +636,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
           area: normalizeString(formData.area),
           descripcion_zona: normalizeString(formData.descripcion_zona),
           asignacion: normalizeString(formData.asignacion),
-          estado_actual: normalizeString(formData.estado_actual),
+          estado_actual: isReingreso ? 'Reingresante' : 'Nuevo',
           cargo: normalizeString(formData.cargo),
           fecha_inicio_contrato: normalizeString(formData.fecha_inicio_contrato),
           fecha_termino_contrato: normalizeString(formData.fecha_termino_contrato),
@@ -400,52 +656,53 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       } else {
         // Para crear, incluimos apellidos_y_nombres
         const apellidosYNombres = [aPaterno, aMaterno, nombre].filter(Boolean).join(' ').trim();
-        const createPayload: Partial<Cliente> = {
+        const createPayload: any = {
           dni: formData.dni.trim(),
           cod: codigo,
           repetir_codigo: normalizeString(formData.repetir_codigo),
-          nombre: nombre || null,
-          a_paterno: aPaterno || null,
-          a_materno: aMaterno || null,
-          apellidos_y_nombres: apellidosYNombres || null,
-          fecha_nac: normalizeString(formData.fecha_nac),
-          edad: formData.edad.trim() ? parseInt(formData.edad.trim(), 10) : null,
-          fecha_reclutamiento: normalizeString(formData.fecha_reclutamiento),
-          sexo: formData.sexo ? (formData.sexo as 'M' | 'F') : null,
+          nombre: nombre || '',
+          a_paterno: aPaterno || '',
+          a_materno: aMaterno || '',
+          apellidos_y_nombres: apellidosYNombres || '',
+          fecha_nac: normalizeString(formData.fecha_nac) || '',
+          edad: formData.edad.trim() ? parseInt(formData.edad.trim(), 10) : 0,
+          fecha_reclutamiento: normalizeString(formData.fecha_reclutamiento) || todayIso(),
           estado_civil: formData.estado_civil
             ? (formData.estado_civil as 'SOLTERO' | 'CASADO' | 'VIUDO' | 'CONVIVIENTE' | 'DIVORCIADO')
-            : null,
-          codigogrupotrabajo: normalizeString(formData.codigogrupotrabajo),
-          id_afp: normalizeString(formData.id_afp),
-          cuspp: normalizeString(formData.cuspp),
-          fecha_inicio_afiliacion: normalizeString(formData.fecha_inicio_afiliacion),
+            : '',
+          codigogrupotrabajo: normalizeString(formData.codigogrupotrabajo) || '',
+          id_afp: normalizeString(formData.id_afp) || '',
+          cuspp: normalizeString(formData.cuspp) || '',
+          fecha_inicio_afiliacion: normalizeString(formData.fecha_inicio_afiliacion) || '',
           porcentaje_comision: formData.porcentaje_comision.trim()
             ? Number(formData.porcentaje_comision)
-            : null,
+            : 0,
           nueva_afiliacion: formData.nueva_afiliacion,
-          grado_instruccion: normalizeString(formData.grado_instruccion),
-          direccion: normalizeString(formData.direccion),
-          distrito: normalizeString(formData.distrito),
-          provincia: normalizeString(formData.provincia),
-          departamento: normalizeString(formData.departamento),
-          area: normalizeString(formData.area),
-          descripcion_zona: normalizeString(formData.descripcion_zona),
-          asignacion: normalizeString(formData.asignacion),
-          estado_actual: normalizeString(formData.estado_actual),
-          cargo: normalizeString(formData.cargo),
-          fecha_inicio_contrato: normalizeString(formData.fecha_inicio_contrato),
-          fecha_termino_contrato: normalizeString(formData.fecha_termino_contrato),
-          tipo_contrato: normalizeString(normalizeTipoContrato(formData.tipo_contrato)),
+          grado_instruccion: normalizeString(formData.grado_instruccion) || '',
+          direccion: normalizeString(formData.direccion) || '',
+          distrito: normalizeString(formData.distrito) || '',
+          provincia: normalizeString(formData.provincia) || '',
+          departamento: normalizeString(formData.departamento) || '',
+          area: normalizeString(formData.area) || '',
+          descripcion_zona: normalizeString(formData.descripcion_zona) || '',
+          asignacion: normalizeString(formData.asignacion) || '',
+          cargo: normalizeString(formData.cargo) || '',
+          fecha_inicio_contrato: normalizeString(formData.fecha_inicio_contrato) || '',
+          fecha_termino_contrato: normalizeString(formData.fecha_termino_contrato) || '',
+          tipo_contrato: normalizeString(normalizeTipoContrato(formData.tipo_contrato)) || '',
           remuneracion: formData.remuneracion.trim()
             ? Number(formData.remuneracion)
-            : null,
-          planilla: normalizeString(formData.planilla),
-          observaciones: normalizeString(formData.observaciones),
-          referido: normalizeString(formData.referido),
-          lugar: normalizeString(formData.lugar),
-          cooperador: normalizeString(formData.cooperador),
+            : 0,
+          planilla: normalizeString(formData.planilla) || '',
+          observaciones: normalizeString(formData.observaciones) || '',
+          referido: normalizeString(formData.referido) || '',
+          lugar: normalizeString(formData.lugar) || '',
+          cooperador: normalizeString(formData.cooperador) || '',
+          estado_actual: normalizeString(formData.estado_actual) || (isReingreso ? 'Reingresante' : 'Nuevo'),
         };
-        
+        if (formData.sexo === 'M' || formData.sexo === 'F') {
+          createPayload.sexo = formData.sexo;
+        }
         const createdClient = await addCliente(createPayload);
         const fullName =
           createdClient.apellidos_y_nombres?.trim() ||
@@ -462,6 +719,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
             estado: 'borrador',
             firmado: false,
             firmado_at: undefined,
+            ficha_datos: buildFichaDatosSnapshot(formData),
           });
           toast.success('Cliente y contrato borrador creados correctamente');
         } catch (contractError) {
@@ -511,6 +769,54 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Identificación</p>
               </div>
 
+              <div className="md:col-span-2 flex flex-col gap-3">
+                <div className="flex flex-col md:flex-row md:items-center gap-2">
+                  <label className="text-sm font-semibold text-foreground">Estado Actual *</label>
+                  <select
+                    value={formData.estado_actual}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setField('estado_actual', val);
+                      if (val === 'Nuevo') {
+                        setReingresoCliente(null);
+                        setReingresoQuery('');
+                        void fetchAndSetNextCod();
+                      } else if (val === 'Reingresante') {
+                        setFormData(prev => ({ ...prev, cod: '', repetir_codigo: '', fecha_reclutamiento: todayIso() }));
+                      }
+                    }}
+                    className="input-field md:max-w-xs"
+                  >
+                    <option value="">Seleccione una opción</option>
+                    <option value="Nuevo">Nuevo</option>
+                    <option value="Reingresante">Reingresante</option>
+                  </select>
+                </div>
+                {isReingreso && (
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 flex-1">
+                    <input
+                      type="text"
+                      value={reingresoQuery}
+                      onChange={(e) => setReingresoQuery(e.target.value)}
+                      className="input-field md:max-w-xs"
+                      placeholder="Buscar por DNI o COD"
+                    />
+                    <Button type="button" size="sm" variant="outline" onClick={handleBuscarReingreso}>
+                      Autocompletar
+                    </Button>
+                    {errors.reingreso && (
+                      <p className="text-sm text-destructive">{errors.reingreso}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {isReingreso && reingresoCliente && (
+                <div className="md:col-span-2 text-sm text-success bg-success/10 border border-success/40 rounded-lg px-3 py-2">
+                  Cargado {getFullName(reingresoCliente)} (DNI {reingresoCliente.dni})
+                </div>
+              )}
+
               {/* DNI primero para escáner/teclado */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -527,6 +833,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   maxLength={8}
                   autoComplete="off"
                   autoFocus
+                  disabled={isFormLocked || isReingreso}
                 />
                 {(reniecLoading || reniecError) && (
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -553,6 +860,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   onChange={(e) => setField('nombre', e.target.value)}
                   className={`input-field ${errors.nombre ? 'border-destructive' : ''}`}
                   placeholder="Ej: María"
+                  disabled={isFormLocked}
                 />
                 {errors.nombre && (
                   <p className="mt-1 text-sm text-destructive">{errors.nombre}</p>
@@ -561,7 +869,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Apellido paterno
+                  Apellido paterno *
                 </label>
                 <input
                   type="text"
@@ -569,6 +877,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   onChange={(e) => setField('a_paterno', e.target.value)}
                   className={`input-field ${errors.a_paterno ? 'border-destructive' : ''}`}
                   placeholder="Ej: García"
+                  disabled={isFormLocked}
                 />
                 {errors.a_paterno && (
                   <p className="mt-1 text-sm text-destructive">{errors.a_paterno}</p>
@@ -577,7 +886,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Apellido materno
+                  Apellido materno *
                 </label>
                 <input
                   type="text"
@@ -585,24 +894,26 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   onChange={(e) => setField('a_materno', e.target.value)}
                   className="input-field"
                   placeholder="Ej: López"
+                  disabled={isFormLocked}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de nacimiento
+                  Fecha de nacimiento *
                 </label>
                 <input
                   type="date"
                   value={formData.fecha_nac}
                   onChange={(e) => setField('fecha_nac', e.target.value)}
                   className="input-field"
+                  disabled={isFormLocked}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Edad
+                  Edad *
                 </label>
                 <input
                   type="number"
@@ -612,29 +923,32 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   placeholder="Se calcula automáticamente"
                   min="0"
                   max="150"
+                  disabled={isFormLocked}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de reclutamiento
+                  Fecha de reclutamiento *
                 </label>
                 <input
                   type="date"
                   value={formData.fecha_reclutamiento}
                   onChange={(e) => setField('fecha_reclutamiento', e.target.value)}
                   className="input-field"
+                  disabled={isFormLocked}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Sexo
+                  Sexo *
                 </label>
                 <select
                   value={formData.sexo}
                   onChange={(e) => setField('sexo', e.target.value)}
                   className="input-field"
+                  disabled={isFormLocked}
                 >
                   <option value="">Seleccionar</option>
                   <option value="M">Masculino</option>
@@ -644,12 +958,13 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Estado civil
+                  Estado civil *
                 </label>
                 <select
                   value={formData.estado_civil}
                   onChange={(e) => setField('estado_civil', e.target.value)}
                   className="input-field"
+                  disabled={isFormLocked}
                 >
                   <option value="">Seleccionar</option>
                   <option value="SOLTERO">Soltero</option>
@@ -671,6 +986,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   className="input-field"
                   placeholder="Ej: 44000"
                   maxLength={20}
+                  disabled={isFormLocked || isReingreso}
                 />
               </div>
 
@@ -685,6 +1001,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   className={`input-field ${errors.cod ? 'border-destructive' : ''}`}
                   placeholder="Se autogenera si lo dejas vacio"
                   maxLength={30}
+                  disabled={isFormLocked || isReingreso}
                 />
                 {errors.cod && (
                   <p className="mt-1 text-sm text-destructive">{errors.cod}</p>
@@ -789,7 +1106,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Dirección
+                  Dirección *
                 </label>
                 <textarea
                   value={formData.direccion}
@@ -802,7 +1119,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Distrito
+                  Distrito *
                 </label>
                 <input
                   type="text"
@@ -815,7 +1132,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Provincia
+                  Provincia *
                 </label>
                 <input
                   type="text"
@@ -828,7 +1145,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Departamento
+                  Departamento *
                 </label>
                 <input
                   type="text"
@@ -846,7 +1163,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Código Grupo Trabajo
+                  Código Grupo Trabajo *
                 </label>
                 <input
                   type="text"
@@ -860,7 +1177,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Área
+                  Área *
                 </label>
                 <input
                   type="text"
@@ -873,7 +1190,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Descripción de Zona
+                  Descripción de Zona *
                 </label>
                 <input
                   type="text"
@@ -886,7 +1203,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Asignación
+                  Asignación *
                 </label>
                 <input
                   type="text"
@@ -899,22 +1216,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Estado Actual
-                </label>
-                <select
-                  value={formData.estado_actual}
-                  onChange={(e) => setField('estado_actual', e.target.value)}
-                  className="input-field"
-                >
-                  <option value="">Seleccione una opción</option>
-                  <option value="Nuevo">Nuevo</option>
-                  <option value="Reingresante">Reingresante</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Cargo
+                  Cargo *
                 </label>
                 <input
                   type="text"
@@ -932,7 +1234,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Fecha Inicio Contrato
+                  Fecha Inicio Contrato *
                 </label>
                 <input
                   type="date"
@@ -944,7 +1246,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Fecha Término Contrato
+                  Fecha Término Contrato *
                 </label>
                 <input
                   type="date"
@@ -956,7 +1258,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Tipo de Contrato
+                  Tipo de Contrato *
                 </label>
                 <select
                   value={formData.tipo_contrato}
@@ -975,7 +1277,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Remuneración
+                  Remuneración *
                 </label>
                 <input
                   type="number"
@@ -989,7 +1291,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Planilla
+                  Planilla *
                 </label>
                 <select
                   value={formData.planilla}
@@ -1087,3 +1389,9 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     </div>
   );
 }
+
+
+
+
+
+

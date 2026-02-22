@@ -36,6 +36,7 @@ type ClienteFirmaActivaRow = { firma_url?: string };
 type ErrorWithCode = { code?: string };
 
 type ViewMode = 'list' | 'create' | 'view';
+const REQUIRE_SIGNATURE_TO_SAVE = false;
 
 interface ValidationErrors {
   client?: string;
@@ -109,6 +110,7 @@ export default function ContratosPage() {
   const [registroFormData, setRegistroFormData] = useState(() => createRegistroInitialState());
   const [activeContractForm, setActiveContractForm] = useState('ficha-datos');
   const [lockedExclusiveContract, setLockedExclusiveContract] = useState<string | null>(null);
+  const [lockReason, setLockReason] = useState<'from-client' | null>(null);
   const [fichaDatosValues, setFichaDatosValues] = useState<FichaDatosValues>(emptyFichaDatosValues);
   const [fichaDatosMissing, setFichaDatosMissing] = useState<(keyof FichaDatosValues)[]>([]);
   const [declaracionParentescoValues, setDeclaracionParentescoValues] = useState<DeclaracionParentescoValues>(emptyDeclaracionParentescoValues);
@@ -164,12 +166,36 @@ export default function ContratosPage() {
     return [apellidos, nombre].filter(Boolean).join(' ').trim();
   };
 
+  const normalizeTipoContratoLocal = (tipo?: string | null) => {
+    const trimmed = (tipo ?? '').trim().toUpperCase();
+    if (!trimmed) return null;
+    if (trimmed === 'CONTRATO INTERMITENTE' || trimmed === 'INTERMITENTE') return 'contrato-intermitente';
+    if (trimmed === 'CONTRATO POR TEMPORADA' || trimmed === 'CONTRATO POR TEMPORADA PLAN' || trimmed === 'TEMPORADA' || trimmed === 'TEMPORADA PLAN') {
+      return 'contrato-temporada-plan';
+    }
+    return null;
+  };
+
   const getFullName = (cliente?: Cliente | null) => {
     if (!cliente) return 'Cliente no encontrado';
     const apellidosYNombre = (cliente.apellidos_y_nombres ?? '').trim();
     const combined = getSearchName(cliente);
     return apellidosYNombre || combined || 'Cliente no encontrado';
   };
+
+  // Auto-seleccionar el cliente más reciente (recién creado) para iniciar contrato
+  useEffect(() => {
+    if (selectedClient || clientes.length === 0 || viewMode !== 'list') return;
+    const latest = [...clientes].sort((a, b) => {
+      const ta = new Date(a.created_at || '').getTime();
+      const tb = new Date(b.created_at || '').getTime();
+      return tb - ta;
+    })[0];
+    if (latest) {
+      handleClientChange(latest, 'from-client');
+      // Mantén vista en lista para que se puedan ver los demás contratos; el usuario puede pasar a crear cuando lo desee
+    }
+  }, [clientes, selectedClient, viewMode]);
 
   const contratosPorCliente = useMemo(() => {
     const map = new Map<string, { cliente: Cliente | null; contratos: Contrato[] }>();
@@ -340,7 +366,7 @@ export default function ContratosPage() {
 
   const fichaDatosComplete = getFichaDatosMissing(fichaDatosValues).length === 0;
 
-  const signatureSectionComplete = !!signatureData;
+  const signatureSectionComplete = REQUIRE_SIGNATURE_TO_SAVE ? !!signatureData : true;
 
   const hasText = (value?: string | number | null) => {
     if (value === null || value === undefined) return false;
@@ -748,7 +774,7 @@ export default function ContratosPage() {
       return;
     }
 
-    if (!signatureData) {
+    if (REQUIRE_SIGNATURE_TO_SAVE && !signatureData) {
       setValidationErrors({ signature: 'El contrato requiere la firma del trabajador para ser valido' });
       toast.error('Debe agregar la firma del trabajador');
       return;
@@ -763,7 +789,11 @@ export default function ContratosPage() {
     }
 
     const targetContract = viewingContract;
-    const firmadoAt = new Date().toISOString();
+    const firmadoAt = new Date();
+    const shouldSignWithoutDigital = !signatureData;
+    const persistEstado: Contrato['estado'] = shouldSignWithoutDigital ? 'firmado' : 'borrador';
+    const persistFirmado = shouldSignWithoutDigital;
+    const persistFirmadoAt = shouldSignWithoutDigital ? firmadoAt : undefined;
 
     const fichaDatosPayload = {
       ficha_datos: {
@@ -1087,9 +1117,9 @@ export default function ContratosPage() {
       if (targetContract) {
         await updateContrato(targetContract.id, {
           contenido: `Contrato de trabajo para ${selectedClient.apellidos_y_nombres || `${selectedClient.nombre || ''} ${selectedClient.a_paterno || ''} ${selectedClient.a_materno || ''}`.trim()}`,
-          estado: 'borrador',
-          firmado: false,
-          firmado_at: undefined,
+          estado: persistEstado,
+          firmado: persistFirmado,
+          firmado_at: persistFirmadoAt,
           ...fichaDatosPayload,
           ...contratoIntermitentePayload,
           ...contratoTemporadaPlanPayload,
@@ -1108,9 +1138,9 @@ export default function ContratosPage() {
         const insertedId = await addContrato({
           cliente_id: selectedClient.id,
           contenido: `Contrato de trabajo para ${selectedClient.apellidos_y_nombres || `${selectedClient.nombre || ''} ${selectedClient.a_paterno || ''} ${selectedClient.a_materno || ''}`.trim()}`,
-          estado: 'borrador',
-          firmado: false,
-          firmado_at: undefined,
+          estado: persistEstado,
+          firmado: persistFirmado,
+          firmado_at: persistFirmadoAt,
           ...fichaDatosPayload,
           ...contratoIntermitentePayload,
           ...contratoTemporadaPlanPayload,
@@ -1156,7 +1186,11 @@ export default function ContratosPage() {
       }
 
       await reloadContratos();
-      toast.success('Contrato guardado y firmado correctamente');
+      toast.success(
+        signatureData
+          ? 'Contrato guardado y firmado correctamente'
+          : 'Contrato guardado como firmado (firma fisica)'
+      );
       resetForm();
     } catch (err) {
       console.error('No se pudo guardar el contrato:', err);
@@ -1699,7 +1733,7 @@ export default function ContratosPage() {
         };
 
         const strategies: Array<Pick<Html2CanvasOptions, 'scale' | 'foreignObjectRendering'>> = [
-          { scale: 5, foreignObjectRendering: false },
+          { scale: 2, foreignObjectRendering: true },  // mayor fidelidad tipográfica
           { scale: 4, foreignObjectRendering: false },
           { scale: 3, foreignObjectRendering: false },
         ];
@@ -1996,6 +2030,7 @@ export default function ContratosPage() {
     setSignatureMode('direct');
     setActiveContractForm('ficha-datos');
     setLockedExclusiveContract(null);
+    setLockReason(null);
     setPensionChoice('');
     setPreviewPage(1);
     setFichaDatosValues(emptyFichaDatosValues);
@@ -2010,6 +2045,20 @@ export default function ContratosPage() {
     const cliente = getClienteById(contrato.cliente_id);
     setViewingContract(contrato);
     setSelectedClient(cliente || null);
+    // Cargar datos guardados del contrato para mostrar en modo lectura
+    const ficha = (contrato.ficha_datos as Partial<FichaDatosValues> | undefined) ?? undefined;
+    if (ficha) {
+      setFichaDatosValues(prev => ({ ...prev, ...ficha }));
+    }
+    const parentesco = (contrato.declaracion_parentesco as Partial<DeclaracionParentescoValues> | undefined) ?? undefined;
+    if (parentesco) {
+      setDeclaracionParentescoValues(prev => ({
+        ...prev,
+        ...parentesco,
+        familiares: parentesco.familiares ?? prev.familiares,
+      }));
+    }
+    setActiveContractForm('ficha-datos');
     setSignatureData('');
     setSignatureSource(null);
     setViewMode('view');
@@ -2024,6 +2073,7 @@ export default function ContratosPage() {
     const cliente = getClienteById(contrato.cliente_id);
     setViewingContract(contrato);
     setSelectedClient(cliente || null);
+    setSelectionMethod('manual'); // fija método para que no aparezca selector
     setSignatureData('');
     setSignatureSource(null);
     setViewMode('create');
@@ -2054,10 +2104,10 @@ export default function ContratosPage() {
   };
 
   useEffect(() => {
-    if (viewMode === 'create' && !viewingContract) {
+    if (viewMode === 'create' && !viewingContract && lockReason !== 'from-client') {
       setLockedExclusiveContract(null);
     }
-  }, [viewMode, viewingContract]);
+  }, [viewMode, viewingContract, lockReason]);
 
   // Al cambiar de trabajador (o limpiar selección) resetea la ficha para evitar datos congelados
   useEffect(() => {
@@ -2147,6 +2197,49 @@ export default function ContratosPage() {
     }
   }, [viewingContract, viewMode]);
 
+  // Cuando se abre un contrato en modo "ver", cargar los datos guardados en la ficha y parentesco
+  useEffect(() => {
+    if (!viewingContract) return;
+    const ficha = viewingContract.ficha_datos as Partial<FichaDatosValues> | undefined;
+    if (ficha) {
+      setFichaDatosValues(prev => ({
+        ...prev,
+        ...ficha,
+      }));
+    }
+    const parentesco = viewingContract.declaracion_parentesco as Partial<DeclaracionParentescoValues> | undefined;
+    if (parentesco) {
+      setDeclaracionParentescoValues(prev => ({
+        ...prev,
+        ...parentesco,
+        familiares: parentesco.familiares ?? prev.familiares,
+      }));
+    }
+  }, [viewingContract]);
+
+  // Al ver un contrato firmado, cargar la firma almacenada
+  useEffect(() => {
+    const loadViewingSignature = async () => {
+      if (!viewingContract || viewMode !== 'view') return;
+      try {
+        const { data, error } = await supabase
+          .from('firmas')
+          .select('firma_url')
+          .eq('contrato_id', viewingContract.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!error && data?.firma_url) {
+          setSignatureData(data.firma_url);
+          setSignatureSource('reutilizada');
+        }
+      } catch (err) {
+        console.warn('No se pudo cargar firma del contrato visualizado', err);
+      }
+    };
+    void loadViewingSignature();
+  }, [viewingContract, viewMode]);
+
   // Prefill ficha de datos SOLO con información básica del cliente (NO con datos de contratos anteriores)
   useEffect(() => {
     if (!selectedClient || viewMode !== 'create' || viewingContract) return;
@@ -2198,6 +2291,26 @@ export default function ContratosPage() {
     } finally {
       handleConfirmClose();
     }
+  };
+
+  const handleNewFicha = () => {
+    setViewingContract(null);
+    setSelectedClient(null);
+    setSelectionMethod(null);
+    setViewMode('create');
+    setSignatureData('');
+    setSignatureSource(null);
+    setSignatureMode('direct');
+    setActiveContractForm('ficha-datos');
+    setLockedExclusiveContract(null);
+    setLockReason(null);
+    setPensionChoice('');
+    setPreviewPage(1);
+    setFichaDatosValues(emptyFichaDatosValues);
+    setFichaDatosMissing([]);
+    setDeclaracionParentescoValues(emptyDeclaracionParentescoValues);
+    setDeclaracionParentescoMissing([]);
+    setValidationErrors({});
   };
 
   const triggerBlobDownload = (blob: Blob, fileName: string) => {
@@ -2945,7 +3058,7 @@ export default function ContratosPage() {
 
       const newClient = getClienteByDni(registroFormData.dni.toUpperCase());
       if (newClient) {
-        handleClientChange(newClient);
+        handleClientChange(newClient, 'from-client');
       }
 
       setShowRegistroModal(false);
@@ -2958,7 +3071,7 @@ export default function ContratosPage() {
     }
   };
 
-  const handleClientChange = (cliente: Cliente | null) => {
+  const handleClientChange = (cliente: Cliente | null, reason: 'from-client' | null = null) => {
     if (isContractLocked) {
       toast.error('No se puede modificar un contrato firmado');
       return;
@@ -2968,6 +3081,19 @@ export default function ContratosPage() {
     setSignatureData('');
     setSignatureSource(null);
     setValidationErrors(prev => ({ ...prev, client: undefined }));
+    setLockReason(reason);
+
+    if (cliente) {
+      const mapped = normalizeTipoContratoLocal(cliente.tipo_contrato);
+      if (mapped) {
+        setLockedExclusiveContract(mapped);
+        setActiveContractForm(mapped);
+      } else {
+        setLockedExclusiveContract(null);
+      }
+    } else {
+      setLockedExclusiveContract(null);
+    }
   };
 
   const handleScannerDetection = (client: Cliente) => {
@@ -3031,7 +3157,7 @@ export default function ContratosPage() {
                 <Download className="w-5 h-5" />
                 <span>Descarga masiva</span>
               </Button>
-              <Button onClick={() => setViewMode('create')} size="lg" className="gap-2">
+              <Button onClick={handleNewFicha} size="lg" className="gap-2">
                 <Plus className="w-5 h-5" />
                 <span>Nueva Ficha</span>
               </Button>
@@ -3117,15 +3243,17 @@ export default function ContratosPage() {
                   <span className="text-xs text-muted-foreground">
                     Seleccionaste {contractForms.find(form => form.id === lockedExclusiveContract)?.label}. El otro contrato queda bloqueado.
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLockedExclusiveContract(null);
-                    }}
-                    className="text-xs font-semibold text-warning hover:text-foreground"
-                  >
-                    Desbloquear
-                  </button>
+                  {lockReason !== 'from-client' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLockedExclusiveContract(null);
+                      }}
+                      className="text-xs font-semibold text-warning hover:text-foreground"
+                    >
+                      Desbloquear
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -3227,10 +3355,21 @@ export default function ContratosPage() {
                 {selectionMethod === 'manual' && (
                   <>
                     <div className="dashboard-card p-6">
-                      <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                        <FileText className="w-5 h-5" />
-                        Datos del Trabajador
-                      </h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-5 h-5" />
+                          <h3 className="font-semibold text-foreground">Datos del Trabajador</h3>
+                        </div>
+                        {viewMode === 'create' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNewFicha}
+                          >
+                            Nueva ficha
+                          </Button>
+                        )}
+                      </div>
                       
                       {isContractLocked ? (
                         <div className="space-y-3 text-sm">
@@ -3241,6 +3380,21 @@ export default function ContratosPage() {
                           <div>
                             <span className="text-muted-foreground">DNI:</span>
                             <p className="font-medium">{selectedClient?.dni}</p>
+                          </div>
+                        </div>
+                      ) : selectionMethod ? (
+                        <div className="space-y-3 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Nombre:</span>
+                            <p className="font-medium">{selectedClient?.nombre} {selectedClient?.a_paterno || ''} {selectedClient?.a_materno || ''}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">DNI:</span>
+                            <p className="font-medium">{selectedClient?.dni}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">COD:</span>
+                            <p className="font-medium">{selectedClient?.cod}</p>
                           </div>
                         </div>
                       ) : (
@@ -3256,14 +3410,6 @@ export default function ContratosPage() {
                               {validationErrors.client}
                             </p>
                           )}
-                          <Button
-                            onClick={() => setSelectionMethod(null)}
-                            variant="outline"
-                            className="w-full mt-4"
-                            size="sm"
-                          >
-                            Volver Atras
-                          </Button>
                         </>
                       )}
                     </div>
@@ -3412,7 +3558,7 @@ export default function ContratosPage() {
                       </p>
                       <ul className="text-sm text-muted-foreground space-y-1">
                         {!selectedClient && <li>- Seleccione un trabajador</li>}
-                        {!signatureData && <li>- Anada la firma del trabajador</li>}
+                        {REQUIRE_SIGNATURE_TO_SAVE && !signatureData && <li>- Anada la firma del trabajador</li>}
                       </ul>
                     </div>
                   )}
@@ -3421,21 +3567,23 @@ export default function ContratosPage() {
 
               <div className="xl:col-span-2">
                 <div className="dashboard-card p-4 bg-slate-100 dark:bg-slate-900">
-                  {activeContractForm === 'ficha-datos' && !isContractLocked && (
-                    <div className="mb-4">
-                      {activeContractTab?.component}
-                    </div>
-                  )}
-                  {activeContractForm === 'declaracion-parentesco' && !isContractLocked && (
-                    <div className="mb-4">
-                      <DeclaracionParentescoEditor
-                        client={selectedClient}
-                        value={declaracionParentescoValues}
-                        onChange={setDeclaracionParentescoValues}
-                        onMissingChange={setDeclaracionParentescoMissing}
-                      />
-                    </div>
-                  )}
+                  <fieldset disabled={isContractLocked} className={isContractLocked ? 'opacity-80 cursor-not-allowed' : ''}>
+                    {activeContractForm === 'ficha-datos' && (
+                      <div className="mb-4">
+                        {activeContractTab?.component}
+                      </div>
+                    )}
+                    {activeContractForm === 'declaracion-parentesco' && (
+                      <div className="mb-4">
+                        <DeclaracionParentescoEditor
+                          client={selectedClient}
+                          value={declaracionParentescoValues}
+                          onChange={setDeclaracionParentescoValues}
+                          onMissingChange={setDeclaracionParentescoMissing}
+                        />
+                      </div>
+                    )}
+                  </fieldset>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-foreground flex items-center gap-2">
                       <Eye className="w-5 h-5" />

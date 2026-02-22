@@ -74,7 +74,12 @@ export function ReportModal({ isOpen, onClose, clientes }: ReportModalProps) {
         return;
       }
 
-      const filteredClientes = filterClientesByDate(clientes, start, end);
+      const contratosInRange = contratos.filter(c => {
+        const t = new Date(c.created_at).getTime();
+        return t >= start.getTime() && t <= end.getTime();
+      });
+
+      const filteredClientes = filterClientesByDate(clientes, start, end, contratosInRange);
 
       if (filteredClientes.length === 0) {
         toast.warning('No hay clientes registrados en el rango de fechas y horas seleccionado');
@@ -85,7 +90,11 @@ export function ReportModal({ isOpen, onClose, clientes }: ReportModalProps) {
         ? `Reporte_Clientes_${startDate}_${startTime.replace(':', '-')}_a_${endTime.replace(':', '-')}`
         : `Reporte_Clientes_${startDate}_${startTime.replace(':', '-')}_a_${endDate}_${endTime.replace(':', '-')}`;
 
-      await generateExcelReport(filteredClientes, reportName, contratos);
+      const rangeLabel = mode === 'single'
+        ? format(start, 'dd/MM/yyyy', { locale: undefined })
+        : `${format(start, 'dd/MM/yyyy', { locale: undefined })} al ${format(end, 'dd/MM/yyyy', { locale: undefined })}`;
+
+      await generateExcelReport(filteredClientes, reportName, contratosInRange, rangeLabel);
 
       onClose();
     } catch (error) {

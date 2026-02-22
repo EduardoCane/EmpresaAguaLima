@@ -48,7 +48,18 @@ function PdfPage({
       </div>
 
       {/* Body */}
-      <div className={bodyClass} style={pdfMode ? { marginTop: "3mm" } : undefined}>
+      <div
+        className={bodyClass}
+        style={{
+          ...(pdfMode ? { marginTop: "3mm" } : {}),
+          hyphens: "none",
+          WebkitHyphens: "none",
+          msHyphens: "none",
+          wordBreak: "normal",
+          overflowWrap: "normal",
+          whiteSpace: "normal",
+        }}
+      >
         {children}
       </div>
     </section>
@@ -76,12 +87,17 @@ function P({
 }) {
   return (
     <p
-      className={[
-        tight ? "mt-0" : "mt-2",
-        center ? "text-center" : "text-justify",
-        "hyphens-auto",
-      ].join(" ")}
-      style={{ hyphens: "auto" }}
+      className={[tight ? "mt-0" : "mt-2", center ? "text-center" : ""].join(" ")}
+      style={{
+        hyphens: "none",
+        WebkitHyphens: "none",
+        msHyphens: "none",
+        textAlign: center ? "center" : "justify",
+        textJustify: "inter-word",
+        wordBreak: "normal",
+        overflowWrap: "normal",
+        whiteSpace: "normal",
+      }}
     >
       {children}
     </p>
@@ -354,7 +370,7 @@ export function ContratoIntermitenteForm({
         .filter(Boolean)
         .join(" ")
     ) ||
-    normalize([client?.apellido, client?.nombre].filter(Boolean).join(" "));
+      "";
 
   const dni = normalize(client?.dni);
   const address = normalize(client?.direccion);
@@ -392,7 +408,7 @@ export function ContratoIntermitenteForm({
     remuneracionValue !== "" ? formatAmount(remuneracionValue) : "";
   const remuneracionDiaria =
     remuneracionValue !== "" ? formatAmount(remuneracionValue / 30) : "";
-  const celularValue = normalize(celular) || normalize(client?.celular);
+  const celularValue = normalize(celular);
 
   const BlankPdf = (props: { value?: string; widthMm?: number }) => (
     <Blank {...props} pdfMode={pdfMode} />
@@ -453,28 +469,18 @@ export function ContratoIntermitenteForm({
         </Title>
 
         <P>
-          Conste por el presente documento que se extiende por duplicado, EL CONTRATO
-          DE TRABAJO A PLAZO FIJO BAJO LA MODALIDAD DE “CONTRATO DE TEMPORADA”,
-          que celebran al amparo del Art. 67º de la Ley de Productividad y Competitividad
-          Laboral aprobado por D.S. Nº 003-97-TR, las normas de la Ley N° 31110, Ley del
-          Régimen Laboral Agrario y de Incentivos para el Sector Agrario y Riego,
-          Agroexportador y Agroindustrial, y su Reglamento; de una parte, la empresa{" "}
-          <span className="font-bold uppercase">AGUALIMA S.A.C.</span> con R.U.C N°{" "}
-          <span className="font-bold">20512217452</span>, y domiciliada en{" "}
-          <span className="font-bold">KM 512</span> Carretera Panamericana Norte,
-          Provincia de Virú, Departamento de La Libertad; a quien en adelante se le
-          denominará{" "}
+          Conste por el presente documento que se extiende por duplicado,<span className="font-bold uppercase"> EL CONTRATO
+          DE TRABAJO A PLAZO FIJO BAJO LA MODALIDAD DE “CONTRATO DE TEMPORADA”</span>,
+          que celebran al amparo del a Art. 67º de la Ley de Productividad y Competitividad Laboral aprobado por D. S. Nº 003-97-TR, las normas de la Ley N° 31110, Ley del Régimen Laboral Agrario y de Incentivos para el Sector Agrario y Riego, Agroexportador y Agroindustrial, y su Reglamento; de una parte, la empresa{" "}
+          <span className="font-bold uppercase">AGUALIMA S.A.C.</span> con R.U.C N° 20512217452, y domiciliada en KM 512 Carretera Panamericana Norte, Provincia de Virú, Departamento de La Libertad; a quien en adelante se le denominará{" "}
           <span className="font-bold uppercase">LA EMPRESA</span>, representada{" "}
-          <span className="font-bold uppercase">YESSICA SELENE TORRES VILCHEZ</span>{" "}
-          identificada con D.N.I N° <span className="font-bold">40642893</span> con
-          facultades inscritas en la P.E. 11829370 del Registro de Personas Jurídicas de
-          Lima, y de la otra parte el Sr(a).
+          representada YESSICA SELENE TORRES VILCHEZ identificada con D.N.I N° 40642893 con facultades inscritas en la P.E. 11829370 del Registro de Personas Jurídicas de Lima, y de la otra parte el Sr (a). 
         </P>
 
         <P center>
-          <BlankPdf widthMm={55} value={fullName} /> identificado(a) con DNI Nº{" "}
-          <BlankPdf widthMm={35} value={dni} /> con domicilio en{" "}
-          <BlankPdf widthMm={60} value={fullAddress} />
+           <span className="font-bold">{fullName}</span> identificado(a) con DNI Nº{" "}
+           <span className="font-bold">{dni}</span> con domicilio en{" "}
+           <span className="font-bold">{fullAddress}</span>
         </P>
 
         <P>
@@ -483,101 +489,60 @@ export function ContratoIntermitenteForm({
           términos y condiciones siguientes:
         </P>
 
-        <Clause>PRIMERA: DEL EMPLEADOR.-</Clause>
         <P>
-          LA EMPRESA es una persona jurídica del sector Privado, dedicada a la
-          agroindustria; esto es: cultivo de hortalizas y frutas. Entre ellos, el cultivo,
-          pre cosecha y cosecha, empaque y exportación de espárrago blanco, arándano,
-          mandarinas y paltas.
+           <span className="font-bold uppercase">PRIMERA: DEL EMPLEADOR.- LA EMPRESA </span> es una persona jurídica del sector Privado, dedicada a la agroindustria; esto es: cultivo de hortalizas y frutas. Entre ellos, el cultivo, pre cosecha y cosecha, empaque y exportación de espárrago blanco, arándano, mandarinas y paltas.
         </P>
         <P>
-          LA EMPRESA declara que se encuentra sujeta y acogida a los alcances del
-          Régimen Laboral Agrario, de conformidad con lo dispuesto en la Ley N° 31110,
-          Ley del Régimen Laboral Agrario y de Incentivos para el Sector Agrario y Riego,
-          Agroexportador y Agroindustrial, y su Reglamento.
+           <span className="font-bold uppercase">LA EMPRESA </span> declara que se encuentra sujeta y acogida a los alcances del Régimen Laboral Agrario, de conformidad con lo dispuesto en la Ley N° 31110, Ley del Régimen Laboral Agrario y de Incentivos para el Sector Agrario y Riego, Agroexportador y Agroindustrial, y su Reglamento.
         </P>
 
         <Clause>SEGUNDA: JUSTIFICACIÓN DE LA CONTRATACIÓN.-</Clause>
         <P>
-          Por el presente contrato, las partes convienen que EL(A) TRABAJADOR(A) preste
-          servicios intermitentes para EL EMPLEADOR en calidad de{" "}
-          <BlankPdf widthMm={45} value={puestoValue} /> a cambio de la retribución pactada en el presente
-          contrato, para cumplir y cubrir las necesidades de las actividades de EL
-          EMPLEADOR, que, por su naturaleza y particularidades del sector agrario, son
-          discontinuas.
+          Por el presente contrato, las partes convienen que EL(A) TRABAJADOR(A) preste servicios intermitentes para EL EMPLEADOR en calidad de {" "}
+           <span className="font-bold">{puestoValue}</span> a cambio de la retribución pactada en el presente contrato, para cumplir, y cubrir las necesidades de las actividades de EL EMPLEADOR, que, por su naturaleza y particularidades del sector agrario, son discontinuas.
         </P>
         <P>
-          Las partes declaran conocer que las necesidades de trabajo de EL EMPLEADOR,
-          al desarrollar una actividad de exportación agroindustrial, son discontinuas
-          debido a los factores climáticos, biológicos, y otros que condicionan las
-          actividades en el campo y, consecuentemente, todas las actividades conexas de
-          la empresa, por lo que estos factores determinan que EL(A) TRABAJADOR(A) preste
-          servicios de modo intermitente.
+          Las partes declaran conocer que las necesidades de trabajo de EL EMPLEADOR, al desarrollar una actividad de exportación agroindustrial, son discontinuas debido a los factores climáticos, biológicos, y otros que condicionan las actividades en el campo y consecuentemente todas las actividades conexas de la empresa, por lo que estos factores determinan que EL(A) TRABAJADOR(A) preste servicios de modo intermitente.
         </P>
         <P>
-          Las labores del(a) trabajador(a) son de naturaleza regular, pero con períodos
-          de discontinuidad, previo al período de tiempo en que los productos (frutas y
-          la hortaliza) estén aptos para ser cosechados.
+          Las labores del(a) trabajador (a) son de naturaleza regular, pero con periodos de discontinuidad, previo al periodo de tiempo en que los productos (frutas y la hortaliza) estén aptos para ser cosechados.
         </P>
         <P>
-          En este contexto, LA EMPRESA requiere de los servicios de EL(A) TRABAJADOR(A),
-          cuya contratación se encuentra íntimamente vinculada a la circunstancia
-          descrita precedentemente; lo cual constituye la causa objetiva de la presente
-          contratación modal a plazo determinado, quedando plenamente justificada su
-          temporalidad.
-        </P>
-
-        <Clause>TERCERA: CARGO Y FUNCIONES.-</Clause>
-        <P>
-          Por el presente documento, LA EMPRESA contrata a plazo fijo, bajo la modalidad
-          ya indicada en la cláusula precedente, los servicios personales de EL(LA)
-          TRABAJADOR(A), para que se realice las labores y funciones propias y
-          complementarias del puesto de <BlankPdf widthMm={45} value={puestoValue} /> pudiendo también
-          desarrollar cualquier otra función que le encomienden sus superiores.
-        </P>
-        <P>
-          La prestación de servicios deberá ser efectuada de manera personal, no
-          pudiendo EL(LA) TRABAJADOR(A) ser reemplazado ni ayudado por tercera persona.
-          EL(LA) TRABAJADOR(A) declara expresamente encontrarse capacitado para la
-          prestación de los servicios contratados, los cuales llevará adelante según
-          instrucciones que le imparta LA EMPRESA.
-        </P>
-        <P>
-          EL TRABAJADOR se compromete a ejecutar las tareas propias de su cargo en cada
-          oportunidad que se reanude la labor intermitente del contrato, cumpliendo con
-          lo que disponga la Empresa.
-        </P>
-        <P>
-          Las partes declaran que la labor intermitente del contrato se reanudará si y
-          solo si se verifica una necesidad de personal para atender las actividades de
-          EL EMPLEADOR con posición dispuesto por el Decreto Supremo N° 003-97-TR...
+          En este contexto, LA EMPRESA requiere de los servicios de EL(A) TRABAJADOR(A), cuya contratación se encuentra íntimamente vinculada a la circunstancia descrita precedentemente; lo cual constituye la causa objetiva de la presente contratación modal a plazo determinado, quedando plenamente justificada su temporalidad.
         </P>
 
         <P>
-          EL EMPLEADOR está facultado a rotar a EL(A) TRABAJADOR(A), dentro de su
-          categoría profesional y nivel, y sin modificar su remuneración, sin que ello
-          suponga una variación sustancial del presente contrato de trabajo...
+           <span className="font-bold uppercase">TERCERA: CARGO Y FUNCIONES. - </span> Por el presente documento, LA EMPRESA contrata a plazo fijo, bajo la modalidad ya indicada en la cláusula precedente, los servicios personales de EL (LA) TRABAJADOR (A), para que se realice las labores y funciones propias y complementarias del puesto de  <span className="font-bold">{puestoValue}</span> pudiendo también desarrollar cualquier  otra función que le encomienden sus superiores. La prestación de servicios deberá ser efectuada de manera personal,  no pudiendo  <span className="font-bold uppercase">  EL (LA) TRABAJADOR (A </span> ser reemplazado ni ayudado por tercera persona. <span className="font-bold uppercase"> EL (LA) TRABAJADOR (A) </span> declara expresamente encontrarse capacitado para la prestación de los servicios contratados, los cuales llevará adelante según instrucciones que le imparta <span className="font-bold uppercase">LA EMPRESA. </span>
+        </P>
+        <P>
+          EL TRABAJADOR se compromete a ejecutar las tareas propias de su cargo en cada oportunidad que se reanude la labor intermitente del contrato, cumpliendo con lo que disponga la Empresa.
+        </P>
+        <P>
+          Las  Partes declaran que la labor intermitente del contrato se reanudará si y solo si se verifica una necesidad de  personal para atender las actividades de EL EMPLEADOR con posición dispuesto por el  Decreto Supremo N° 003-97-TR, las circunstancias o condiciones que deben observarse para que se reanude la labor intermitente vienen dadas por la necesidad de vacante en las secciones correspondientes en sus Fundos y/o Campos  y/o  Plantas, para satisfacer los requerimientos  de  siembra, cultivo, cosecha, riego, procesamiento, envasado y congelamiento, entre otras y la verificación de puestos vacantes para atender tales actividades, con relación a requerimientos de producción.
         </P>
 
         <P>
-          Para el desarrollo de sus funciones, EL(LA) TRABAJADOR(A) recibirá equipos de
-          protección personal, herramientas u otros, que son de propiedad de LA EMPRESA...
+          EL EMPLEADOR está facultado a rotar a EL(A) TRABAJADOR(A), dentro de su categoría profesional y nivel, y sin modificar su remuneración, sin que ello suponga una variación sustancial del presente contrato de trabajo, en tanto que, EL EMPLEADOR, en ejercicio de su facultad de dirección y organización está facultado para incorporar estos cambios a fin de satisfacer las necesidades empresariales; pudiendo EL TRABAJADOR ejecutar las labores de OBRERO en otras unidades o áreas de la empresa.
         </P>
 
-        <Clause>CUARTA: PLAZO Y VIGENCIA.-</Clause>
         <P>
-          El plazo del presente contrato comenzará a regir desde el <BlankPdf widthMm={30} value={fechaInicioValue} />
-          concluyendo el día <BlankPdf widthMm={30} value={fechaFinValue} />, sin necesidad de comunicación previa
-          por parte de LA EMPRESA...
+          LAS PARTES convienen que EL(A) TRABAJADOR(A) puede prestar sus servicios tanto por unidad de tiempo o por unidad de obra, de acuerdo a los requerimientos de la producción diaria, por tal razón, cuando corresponda, el pago será por jornal diario, de conformidad con lo establecido en el presente contrato; o por destajo o tarea u obra ejecutada.
         </P>
 
-        <Clause>QUINTA: SUSPENSIÓN PERFECTA DE LABORES.-</Clause>
+        <P> 
+          Para el desarrollo de sus funciones, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A) </span> recibirá equipos de protección personal, herramientas u otros, que son de propiedad de <span className="font-bold uppercase">LA EMPRESA. </span> En caso de término del vínculo laboral, por cualquiera de los supuestos establecidos en la Ley, o a solicitud de, <span className="font-bold uppercase">LA EMPRESA, EL (LA) TRABAJADOR (A) </span> devolverá dichos equipos de forma inmediata. En caso de pérdida, robo o daño por el uso inadecuado de los equipos, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A) </span> deberá cumplir con reponerlos en plazo breve, y el costo será asumido en su totalidad por <span className="font-bold uppercase">EL (LA) TRABAJADOR (A) </span>, quien autoriza expresamente a  <span className="font-bold uppercase">LA EMPRESA </span> a descontar de su remuneración y liquidación de beneficios sociales, el correspondiente valor no devuelto, así como los gastos que pudieran generarse por la no devolución oportuna de los mismos.
+        </P>
+
         <P>
-          Por la propia naturaleza de las actividades que realiza LA EMPRESA, se
-          presentan circunstancias que paralizan en forma total o parcial las labores
-          de todos o algunos de sus trabajadores. Por ello, las partes convienen
-          expresamente en suspender en forma temporal y perfecta el presente contrato
-          cuando se presenten:
+          <span className="font-bold uppercase">CUARTA: PLAZO Y VIGENCIA.- </span> El plazo del presente contrato comenzará a regir desde el <span className="font-bold">{fechaInicioValue}</span> concluyendo el día <span className="font-bold">{fechaFinValue}</span>, sin necesidad de comunicación previa por parte de LA EMPRESA. La suspensión de las labores por alguna de las causas previstas legalmente como: descansos pre y post natal, accidente de trabajo, enfermedad, etc., no interrumpirá el plazo de duración del presente contrato. Sin embargo, las partes, de común acuerdo, podrán nuevamente prorrogar o renovar el presente contrato respetando el derecho de preferencia del trabajador previsto en las leyes que regulan la presente contratación.
+        </P>
+
+        <P> 
+          De conformidad con lo dispuesto en el artículo 10º del TUO del D. Leg.728, EL (LA) TRABAJADOR (A) se encontrará sujeto a un período de prueba de ley.
+        </P>
+
+        <P>
+          <span className="font-bold uppercase">QUINTA: SUSPENSIÓN PERFECTA DE LABORES.- </span> Por la propia naturaleza de las actividades que realiza <span className="font-bold uppercase">LA EMPRESA</span>, se presentan circunstancias que paralizan en forma total o parcial las labores de todos o algunos de sus trabajadores. Por ello, las partes convienen expresamente en suspender en forma temporal y perfecta el presente contrato cuando se presenten:
         </P>
 
         <ol className="mt-2 list-decimal pl-5 text-justify">
@@ -589,36 +554,19 @@ export function ContratoIntermitenteForm({
         </ol>
 
         <P>
-          EL(LA) TRABAJADOR(A) declara conocer que la suspensión perfecta de labores
-          acordada previamente implica que temporalmente cesa su obligación de prestar el
-          servicio y de LA EMPRESA de pagar la remuneración y demás beneficios laborales...
+         <span className="font-bold uppercase">EL (LA) TRABAJADOR(A)</span> declara conocer que la suspensión perfecta de labores acordada previamente implica que temporalmente cesa su obligación de prestar el servicio y de <span className="font-bold uppercase">LA EMPRESA</span> de pagar la remuneración y demás beneficios laborales. Para ello la empresa comunica a EL(A) TRABAJADOR(A) esta situación mediante una boleta de suspensión de labores o de descanso temporal, consignando en dicho documento el periodo de suspensión, así como la fecha probable en que se reanudarán las labores. EL(A) TRABAJADOR(A) deberá presentarse en el centro de trabajo en la oportunidad fijada, con la finalidad de reincorporarse al área que venía laborando o a otra nueva, según las disposiciones que la empresa emita o inclusive de recibir la comunicación de una nueva o la continuación de la suspensión.
         </P>
 
         <P>
-          La suspensión del presente contrato de trabajo por alguna de las causas previstas
-          en el Art. 11 del D.S. N° 003-97-TR, incluyendo las que se den por la naturaleza
-          intermitente ya señalada, no interrumpirán su vigencia, pues ésta seguirá siendo
-          la misma.
+          La suspensión del presente contrato de trabajo por alguna de las causas previstas en el Art. 11 del D.S. N° 003-97-TR, incluyendo las que se den por la naturaleza intermitente ya señalada, no interrumpirán su vigencia, pues ésta seguirá siendo la misma.
         </P>
 
         <P>
-          Respecto a esta suspensión perfecta de labores durante los periodos de inactividad
-          de las labores agrícolas, EL TRABAJADOR y la empresa acuerdan que transcurridos
-          03 días naturales desde el vencimiento del periodo de suspensión de labores...
+          Respecto a esta suspensión perfecta de labores durante los periodos de inactividad de las labores agrícolas, EL TRABAJADOR y la  empresa acuerdan que transcurridos 03 días naturales desde el vencimiento del periodo de suspensión de labores (descansos temporales), sin que EL TRABAJADOR se haya apersonado al centro de trabajo, se entenderá que ello implica la manifestación del trabajador de no continuar la relación laboral y operará la extinción diferida del vínculo laboral por mutuo disenso, de conformidad con lo establecido en el artículo 16, inciso d) y el artículo 19° del Decreto Supremo N° 003-97-TR.
         </P>
 
-        <Clause>SEXTA: HORARIO Y JORNADA LABORAL.-</Clause>
         <P>
-          EL (LA) TRABAJADOR (A) observará bajo responsabilidad, el horario de trabajo
-          establecido por LA EMPRESA de conformidad con las normas contenidas en el Decreto
-          Supremo N° 007-2002-TR, que aprueba el Texto Único Ordenado de la Ley de Jornada
-          de Trabajo, Horario y Trabajo en Sobretiempo, y su Reglamento, aprobado por
-          Decreto Supremo N° 008-2002-TR. EL (LA) TRABAJADOR (A), tendrá una jornada laboral
-          de 48 horas semanales, respetando el día de descanso semanal obligatorio, y el
-          tiempo de refrigerio mínimo, el mismo que, conforme a Ley, no forma parte de la
-          jornada de trabajo. En uso de sus facultades directrices, y de acuerdo a lo
-          dispuesto en el artículo 2º del D. Leg.713, según las necesidades del negocio, el
-          descanso podrá ser rotativo.
+          <span className="font-bold uppercase"> SEXTA: HORARIO Y JORNADA LABORAL.- EL (LA) TRABAJADOR(A)</span>  observará bajo responsabilidad, el horario de trabajo establecido por <span className="font-bold uppercase">LA EMPRESA</span> de conformidad con las normas contenidas en el Decreto Supremo N° 007-2002-TR, que aprueba el Texto Único Ordenado de la Ley de Jornada de Trabajo, Horario y Trabajo en Sobretiempo, y su Reglamento, aprobado por Decreto Supremo N° 008-2002-TR. <span className="font-bold uppercase"></span>, tendrá una jornada laboral de 48 horas semanales, respetando el día de descanso semanal obligatorio, y el tiempo de refrigerio mínimo, el mismo que, conforme a Ley, no forma parte de la jornada de trabajo. En uso de sus facultades directrices, y de acuerdo a lo dispuesto en el artículo 2º del D. Leg.713, según las necesidades del negocio, el descanso podrá ser rotativo. 
         </P>
         </PdfPage>
       )}
@@ -626,211 +574,107 @@ export function ContratoIntermitenteForm({
         <PdfPage headerLeft="Versión 02" headerRight={codigo} pageNumber={2} pdfMode={pdfMode}>
   {/* Continúa cláusula SEXTA */}
   <P>
-    EL (LA) TRABAJADOR (A) observará el horario de trabajo establecido en LA EMPRESA;
-    sin embargo, LA EMPRESA podrá introducir cambios necesarios por la propia naturaleza
-    variable de las actividades agrícolas y agronómicas. En tal sentido, cuando se generen
-    las llamadas bajas de producción, no se prevén horas en forma de tiempo y trabajo por
-    lo cual, LA EMPRESA, de manera unilateral y ateniéndose a la norma de LA EMPRESA, la
-    jornada laboral diaria se restringirá al tiempo necesario de acuerdo a los requerimientos
-    de LA EMPRESA, y a la observancia de sus normas técnicas.
+    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> observará el horario de trabajo establecido en <span className="font-bold uppercase">LA EMPRESA</span>; sin embargo, <span className="font-bold uppercase">LA EMPRESA</span> podrá introducir cambios necesarios por la propia naturaleza variable de las actividades agrícolas y agroindustriales. En tal sentido, cuando se generen las llamadas bajas de producción, no previsibles en términos de tiempo y sujetas por lo general a factores no siempre determinados y ajenos a <span className="font-bold uppercase">LA EMPRESA</span>, la jornada laboral diaria se restringirá al tiempo necesario de acuerdo a los requerimientos de <span className="font-bold uppercase">LA EMPRESA</span> y a la observancia de sus normas técnicas.
   </P>
 
   <P>
-    EL (LA) TRABAJADOR (A) y LA EMPRESA acuerdan que, de existir trabajo en sobretiempo,
-    éste será compensado con tiempo de descanso equivalente, de acuerdo a lo regulado en el
-    artículo 10° del Decreto Supremo N° 007-2002-TR. A fin de validar el trabajo en
-    sobretiempo, EL TRABAJADOR deberá cumplir con el procedimiento establecido por LA EMPRESA
-    para la autorización de trabajo en sobretiempo y firmar el formato de autorización de
-    trabajo en sobretiempo correspondiente.
+    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> y <span className="font-bold uppercase">LA EMPRESA</span> acuerdan que, de existir trabajo en sobretiempo, éste será compensado con tiempo de descanso equivalente, de acuerdo a lo regulado en el artículo 10° del Decreto Supremo No. 007-2002-TR. A fin de validar el trabajo en sobretiempo realizado, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> deberá cumplir con el procedimiento establecido por <span className="font-bold uppercase">LA EMPRESA</span> para la autorización de trabajo en sobretiempo y firmar el formato de autorización de trabajo en sobretiempo correspondiente.  
   </P>
 
   <P>
-    LA EMPRESA, en ejercicio de su poder de dirección, podrá variar los horarios fijados,
-    estableciendo nuevos turnos y horarios de trabajo, de acuerdo a sus necesidades de
-    operación y control. Sin perjuicio de lo pactado en la presente cláusula, EL (LA)
-    TRABAJADOR (A) se compromete a laborar en sobretiempo en la oportunidad que sea requerido,
-    si así lo estima necesario, y de forma voluntaria, durante la jornada de trabajo, y en
-    los días u horas, inclusive días de descanso y feriados, que por necesidades concretas
-    de las actividades de LA EMPRESA, o por requerimientos del negocio, así lo estime.
-    LA EMPRESA, en ejercicio de sus facultades directrices, lo requiera, los cuales serán
-    adicionalmente remunerados conforme a la normatividad vigente.
-  </P>
-
-  {/* SÉPTIMA */}
-  <Clause>SEPTIMA: REMUNERACIÓN.-</Clause>
-  <P>
-    Conforme a lo dispuesto en literal d) del artículo 3° de la Ley N° 31110, EL (LA)
-    TRABAJADOR (A) percibirá una Remuneración diaria (RD) ascendente a{" "}
-    <BlankPdf value={remuneracionDiaria} widthMm={26} /> o <BlankPdf value={remuneracionMensual} widthMm={26} /> por periodo mensual.
-    Dicho monto, de acuerdo al alcance de la Ley N° 31110 (Ley del Régimen Laboral Agrario y
-    de Incentivos para el Sector Agrario y Riego, Agroexportador y Agroindustrial), incluye
-    alimentación mínima vital. Asimismo, se considera que en la planilla de remuneraciones se
-    desagrega el margen independiente a la remuneración básica, CTS y gratificaciones, de
-    acuerdo al porcentaje que corresponda a dicho concepto, y se actualizarán en el mismo
-    porcentaje que los incrementos de la Remuneración Mínima Vital.
+    <span className="font-bold uppercase">LA EMPRESA</span>, en ejercicio de su poder de dirección, podrá variar los horarios fijados, estableciendo nuevos turnos y horarios de trabajo, de acuerdo a sus necesidades de operación y dentro del marco legal y parámetros establecidos en el antes citado cuerpo normativo y su Reglamento aprobado por D.S.008-2002-TR. Sin perjuicio de lo pactado en la presente cláusula, <span className="font-bold uppercase">EL (LA)
+    TRABAJADOR (A)</span> se compromete a mantener un permanente involucramiento y disponibilidad para prestar la colaboración necesaria, y de forma voluntaria, durante la jornada de trabajo, y en los días u horas, inclusive días de descanso y feriados, que por necesidades concretas de las actividades de <span className="font-bold uppercase">LA EMPRESA</span>, o por requerimientos especiales de la misma,
+    <span className="font-bold uppercase">LA EMPRESA</span>, -en ejercicio de sus facultades directrices-, lo requiera, los cuales serán debidamente remunerados conforme a la normatividad vigente.
   </P>
 
   <P>
-    El importe remunerativo estará sujeto a las deducciones y retenciones de ley. La ausencia
-    injustificada por parte de EL (LA) TRABAJADOR (A) implica la pérdida de la remuneración
-    básica de modo proporcional a la duración de dicha ausencia, sin perjuicio del ejercicio
-    de las facultades disciplinarias propias de LA EMPRESA, previa evaluación y de acuerdo a
-    su Reglamento Interno. Serán de cargo de EL (LA) TRABAJADOR (A) el pago de impuestos a la
-    renta, aportes a los organismos que son de su cargo, aportes y contribuciones previsionales
-    y sociales a su cargo, así como cualquier otro tributo que grave las remuneraciones por
-    persona dependiente. LA EMPRESA cumplirá con efectuar las retenciones y descuentos de ley.
-    LA EMPRESA se reserva el derecho de hacer las retenciones que de acuerdo a ley o mandato
-    judicial correspondan.
+    <span className="font-bold uppercase">SEPTIMA: REMUNERACIÓN.-</span> - Conforme a lo dispuesto en el literal d) del artículo 3° de la Ley N° 31110, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> percibirá una Remuneración diaria (RD) ascendente a {" "}
+    <span className="font-bold uppercase">{remuneracionDiaria}</span> o <span className="font-bold uppercase">{remuneracionMensual}</span> por período mensual.
+    Dicho importe, de acuerdo a los alcances de la Ley N° 31110 Ley del Régimen Laboral Agrario y de Incentivos para el  Sector Agrario y Riego, Agroexportador y Agroindustrial, incluye a la compensación por tiempo de servicios y las gratificaciones de Fiestas Patrias y Navidad, y se actualizará en el mismo porcentaje que los incrementos de la Remuneración Mínima Vital. Asimismo, se precisa que en la planilla de remuneraciones se disgregará de manera independiente la remuneración básica, CTS y gratificaciones, de acuerdo a los porcentajes que corresponden a cada concepto.
   </P>
 
-  {/* OCTAVA */}
-  <Clause>OCTAVA: EL (LA) TRABAJADOR (A) opta por pago mensual prorrateado.-</Clause>
   <P>
-    EL (LA) TRABAJADOR (A), de acuerdo a lo previsto en el inciso d) del artículo 3 de la Ley
-    N° 31110, opta por percibir el pago de sus beneficios sociales (CTS y gratificaciones de
-    Fiestas Patrias y Navidad) de manera mensual y prorrateada, con la remuneración diaria.
+    El importe remunerativo estará sujeto a las deducciones y retenciones de ley, las ausencias injustificadas por parte de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> implican la pérdida de la remuneración básica de modo proporcional a la duración de dicha ausencia, sin perjuicio del ejercicio de las facultades disciplinarias propias de <span className="font-bold uppercase">LA EMPRESA</span>, previsto en la legislación laboral y su Reglamento Interno. Será de cargo de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> el pago del Impuesto a la Renta, aplicable a toda remuneración que se le abone, los aportes y contribuciones previsionales y sociales a su cargo, así como cualquier otro tributo que grave las remuneraciones del personal dependiente. <span className="font-bold uppercase">LA EMPRESA</span> cumplirá con efectuar las retenciones y descuentos de ley. <span className="font-bold uppercase">LA EMPRESA</span> se reserva el derecho de hacer las retenciones que de acuerdo a ley o mandato judicial correspondiente.
   </P>
 
-  {/* NOVENA */}
-  <Clause>NOVENA: PODER DE DIRECCIÓN.-</Clause>
   <P>
-    LA EMPRESA se reserva el derecho a reubicar a EL (LA) TRABAJADOR (A) en otro cargo de igual
+    <span className="font-bold uppercase">OCTAVA: EL (LA) TRABAJADOR (A)</span>, se reserva el derecho a reubicar a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> en otro cargo de igual categoría dentro de la organización, de acuerdo a sus requerimientos y conveniencias siempre que dicho cambio no implique reducción inmotivada de remuneración o categoría.
+  </P>
+
+
+  <P>
+    <span className="font-bold uppercase">NOVENO: PODER DE DIRECCIÓN. - LA EMPRESA</span> se reserva el derecho a reubicar a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> en otro cargo de igual
     categoría dentro de la organización, de acuerdo a sus requerimientos y conveniencias, siempre
     que dicho cambio no implique reducción inmotivada de remuneración o categoría.
   </P>
 
   <P>
-    LA EMPRESA, al amparo del artículo 9° de la Ley de Productividad y Competitividad Laboral
-    (LPCL), está facultada en introducir cambios o modificaciones en el horario y jornadas de
-    trabajo, establecer jornadas acumulativas, alternativas, flexibles, compensatorias y horarios
-    diferenciados, así como la forma y modalidad de la prestación de las labores, dentro de
-    criterios de razonabilidad y teniendo en cuenta las necesidades del centro de trabajo sin que
-    dichas variaciones signifiquen menoscabo de categoría y/o remuneración.
-  </P>
-
-  {/* DÉCIMA */}
-  <Clause>DECIMA: DEBERES DEL TRABAJADOR.-</Clause>
-  <P>
-    Durante el desarrollo de las labores que le competen a EL (LA) TRABAJADOR (A), éste se
-    ajustará a las disposiciones de dirección y administración de LA EMPRESA. Asimismo, deberá
-    cumplir con las normas propias del centro de trabajo, las contenidas en el Reglamento Interno
-    de Trabajo, de Seguridad y Salud en el Trabajo, de Seguridad Alimentaria y demás normas
-    laborales y las que se impartan por necesidades del servicio, de conformidad con el artículo
-    9° del T.U.O. de la Ley de Productividad y Competitividad Laboral aprobado por D.S. N° 003-97-TR;
-    asimismo, se compromete a cumplir las obligaciones con buena fe, lealtad, fidelidad y
-    responsabilidad, velando por los intereses de LA EMPRESA y cumpliendo con los estándares de
-    asistencia laboral y calidad en las labores encargadas.
+    <span className="font-bold uppercase">LA EMPRESA</span> ,  al amparo del artículo 9° de la Ley de Productividad y Competitividad Laboral (LPCL), está facultada para introducir cambios, modificaciones al horario y jornada de trabajo, establecer jornadas acumulativas, alternativas, flexibles, compensatorias y horarios diferenciados, así como la forma y modalidad de la prestación de las labores, dentro de criterios de razonabilidad y teniendo en cuenta las necesidades del centro de trabajo; sin que dichas variaciones signifiquen menoscabo de categoría y/o remuneración.
   </P>
 
   <P>
-    EL (LA) TRABAJADOR (A) se obliga ante LA EMPRESA en forma concreta a ejecutar mientras dure
-    la vigencia de su contrato las siguientes reglas de trabajo:
+    <span className="font-bold uppercase">DECIMA: DEBERES DEL TRABAJADOR.-</span>  Durante el desarrollo de las labores que le competen a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, éste se sujetará a las disposiciones de dirección y administración de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>.
+  </P>
+
+  <P>
+    Asimismo, deberá cumplir con las normas propias del centro de trabajo, las contenidas en el Reglamento Interno de Trabajo, de Seguridad y Salud en el Trabajo, de Seguridad Alimentaria y demás normas laborales; y las que se impartan por necesidades del servicio en ejercicio de las facultades de administración de <span className="font-bold uppercase">LA EMPRESA</span>, de conformidad con el artículo 9° del T.U.O de la Ley de Productividad y Competitividad Laboral aprobado por D.S. Nº 003-97-TR; asimismo, se compromete a cumplir sus obligaciones con buena fe, lealtad, eficiencia y responsabilidad, velando por los intereses de <span className="font-bold uppercase">LA EMPRESA</span>, y cumpliendo con los estándares de asistencia laboral y ejecución de las tareas encargadas.
+  </P>
+
+  <P>
+    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se obliga ante <span className="font-bold uppercase">LA EMPRESA</span> en forma expresa a ejecutar mientras dure la vigencia de su contrato las siguientes reglas de trabajo:
   </P>
 
   <ol className="mt-2 list-decimal pl-5 text-justify">
     <li className="mt-1">
-      Cumplir y acatar las órdenes y disposiciones que bajo dirección y control de la empresa
-      puedan recibir directamente de sus jefes inmediatos superiores o los gerentes de LA EMPRESA.
+      Cumplir y acatar las órdenes y disposiciones que bajo dirección y control de la empresa pudiera recibir directamente de sus jefes inmediatos superiores o los gerentes de <span className="font-bold uppercase">LA EMPRESA</span>.
     </li>
     <li className="mt-1">
-      Cumplir con los procesos y métodos de trabajo internos a su puesto de labor, así como las
-      entregas y condiciones de trabajo del puesto que ocupa, de conformidad a las disposiciones
-      internas de LA EMPRESA y normas convencionales vigentes.
+      Cumplir con los procesos y métodos de trabajo inherentes a su puesto de labor, así como las cargas y condiciones de trabajo del puesto que ocupe, de conformidad a las disposiciones internas de <span className="font-bold uppercase">LA EMPRESA</span> y/o normas convencionales vigentes.
     </li>
     <li className="mt-1">
-      Reconocer la facultad de LA EMPRESA a planificar y ordenar las labores que debe desarrollar
-      el trabajador, así como la facultad de poder reubicar a EL (LA) TRABAJADOR (A) en horas y
-      turnos que requiera su actividad, o en cualquier otro puesto de similar categoría y
-      remuneración, o en otra área o sección de trabajo que guarde relación con el origen de lo
-      contratado.
+      Reconocer la facultad de <span className="font-bold uppercase">LA EMPRESA</span> a planificar y ordenar las labores que debe desarrollar el trabajador, así como reservarse la facultad de poder reubicar a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> en los horarios y turnos que requiera su actividad, o en cualquier otro puesto de similar categoría y remuneración, o en otra área o sección de trabajo, que guarde relación con el origen de la contratación.
     </li>
     <li className="mt-1">
-      A conocer que las obligaciones y condiciones de trabajo establecidas en la presente cláusula
-      son solamente enunciativas, pudiéndose dar otras durante la ejecución del contrato, las
-      cuales serán ampliadas también por EL (LA) TRABAJADOR (A) siempre que se refieran a
-      disposiciones de carácter laboral y que sean necesarias para optimizar y hacer productiva,
-      a criterio del empleador, la labor contratada.
+      A conocer que las obligaciones y condiciones de trabajo establecidas en la presente clausula con solamente enunciativas pudiéndose dar otras más durante la ejecución del contrato, las cuales serán cumplidas también por <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> siempre que se refieran a disposiciones de carácter laboral y que sean necesarias para optimizar y hacer productiva, a criterio del empleador, la labor contratada.
     </li>
     <li className="mt-1">
-      A cumplir con las disposiciones vigentes en la empresa y actividades relacionadas con
-      aspectos ambientales, de calidad y seguridad que existan en LA EMPRESA.
+      A cumplir con las disposiciones vigentes en la empresa y certificaciones relacionadas con aspectos ambientales, de calidad y seguridad que existan en <span className="font-bold uppercase">LA EMPRESA</span>.
     </li>
   </ol>
 
   <P>
-    La enumeración antes indicada es enunciativa y no limitativa, toda vez que, de acuerdo a las
-    necesidades de LA EMPRESA, ésta puede introducir obligaciones adicionales y/o conexas que no
-    resulten contrarias a las descritas en el presente documento.
-  </P>
-
-  {/* DÉCIMO PRIMERA */}
-  <Clause>DÉCIMO PRIMERA: CONFIDENCIALIDAD.-</Clause>
-  <P>
-    EL (LA) TRABAJADOR (A) mantendrá confidencialidad absoluta durante la vigencia de este
-    contrato, respecto de las informaciones y documentos en general proporcionados por LA EMPRESA
-    o que hubiera obtenido en ejecución del mismo. Asimismo, se obliga a no divulgar a terceros
-    ajenos a la empresa (dentro de los que se incluyen a los medios de comunicación), toda
-    información legal, financiera, contable o general relativa al desarrollo de las operaciones o
-    actividades de LA EMPRESA, incluidas sus sistemas y procesos de exportación, importación,
-    producción y/o comercialización y marketing, ya sea que estén incorporados o no en documentos
-    escritos, archivos o cualquier otro medio.
+    La enumeración antes indicada es enunciativa y no limitativa, toda vez que, de acuerdo a las necesidades de <span className="font-bold uppercase">LA EMPRESA</span>, ésta puede introducir obligaciones adicionales y/o conexas que no resulten contrarias a las descritas en el presente documento.
   </P>
 
   <P>
-    EL (LA) TRABAJADOR (A) se compromete a no retirar de LA EMPRESA, mediante medios físicos,
-    electrónicos u otros, ningún proceso o programa de cómputo. Además, velará para que durante el
-    período que realice sus labores, terceras personas no tengan acceso a retirar parcial o
-    totalmente cualquiera de los programas de cómputo de propiedad de LA EMPRESA o información
-    relativa a sus datos.
+    <span className="font-bold uppercase">DÉCIMO PRIMERA: CONFIDENCIALIDAD.- EL (LA) TRABAJADOR (A)</span> mantendrá confidencialidad absoluta durante la vigencia de este contrato, respecto de las informaciones y documentos en general proporcionados por <span className="font-bold uppercase">LA EMPRESA</span> o que hubiera obtenido en ejecución del mismo. Asimismo, se obliga a no divulgar a terceros ajenos a la empresa (dentro de los que se incluyen a los medios de comunicación), toda información legal, financiera, contable o aquella relativa al desarrollo de las operaciones o actividades de <span className="font-bold uppercase">LA EMPRESA</span> , incluidos sus clientes o el diseño de sus sistemas y procesos de exportación, importación, producción y/o comercialización y marketing, ya sea que estén incorporados o no en documentos escritos, archivos, cintas magnéticas, cassets, disquetes, videos, películas, entre otros medios que le fueran proporcionados directa o indirectamente, por ejecutivos, analistas financieros, contadores o abogados relacionados directa o indirectamente con <span className="font-bold uppercase">LA EMPRESA</span>.
   </P>
 
   <P>
-    EL (LA) TRABAJADOR (A) responderá ante LA EMPRESA por los daños y perjuicios derivados del
-    incumplimiento de lo previsto en esta cláusula, sin perjuicio de la incursión en falta grave y
-    la aplicación de las medidas legales correspondientes.
+    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete a no retirar de <span className="font-bold uppercase">LA EMPRESA</span>, mediante medios físicos, electrónicos u otros, ningún proceso o programa de cómputo. Además de las obligaciones anteriores que son de índole personal, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> velará para que durante el periodo que se realice sus labores, terceras personas no tengan acceso a retirar parcial o totalmente cualquiera de los programas de cómputo de propiedad de <span className="font-bold uppercase">LA EMPRESA</span> o información relativa a sus clientes.
   </P>
 
   <P>
-    Esta obligación subsistirá aún después de terminada la relación laboral y su incumplimiento
-    genera la correspondiente responsabilidad por daños y perjuicios, sin desmedro de la persecución
-    penal por el delito previsto en el artículo 165° del Código Penal y además por lo dispuesto por
-    el inciso d) del artículo 25° del D.S. 003-97-TR. EL (LA) TRABAJADOR (A) se obliga a entregar, al
-    término del contrato, los documentos, materiales e informes a los que hubiere tenido acceso con
-    motivo de la ejecución del mismo.
+    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>  responderá ante <span className="font-bold uppercase">LA EMPRESA</span> por los daños y perjuicios que cause derivados del incumplimiento de lo previsto en esta cláusula, sin perjuicio de la incursión en falta grave por expreso incumplimiento de sus obligaciones laborales y la buena fe laboral, conforme previsto en la Ley de Productividad y Competitividad Laboral, lo cual configura causal de despido justificado.
   </P>
 
-  {/* DÉCIMO SEGUNDA */}
-  <Clause>DÉCIMO SEGUNDA: NO DISCRIMINACIÓN.-</Clause>
   <P>
-    LA EMPRESA, en observancia de lo previsto en el artículo 2, inciso 2 de la Constitución Política
-    del Perú y en el Convenio 111 de la Organización Internacional del Trabajo, declara que en la
-    presente contratación no ha mediado discriminación ni favoritismo sin causa objetiva, y se obliga
-    a no efectuar distinciones, exclusiones o preferencias respecto de EL (LA) TRABAJADOR (A), basadas
-    en motivos de raza, color, sexo, identidad de género, orientación sexual, embarazo, discapacidad,
-    condición socioeconómica, edad, lengua, opinión política, sindicación, ascendencia, nacionalidad,
-    origen social, idioma, condición económica ni cualquier otro motivo especificado por la legislación
-    nacional, el Tribunal Constitucional o la OIT.
+    Esta obligación subsistirá aún después de terminada la relación laboral y su incumplimiento genera la correspondiente responsabilidad por daños y perjuicios, sin desmedro de la persecución penal por el delito previsto en el artículo 165° del Código Penal y además por lo dispuesto por el inciso d) del artículo 25º del D.S. 003-97-TR. EL (LA) TRABAJADOR (A) se obliga a entregar, al término del contrato, los documentos, materiales e informes a los que hubiera tenido acceso con motivo de la ejecución del mismo.
   </P>
 
-  {/* DÉCIMO TERCERA */}
-  <Clause>DÉCIMO TERCERA: SEGURIDAD Y SALUD EN EL TRABAJO.-</Clause>
   <P>
-    EL (LA) TRABAJADOR (A) se compromete a respetar y dar estricto cumplimiento a las normas sobre
-    seguridad y salud en el trabajo que LA EMPRESA establezca como medidas de prevención de accidentes
-    y protección de los trabajadores y de todos los bienes e instalaciones de la misma. Asimismo,
-    deberá cooperar plenamente en caso se accidente y/o incidentes, así como en la prevención de los
-    mismos, quedando establecido que todo accidente de trabajo del cual tuviera conocimiento EL (LA)
-    TRABAJADOR (A) deberá ser reportado en forma inmediata a fin de tomar las medidas urgentes que sean
-    necesarias. Igualmente, EL (LA) TRABAJADOR (A) se compromete a contribuir al desarrollo de los
-    programas de capacitación y entrenamiento que implemente LA EMPRESA en materia de seguridad y salud
-    en el trabajo.
+    <span className="font-bold uppercase">DÉCIMO SEGUNDA: NO DISCRIMINACIÓN.- LA EMPRESA</span>, en observancia de lo prescrito en el artículo 2, inciso 2 de la Constitución Política del Perú y en el Convenio 111 de la Organización Internacional del Trabajo, y consciente de que todas las personas son únicas e irrepetibles y de que su identidad está formada por una diversidad de aspectos, muchos de los cuales no involucran una mayor o menor idoneidad para el puesto de trabajo que puedan ocupar; declara que en la presente contratación no ha mediado discriminación ni favoritismo sin causa objetiva, y se obliga a no efectuar distinciones, exclusiones o preferencias, respecto de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>,  basadas en motivos de raza, color, sexo, identidad de género, orientación sexual, embarazo, discapacidad, condición seropositiva, conocida o supuesta; religión, opinión política, sindicación, ascendencia, nacionalidad, origen social, lengua, condición económica ni cualquier otro motivo especificado por la legislación nacional, el Tribunal Constitucional o la Organización Internacional del Trabajo.
+  </P>
+
+  <P>
+    <span className="font-bold uppercase">DÉCIMO TERCERA: SEGURIDAD Y SALUD EN EL TRABAJO. - EL (LA) TRABAJADOR (A)</span> se compromete a respetar y dar estricto cumplimiento a las normas sobre seguridad y salud en el trabajo que LA EMPRESA establezca como medidas de prevención de accidentes y protección de los trabajadores y de todos los bienes e instalaciones de la misma. Asimismo, deberá cooperar plenamente en casos de accidente y/o siniestros, así como en la prevención de los mismos, quedando establecido que todo accidente de trabajo acerca del cual tuviera conocimiento <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, deberá ser reportado en forma inmediata a fin de tomar las medidas urgentes que sean necesarias. Igualmente, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete a contribuir al desarrollo de los programas de capacitación y entrenamiento que implemente <span className="font-bold uppercase">LA EMPRESA</span> en materia de seguridad y salud en el trabajo.
   </P>
         </PdfPage>
       )}
       {pagePart !== 1 && pagePart !== 2 && pagePart !== 4 && (
         <PdfPage headerLeft="Version 02" headerRight={codigo} pageNumber={3} pdfMode={pdfMode}>
   <P tight>
-    LA EMPRESA, en cumplimiento de lo dispuesto por el artículo 35° de la Ley 29783,
+    <span className="font-bold uppercase">LA EMPRESA</span>, en cumplimiento de lo dispuesto por el artículo 35° de la Ley 29783,
     Ley de Seguridad y Salud en el trabajo, entrega a{" "}
     <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> una descripción
     de las recomendaciones de seguridad y salud en el trabajo para el puesto que se
@@ -856,7 +700,7 @@ export function ContratoIntermitenteForm({
   </P>
 
   <P>
-    LA EMPRESA se compromete a actualizar periódicamente la descripción de las
+    <span className="font-bold uppercase">LA EMPRESA</span> se compromete a actualizar periódicamente la descripción de las
     recomendaciones de seguridad y salud en el trabajo de{" "}
     <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, en particular,
     en aquellos supuestos en que se le asignen nuevas funciones o cuando las nuevas
@@ -1078,6 +922,7 @@ export function ContratoIntermitenteForm({
     </div>
   );
 }
+
 
 
 

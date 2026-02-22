@@ -22,15 +22,31 @@ export function useReportGenerator() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
-  const filterClientesByDate = (clientes: Cliente[], startDate: Date, endDate: Date): Cliente[] => {
+  const getClienteContractDates = (clienteId: string, contratos: Contrato[]): Date[] => {
+    return contratos
+      .filter(c => c.cliente_id === clienteId)
+      .map(c => toDateTimeOrNull(c.created_at))
+      .filter((d): d is Date => !!d);
+  };
+
+  const filterClientesByDate = (
+    clientes: Cliente[],
+    startDate: Date,
+    endDate: Date,
+    contratos: Contrato[] = []
+  ): Cliente[] => {
     const startTime = startDate.getTime();
     const endTime = endDate.getTime();
 
     return clientes.filter(cliente => {
-      const createdAt = toDateTimeOrNull(cliente.created_at);
-      if (!createdAt) return false;
-      const createdAtTime = createdAt.getTime();
-      return createdAtTime >= startTime && createdAtTime <= endTime;
+      const candidateDates: Date[] = getClienteContractDates(cliente.id, contratos);
+
+      if (candidateDates.length === 0) return false;
+
+      return candidateDates.some(date => {
+        const t = date.getTime();
+        return t >= startTime && t <= endTime;
+      });
     });
   };
 
@@ -87,6 +103,18 @@ export function useReportGenerator() {
     return value ? 'SI' : 'NO';
   };
 
+  const getFilled = <T>(...values: (T | null | undefined | '' | 0)[]): T | null => {
+    for (const value of values) {
+      if (value === null || value === undefined) continue;
+      if (typeof value === 'string') {
+        if (value.trim().length === 0) continue;
+        return value as T;
+      }
+      return value as T;
+    }
+    return null;
+  };
+
   const buildReportRows = (clientes: Cliente[], contratos: Contrato[]) => {
     const contratosMap = getLatestContratoByCliente(contratos);
     return clientes.map(cliente => {
@@ -103,10 +131,33 @@ export function useReportGenerator() {
         [apellidos, nombres].filter(Boolean).join(' ')
       ).trim();
       const fechaNacimiento = toDateOrNull(cliente.fecha_nac);
+      const fechaReclutamiento = contrato?.created_at || cliente.fecha_reclutamiento || cliente.created_at || null;
+      const fechaInicioAfiliacion = cliente.fecha_inicio_afiliacion || null;
+      const fechaInicioContrato = getFilled<string | null>(ficha?.periodoDesde, cliente.fecha_inicio_contrato);
+      const fechaTerminoContrato = getFilled<string | null>(ficha?.periodoHasta, cliente.fecha_termino_contrato);
       const edad = cliente.edad ?? (fechaNacimiento ? differenceInYears(new Date(), fechaNacimiento) : null);
 
+      const area = getFilled<string>(ficha?.unidadArea, cliente.area);
+      const descripcionZona = getFilled<string>(ficha?.descripcion_zona, cliente.descripcion_zona);
+      const asignacion = getFilled<string>(ficha?.asignacion, cliente.asignacion);
+      const direccion = getFilled<string>(ficha?.direccion, cliente.direccion);
+      const distrito = getFilled<string>(ficha?.distrito, cliente.distrito);
+      const provincia = getFilled<string>(ficha?.provincia, cliente.provincia);
+      const departamento = getFilled<string>(ficha?.departamento, cliente.departamento);
+      const cargo = getFilled<string>(ficha?.puesto, cliente.cargo);
+      const remuneracionVal = getFilled<any>(ficha?.remuneracion, cliente.remuneracion);
+      const tipoContratoVal = getFilled<string>(ficha?.tipo_contrato, cliente.tipo_contrato, contrato?.contenido?.split('\n')[0]);
+      const planillaVal = getFilled<string>(ficha?.planilla, cliente.planilla);
+      const observacionesVal = getFilled<string>(ficha?.observaciones, cliente.observaciones);
+      const referidoVal = getFilled<string>(ficha?.referido, cliente.referido);
+      const lugarVal = getFilled<string>(ficha?.lugar, cliente.lugar);
+      const cooperadorVal = getFilled<string>(ficha?.cooperador, cliente.cooperador);
+      const idAfpVal = getFilled<string>(cliente.id_afp);
+      const cusppVal = getFilled<string>(cliente.cuspp);
+      const porcentajeComisionVal = getFilled<number | string>(cliente.porcentaje_comision as any);
+
       return [
-        formatDateOrND(cliente.fecha_reclutamiento),
+        formatDateOrND(fechaReclutamiento),
         formatTextOrND(cliente.cod),
         formatTextOrND((cliente as any).repetir_codigo ?? cliente.cod),
         formatTextOrND(cliente.a_paterno),
@@ -116,32 +167,36 @@ export function useReportGenerator() {
         formatTextOrND(cliente.dni),
         formatDateOrND(cliente.fecha_nac),
         formatNumberOrND(edad),
-        formatTextOrND(cliente.area ?? ficha?.unidadArea),
-        formatTextOrND(cliente.descripcion_zona ?? ficha?.descripcion_zona),
-        formatTextOrND(cliente.id_afp),
-        formatTextOrND(cliente.cuspp),
-        formatDateOrND(cliente.fecha_inicio_afiliacion),
-        formatNumberOrND(cliente.porcentaje_comision ?? null),
+        formatTextOrND(area),
+        formatTextOrND(descripcionZona),
+        formatTextOrND(idAfpVal),
+        formatTextOrND(cusppVal),
+        formatDateOrND(fechaInicioAfiliacion),
+        formatNumberOrND(
+          typeof porcentajeComisionVal === 'string' ? Number(porcentajeComisionVal) : porcentajeComisionVal ?? null
+        ),
         formatNuevaAfiliacion(cliente.nueva_afiliacion ?? null),
         formatTextOrND(cliente.grado_instruccion),
-        formatTextOrND(cliente.asignacion ?? ficha?.asignacion),
+        formatTextOrND(asignacion),
         formatTextOrND(cliente.estado_actual ?? contrato?.estado),
         formatTextOrND(cliente.sexo),
         formatTextOrND(cliente.estado_civil),
-        formatTextOrND(cliente.direccion),
-        formatTextOrND(cliente.distrito),
-        formatTextOrND(cliente.provincia),
-        formatTextOrND(cliente.departamento),
-        formatTextOrND(cliente.cargo ?? ficha?.puesto),
-        formatDateOrND(cliente.fecha_inicio_contrato ?? ficha?.periodoDesde),
-        formatDateOrND(cliente.fecha_termino_contrato ?? ficha?.periodoHasta),
-        formatNumberOrND(cliente.remuneracion ?? ficha?.remuneracion ?? null),
-        formatTextOrND(cliente.tipo_contrato ?? contrato?.contenido?.split('\n')[0]),
-        formatTextOrND(cliente.planilla ?? ficha?.planilla),
-        formatTextOrND(cliente.observaciones ?? ficha?.observaciones),
-        formatTextOrND(cliente.referido ?? ficha?.referido),
-        formatTextOrND(cliente.lugar ?? ficha?.lugar),
-        formatTextOrND(cliente.cooperador ?? ficha?.cooperador),
+        formatTextOrND(direccion),
+        formatTextOrND(distrito),
+        formatTextOrND(provincia),
+        formatTextOrND(departamento),
+        formatTextOrND(cargo),
+        formatDateOrND(fechaInicioContrato),
+        formatDateOrND(fechaTerminoContrato),
+        formatNumberOrND(
+          typeof remuneracionVal === 'string' ? Number(remuneracionVal) : remuneracionVal ?? null
+        ),
+        formatTextOrND(tipoContratoVal),
+        formatTextOrND(planillaVal),
+        formatTextOrND(observacionesVal),
+        formatTextOrND(referidoVal),
+        formatTextOrND(lugarVal),
+        formatTextOrND(cooperadorVal),
       ];
     });
   };
@@ -149,7 +204,8 @@ export function useReportGenerator() {
   const generateExcelReport = async (
     clientes: Cliente[],
     reportName: string,
-    contratos: Contrato[] = []
+    contratos: Contrato[] = [],
+    generatedLabel?: string
   ) => {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'ClientScan Hub';
@@ -241,6 +297,8 @@ export function useReportGenerator() {
       console.warn('Error al obtener created_at de clientes:', error);
     }
 
+    const latestContratoMap = getLatestContratoByCliente(contratos);
+
     const worksheet = workbook.addWorksheet('Clientes', {
       views: [{ state: 'frozen', ySplit: 4 }],
     });
@@ -305,7 +363,12 @@ export function useReportGenerator() {
 
     worksheet.mergeCells(`A2:${lastCol}2`);
     const generatedCell = worksheet.getCell('A2');
-    generatedCell.value = `Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`;
+    // Usar la fecha/hora local al momento de generar el reporte (ahora), no cuando se construyó el archivo
+    const ahora = new Date();
+    const generatedText = generatedLabel
+      ? `Generado: ${generatedLabel}`
+      : `Generado: ${format(ahora, 'dd/MM/yyyy HH:mm', { locale: es })}`;
+    generatedCell.value = generatedText;
     generatedCell.font = { size: 10, color: { argb: 'FF6B7280' } };
     generatedCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
@@ -500,8 +563,13 @@ export function useReportGenerator() {
           .filter(Boolean)
           .join(' ')
       ).trim().toUpperCase();
+      const ultimoContrato = latestContratoMap.get(cliente.id);
       const fechaCreacionCliente = clienteCreatedAtMap.get(cliente.id) ?? cliente.created_at;
-      const fechaEntrega = formatDateOrND(fechaCreacionCliente);
+      const fechaEntrega = formatDateOrND(
+        ultimoContrato?.created_at ||
+        cliente.fecha_reclutamiento ||
+        fechaCreacionCliente
+      );
 
       const rowData = [
         index + 1,
@@ -585,43 +653,41 @@ export function useReportGenerator() {
     const contratosMapTM = getLatestContratoByCliente(contratos);
 
     // Configurar anchos de columna para la hoja TM
-    tmSheet.getColumn(1).width = 12;  // DNI
-    tmSheet.getColumn(2).width = 10;  // COD
-    tmSheet.getColumn(3).width = 15;  // A_PATERNO
-    tmSheet.getColumn(4).width = 15;  // A_MATERNO
-    tmSheet.getColumn(5).width = 15;  // NOMBRE
-    tmSheet.getColumn(6).width = 35;  // APELLIDOS Y NOMBRES
-    tmSheet.getColumn(7).width = 15;  // FECHA DE...
-    tmSheet.getColumn(8).width = 8;   // EDAD
-    tmSheet.getColumn(9).width = 30;  // ÁREA
-    tmSheet.getColumn(10).width = 35; // DESCRIPCIÓN_ZONA
-    tmSheet.getColumn(11).width = 15; // FECHA DE...
-    tmSheet.getColumn(12).width = 10; // Total
-    // Separador (columna vacía)
-    tmSheet.getColumn(13).width = 3;  // Separador
-    // Segunda tabla
-    tmSheet.getColumn(14).width = 10; // COD
-    tmSheet.getColumn(15).width = 30; // CARGO
-    tmSheet.getColumn(16).width = 25; // FECHA DE TERMINO DE CONTRATO
-    tmSheet.getColumn(17).width = 25; // PLANILLA
+    tmSheet.getColumn(1).width = 16;  // FECHA DE RECLUTAMIENTO
+    tmSheet.getColumn(2).width = 12;  // DNI
+    tmSheet.getColumn(3).width = 12;  // COD
+    tmSheet.getColumn(4).width = 16;  // A_PATERNO
+    tmSheet.getColumn(5).width = 16;  // A_MATERNO
+    tmSheet.getColumn(6).width = 18;  // NOMBRE
+    tmSheet.getColumn(7).width = 28;  // APELLIDOS Y NOMBRES
+    tmSheet.getColumn(8).width = 16;  // FECHA DE NAC.
+    tmSheet.getColumn(9).width = 8;   // EDAD
+    tmSheet.getColumn(10).width = 18; // ÁREA
+    tmSheet.getColumn(11).width = 18; // DESCRIPCIÓN_ZONA
+    tmSheet.getColumn(12).width = 16; // FECHA DE INICIO DE CONTRATO
+    tmSheet.getColumn(13).width = 4;  // Separador
+    tmSheet.getColumn(14).width = 12; // CÓDIGO GRUPO TRABAJO
+    tmSheet.getColumn(15).width = 22; // CARGO
+    tmSheet.getColumn(16).width = 18; // FECHA DE TERMINO DE CONTRATO
+    tmSheet.getColumn(17).width = 18; // PLANILLA
     tmSheet.getColumn(18).width = 8;  // SEXO
 
     // Encabezados de la hoja TM
     const tmHeaders = [
+      'FECHA DE RECLUTAMIENTO',
       'DNI',
       'COD',
       'A_PATERNO',
       'A_MATERNO',
       'NOMBRE',
       'APELLIDOS Y NOMBRES',
-      'FECHA DE...',
+      'FECHA DE NAC.',
       'EDAD',
       'ÁREA',
       'DESCRIPCIÓN_ZONA',
-      'FECHA DE...',
-      'Total',
+      'FECHA DE INICIO DE CONTRATO',
       '',  // Columna separadora
-      'COD',
+      'CÓDIGO GRUPO TRABAJO',
       'CARGO',
       'FECHA DE TERMINO DE CONTRATO',
       'PLANILLA',
@@ -629,13 +695,13 @@ export function useReportGenerator() {
     ];
 
     const tmHeaderRow = tmSheet.addRow(tmHeaders);
-    tmHeaderRow.height = 25;
+    tmHeaderRow.height = 18;
     
     // Estilo para primera tabla (columnas 1-12)
     for (let col = 1; col <= 12; col++) {
       const cell = tmHeaderRow.getCell(col);
-      cell.font = { bold: true, size: 10, color: { argb: 'FF000000' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }; // Amarillo
+      cell.font = { bold: true, size: 9, color: { argb: 'FF000000' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
       cell.border = {
         top: { style: 'thin' },
@@ -648,8 +714,8 @@ export function useReportGenerator() {
     // Estilo para segunda tabla (columnas 14-18)
     for (let col = 14; col <= 18; col++) {
       const cell = tmHeaderRow.getCell(col);
-      cell.font = { bold: true, size: 10, color: { argb: 'FF000000' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }; // Amarillo
+      cell.font = { bold: true, size: 9, color: { argb: 'FF000000' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
       cell.border = {
         top: { style: 'thin' },
@@ -663,6 +729,9 @@ export function useReportGenerator() {
     clientes.forEach(cliente => {
       const contrato = contratosMapTM.get(cliente.id);
       const ficha = contrato?.ficha_datos as any;
+      const fechaReclutamiento = contrato?.created_at || cliente.fecha_reclutamiento || cliente.created_at || null;
+      const fechaInicioContrato = cliente.fecha_inicio_contrato ?? ficha?.periodoDesde ?? null;
+      const fechaTerminoContrato = cliente.fecha_termino_contrato ?? ficha?.periodoHasta ?? null;
 
       // Construir apellidos y nombres completo
       const apellidosNombres = (
@@ -673,6 +742,7 @@ export function useReportGenerator() {
       ).trim();
 
       const rowData = [
+        formatDateOrND(fechaReclutamiento),
         formatTextOrND(cliente.dni),
         formatTextOrND(cliente.cod),
         formatTextOrND(cliente.a_paterno),
@@ -683,38 +753,31 @@ export function useReportGenerator() {
         formatNumberOrND(cliente.edad ?? (cliente.fecha_nac ? differenceInYears(new Date(), toDateOrNull(cliente.fecha_nac) || new Date()) : null)),
         formatTextOrND(cliente.area),
         formatTextOrND(cliente.descripcion_zona),
-        formatDateOrND(cliente.fecha_reclutamiento),
-        '', // Total
+        formatDateOrND(fechaInicioContrato), // FECHA DE INICIO DE CONTRATO
         '', // Separador
-        formatTextOrND(cliente.cod), // COD
+        formatTextOrND(cliente.codigogrupotrabajo), // CÓDIGO GRUPO TRABAJO
         formatTextOrND(ficha?.cargo || cliente.area), // CARGO
-        formatDateOrND(contrato?.fecha_termino_contrato), // FECHA DE TERMINO DE CONTRATO
-        formatTextOrND(cliente.area), // PLANILLA
+        formatDateOrND(fechaTerminoContrato), // FECHA DE TERMINO DE CONTRATO
+        (cliente.planilla ?? ficha?.planilla) ? String(cliente.planilla ?? ficha?.planilla).replace(/\s+/g, ' ').trim() : '',
         formatTextOrND(cliente.sexo), // SEXO
       ];
 
       const dataRow = tmSheet.addRow(rowData);
-      dataRow.height = 20;
+      dataRow.height = 16;
 
       dataRow.eachCell((cell, colNumber) => {
-        cell.alignment = { vertical: 'middle', horizontal: 'left' };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFD3D3D3' } },
-          left: { style: 'thin', color: { argb: 'FFD3D3D3' } },
-          bottom: { style: 'thin', color: { argb: 'FFD3D3D3' } },
-          right: { style: 'thin', color: { argb: 'FFD3D3D3' } },
-        };
-
-        // Centrar algunas columnas en primera tabla (DNI, COD, EDAD)
-        if ([1, 2, 8].includes(colNumber)) {
-          cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-        
-        // Centrar algunas columnas en segunda tabla (COD, SEXO)
-        if ([14, 18].includes(colNumber)) {
-          cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-      });
+  cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  cell.font = { size: 9 };
+  cell.border = {
+    top: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+    left: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+    bottom: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+    right: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+  };
+  if (cell.value === 0 || cell.value === '0' || cell.value === '0/01/1900' || cell.value === '#N/D' || cell.value === null) {
+    cell.value = '';
+  }
+});
     });
 
     // Agregar autofiltros a ambas tablas
