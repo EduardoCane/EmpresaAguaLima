@@ -733,8 +733,20 @@ export function ContratoIntermitenteForm({
   </P>
 
   <P>
-    <span className="font-bold uppercase">LA EMPRESA</span>, en virtud de lo dispuesto en el Decreto Legislativo 1310, se encuentra facultado para sustituir su firma ológrafa y el sellado manual por su firma digital, conforme lo regulado por el artículo 141-A del Código Civil; o, su firma electrónica, emitida conforme a lo regulado por la Ley número 27269, Ley de Firmas y Certificados Digitales, en todos los documentos laborales que emita. Por su parte, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> reconoce dicha facultad del empleador, y <span className="font-bold uppercase">autoriza</span> la entrega de manera digital de sus boletas de pago de remuneraciones, vacaciones, liquidación de CTS, de utilidades, de Beneficios Sociales, y cualquier otro documento en materia laboral; reconociendo <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> que no se requiere firma de recepción de su parte en el supuesto que dichos documentos sean puestos a su disposición mediante el uso de tecnologías de la información y comunicación. Incluso, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> otorgará para la comunicación vía remota (debido a estas circunstancias), el correo electrónico :
-    <BlankPdf widthMm={70} /> y el número telefónico celular: <BlankPdf widthMm={55} value={celularValue} />;
+    <span className="font-bold uppercase">LA EMPRESA</span>, en virtud de lo dispuesto en el Decreto
+     Legislativo 1310, se encuentra facultado para sustituir su firma ológrafa y el sellado manual por 
+     su firma digital, conforme lo regulado por el artículo 141-A del Código Civil; o, su firma electrónica,
+      emitida conforme a lo regulado por la Ley número 27269, Ley de Firmas y Certificados Digitales, en todos 
+      los documentos laborales que emita. Por su parte, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> 
+      reconoce dicha facultad del empleador, y <span className="font-bold uppercase">autoriza</span> 
+      la entrega de manera digital de sus boletas de pago de remuneraciones, vacaciones, liquidación de CTS, 
+      de utilidades, de Beneficios Sociales, y cualquier otro documento en materia laboral; 
+      reconociendo <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> que 
+      no se requiere firma de recepción de su parte en el supuesto que dichos documentos 
+      sean puestos a su disposición mediante el uso de tecnologías de la información y 
+      comunicación. Incluso, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> otorgará para 
+      la comunicación vía remota (debido a estas circunstancias), el correo electrónico :
+    <span className="font-bold">  ________________________________________________________</span> y el número telefónico celular: <span className="font-bold">  ____________________________</span>;
     siendo estos válidos para las comunicaciones que efectuará{" "}
     <span className="font-bold uppercase">LA EMPRESA</span>.
   </P>
