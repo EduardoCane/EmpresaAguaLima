@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+// import { Calendar } from '@/components/ui/calendar';
 import { Plus, FileText, Clock, CheckCircle2, AlertCircle, Download, Lock, Edit3, Eye, Trash2, FileArchive } from 'lucide-react';
 import html2canvas, { type Options as Html2CanvasOptions } from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -44,6 +45,20 @@ interface ValidationErrors {
 }
 
 export default function ContratosPage() {
+    // Date filter state: 'today', 'all', or 'custom'
+    const [contractDateFilter, setContractDateFilter] = useState<'today' | 'all' | 'custom'>('today');
+    const [showDateFilter, setShowDateFilter] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [pendingDate, setPendingDate] = useState<string>('');
+
+    // Helper to get today's date in yyyy-mm-dd
+    const getTodayString = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
   const { getClienteById, getClienteByDni, getClienteByCod, clientes, addCliente, getNextCod } = useClientes();
   const {
     contratos, addContrato, updateContrato, deleteContrato, reloadContratos, firmarContrato,
@@ -227,18 +242,52 @@ export default function ContratosPage() {
     return grupos;
   }, [contratos, getClienteById]);
 
+  // Filter contracts by search and date
   const filteredContratosPorCliente = useMemo(() => {
+    // Helper to normalize date string to yyyy-mm-dd
+    const normalizeDate = (dateValue: Date | string) => {
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return '';
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const term = contractSearch.trim().toLowerCase();
-    if (!term) return contratosPorCliente;
-    return contratosPorCliente.filter(grupo => {
-      const cliente = grupo.cliente;
-      if (!cliente) return false;
-      const fullName = getFullName(cliente).toLowerCase();
-      const reverseName = getSearchName(cliente).toLowerCase();
-      const cod = (cliente.cod || '').toLowerCase();
-      return fullName.includes(term) || reverseName.includes(term) || cod.includes(term);
-    });
-  }, [contratosPorCliente, contractSearch]);
+    let filtered = contratosPorCliente;
+    if (term) {
+      filtered = filtered.filter(grupo => {
+        const cliente = grupo.cliente;
+        if (!cliente) return false;
+        const fullName = getFullName(cliente).toLowerCase();
+        const reverseName = getSearchName(cliente).toLowerCase();
+        const cod = (cliente.cod || '').toLowerCase();
+        return fullName.includes(term) || reverseName.includes(term) || cod.includes(term);
+      });
+    }
+
+    // Date filter: show contracts by selected mode
+    if (contractDateFilter === 'today') {
+      const todayStr = getTodayString();
+      filtered = filtered
+        .map(grupo => ({
+          ...grupo,
+          contratos: grupo.contratos.filter(c => normalizeDate(c.created_at) === todayStr)
+        }))
+        .filter(grupo => grupo.contratos.length > 0);
+    } else if (contractDateFilter === 'custom' && selectedDate) {
+      const dateStr = normalizeDate(selectedDate);
+      filtered = filtered
+        .map(grupo => ({
+          ...grupo,
+          contratos: grupo.contratos.filter(c => normalizeDate(c.created_at) === dateStr)
+        }))
+        .filter(grupo => grupo.contratos.length > 0);
+    }
+    // 'all' muestra todos
+    return filtered;
+  }, [contratosPorCliente, contractSearch, contractDateFilter, selectedDate]);
 
   const latestSignedContractByClient = useMemo(() => {
     const map = new Map<string, Contrato>();
@@ -3699,15 +3748,105 @@ export default function ContratosPage() {
             <div className="border-b border-slate-200 bg-slate-50/80 p-6 dark:border-gray-700 dark:bg-gray-800/70">
               <h3 className="font-semibold text-foreground text-lg">Contratos Registrados</h3>
               <p className="text-sm text-muted-foreground mt-1">Total: {contratos.length} ficha(s)</p>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                   type="text"
                   value={contractSearch}
                   onChange={(e) => setContractSearch(e.target.value)}
                   placeholder="Buscar por nombre o COD"
-                  className="input-field w-full"
+                  className="input-field w-full sm:max-w-xs"
                 />
+                <Button
+                  variant="outline"
+                  className="ml-0 sm:ml-4"
+                  onClick={() => {
+                    setPendingDate('');
+                    setShowDateFilter(true);
+                  }}
+                >
+                  Filtrar por fecha
+                </Button>
+                {contractDateFilter === 'custom' && selectedDate && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    Fecha: {selectedDate.toLocaleDateString('es-ES')}
+                  </span>
+                )}
+                {contractDateFilter === 'today' && (
+                  <span className="ml-2 text-xs text-muted-foreground">Mostrando solo hoy</span>
+                )}
+                {contractDateFilter === 'all' && (
+                  <span className="ml-2 text-xs text-muted-foreground">Mostrando todos</span>
+                )}
               </div>
+              {/* Modal de filtro de fecha */}
+              {showDateFilter && (
+                <div className="fixed inset-0 z-50 flex items-start justify-center" style={{paddingTop: 60}}>
+                  <div className="bg-white rounded-xl shadow-xl p-3 w-full max-w-[320px] flex flex-col gap-3 border border-slate-200">
+                    <h2 className="text-base font-semibold mb-1 text-center">Opciones de filtrado</h2>
+                    <input
+                      type="date"
+                      value={pendingDate}
+                      onChange={e => setPendingDate(e.target.value)}
+                      className="input-field w-full text-center text-lg mb-2"
+                      style={{fontSize:'1.1rem',padding:'0.5rem'}}
+                    />
+                    <Button
+                      className="w-full text-base py-2"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        if (pendingDate) {
+                          const [year, month, day] = pendingDate.split('-').map(Number);
+                          const d = new Date(year, (month || 1) - 1, day || 1);
+                          d.setHours(0, 0, 0, 0);
+                          setSelectedDate(d);
+                          setContractDateFilter('custom');
+                        }
+                        setShowDateFilter(false);
+                      }}
+                      disabled={!pendingDate}
+                    >
+                      Filtrar por fecha
+                    </Button>
+                    <Button
+                      className="w-full text-base py-2"
+                      variant="outline"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        setContractDateFilter('today');
+                        setSelectedDate(null);
+                        setPendingDate('');
+                        setShowDateFilter(false);
+                      }}
+                    >
+                      Mostrar solo hoy
+                    </Button>
+                    <Button
+                      className="w-full text-base py-2"
+                      variant="outline"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        setContractDateFilter('all');
+                        setSelectedDate(null);
+                        setPendingDate('');
+                        setShowDateFilter(false);
+                      }}
+                    >
+                      Mostrar todos
+                    </Button>
+                    <Button
+                      className="w-full text-base py-2"
+                      variant="ghost"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        setShowDateFilter(false);
+                        setPendingDate('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full">
