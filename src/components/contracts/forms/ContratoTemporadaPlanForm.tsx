@@ -912,9 +912,4 @@ A         simismo, declaro conocer que puedo revocar el consentimiento para trat
     </div>
   );
 }
-
-<<<<<<< HEAD
 export default ContratoTemporadaPlanForm;
-=======
-export default ContratoTemporadaPlanForm;
->>>>>>> 0bfd1f12b188fde9c985cec1894b7d5581bf87f4
