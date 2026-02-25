@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Cliente } from '@/types';
