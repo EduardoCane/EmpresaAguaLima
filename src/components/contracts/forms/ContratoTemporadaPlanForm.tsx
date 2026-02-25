@@ -280,173 +280,230 @@ export function ContratoTemporadaPlanForm({
       <TitleTemporada />
 
       <P>
-        Conste por el presente documento que se extiende por duplicado,{" "}
-        <span className="font-bold uppercase">
-          EL CONTRATO DE TRABAJO A PLAZO FIJO BAJO LA MODALIDAD DE "CONTRATO DE TEMPORADA"
-        </span>
-        , que celebran al amparo del Art. 67 de la Ley de Productividad y Competitividad
-        Laboral aprobado por D. S. N 003-97-TR, las normas de la Ley N 31110, Ley del
-        Regimen Laboral Agrario y de Incentivos para el Sector Agrario y Riego,
-        Agroexportador y Agroindustrial, y su Reglamento; de una parte, la empresa{" "}
-        <span className="font-bold uppercase">AGUALIMA S.A.C.</span> con R.U.C N{" "}
-        <span className="font-bold">20512217452</span>, y domiciliada en KM 512 Carretera
-        Panamericana Norte, Provincia de Viru, Departamento de La Libertad; a quien en
-        adelante se le denominara <span className="font-bold uppercase">LA EMPRESA</span>,
-        representada YESSICA SELENE TORRES VILCHEZ identificada con D.N.I N{" "}
-        <span className="font-bold">40642893</span> con facultades inscritas en la P.E.
-        11829370 del Registro de Personas Juridicas de Lima, y de la otra parte el Sr (a).
+        Conste por el presente documento que se extiende por duplicado, 
+        <span className="font-bold uppercase">EL CONTRATO DE TRABAJO A PLAZO FIJO BAJO LA MODALIDAD DE “CONTRATO DE TEMPORADA”</span>, 
+        que celebran al amparo del a Art. 67º de la Ley de Productividad y Competitividad 
+        Laboral aprobado por D. S. Nº 003-97-TR, las normas de la Ley N° 31110, Ley del 
+        Régimen Laboral Agrario y de Incentivos para el Sector Agrario y Riego, Agroexportador 
+        y Agroindustrial, y su Reglamento; de una parte, la empresa <span className="font-bold uppercase">AGUALIMA S.A.C.</span> con R.U.C 
+        N° 20512217452, y domiciliada en KM 512 Carretera Panamericana Norte, Provincia de Virú,
+         Departamento de La Libertad; a quien en adelante se le denominará <span className="font-bold uppercase">LA EMPRESA</span>, 
+         representada YESSICA SELENE TORRES VILCHEZ identificada con D.N.I N° 40642893 
+         con facultades inscritas en la P.E. 11829370 del Registro de Personas Jurídicas 
+         de Lima, y de la otra parte el Sr (a). 
       </P>
 
+<<<<<<< HEAD
        <P center>
            <span className="font-bold">{fullName}</span> identificado (a) con DNI Nº{" "}
+=======
+<<<<<<< HEAD
+       <P center>
+           <span className="font-bold">{fullName}</span> identificado (a) con DNI Nº{" "}
+=======
+<<<<<<< HEAD
+       <P center>
+           <span className="font-bold">{fullName}</span> identificado (a) con DNI Nº{" "}
+=======
+<<<<<<< HEAD
+       <P center>
+           <span className="font-bold">{fullName}</span> identificado (a) con DNI Nº{" "}
+=======
+      <P center>
+           <span className="font-bold">{fullName}</span> identificado(a) identificado (a) con DNI Nº{" "}
+>>>>>>> ec1eabe9348520c82121c88f0e4054c21d1f338e
+>>>>>>> f0e56ed59eb76318885995a3a23a80ecc9c9a8ad
+>>>>>>> cceba747610bb152877dc1cbd902f7f8a601f584
+>>>>>>> 2f8d00b3a06e0a7fd9751ad37c655afdb72d1e13
            <span className="font-bold">{dni}</span> con domicilio en{" "}
            <span className="font-bold">{fullAddress}</span>
         </P>
 
       <P>
-        a quien en adelante se le denominara{" "}
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, en los
-        terminos y condiciones siguientes:
+        a quien en adelante se le denominará <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, en los términos y condiciones siguientes:
       </P>
 
-      <ClauseInline label="PRIMERA: DEL EMPLEADOR.-">
-        <span className="font-bold uppercase">LA EMPRESA</span> es una persona juridica
-        del sector Privado, dedicada a la agroindustria; esto es: cultivo de hortalizas
-        y frutas. Entre ellos, el cultivo, pre cosecha y cosecha, empaque y exportacion
-        de esparrago blanco.
+      <ClauseInline label="PRIMERA:">
+        <span className="font-bold uppercase">DEL EMPLEADOR.- LA EMPRESA</span> es una persona jurídica 
+        del sector Privado, dedicada a la agroindustria; esto es: cultivo de hortalizas 
+        y frutas. Entre ellos, el cultivo, pre cosecha y cosecha, empaque 
+        y exportación de espárrago blanco.
       </ClauseInline>
 
       <P>
-        <span className="font-bold uppercase">LA EMPRESA</span> declara que se encuentra
-        sujeta y acogida a los alcances del Regimen Laboral Agrario, de conformidad con
-        lo dispuesto en la Ley N 31110, Ley del Regimen Laboral Agrario y de Incentivos
-        para el Sector Agrario y Riego, Agroexportador y Agroindustrial, y su Reglamento.
+        <span className="font-bold uppercase">LA EMPRESA</span> declara que se encuentra sujeta y acogida a los alcances del
+         Régimen Laboral Agrario, de conformidad con lo dispuesto en la Ley N° 
+        31110, Ley del Régimen Laboral Agrario y de Incentivos para el Sector 
+        Agrario y Riego, Agroexportador y Agroindustrial, y su Reglamento.
       </P>
 
-      <ClauseInline label="SEGUNDA: JUSTIFICACION DE LA CONTRATACION.-">
-        <span className="font-bold uppercase">LA EMPRESA</span> requiere cubrir la
-        necesidad operativa de labores y cosecha de palto, labor que tiene naturaleza
-        irregular, propia del giro de la empresa pero que se cumple solo en determinadas
-        epocas del ano, esto es, del mes de noviembre al mes de marzo de cada ano, salvo
-        que, extraordinariamente, por razones climaticas se extienda y justifique dicho
-        requerimiento.
+      <ClauseInline label="SEGUNDA:">
+        <span className="font-bold uppercase">JUSTIFICACIÓN DE LA CONTRATACIÓN. - LA EMPRESA</span>
+        requiere cubrir la necesidad operativa de labores y cosecha de palto, 
+        labor que tiene naturaleza iregular, propia del giro de la empresa pero que
+         se cumple solo en determinadas épocas del año, esto es, del mes de noviembre 
+         al mes de marzo de cada año, salvo que, extraordinariamente, por razones
+          climáticas se extienda y justifique dicho requerimiento.
       </ClauseInline>
 
       <P>
-        El caracter temporal del contrato se funda en lo dispuesto por el Art. 67 de la
-        Ley de Productividad y Competitividad Laboral aprobado por D. S. N 003-97-TR, y
-        normas complementarias, de acuerdo al cual, pueden celebrarse contratos de
-        temporada con el objeto de atender necesidades propias del giro de la empresa o
-        establecimiento, que se cumplen solo en determinadas epocas del ano, y que estan
-        sujetas a repetirse en periodos equivalentes en cada ciclo en funcion a la
-        naturaleza de la actividad productiva.
+        El carácter temporal del contrato se funda en lo dispuesto por el Art. 67º de
+         la Ley de Productividad y Competitividad Laboral aprobado por D. S. Nº 003-97-TR, 
+         y normas complementarias, de acuerdo al cual, pueden celebrarse contratos de
+          temporada con el objeto de atender necesidades propias del giro de la empresa
+           o establecimiento, que se cumplen solo en determinadas épocas del año, y 
+           que están sujetas a repetirse en períodos equivalentes en cada ciclo en 
+           función a la naturaleza de la actividad productiva.
       </P>
 
       <P>
-        La duracion de la temporada se establece en los meses de julio a agosto,
-        aproximadamente, debido a que en este periodo de tiempo la fruta esta apta para
-        ser cosechada y, posteriormente, empacada y exportada, precisando que, en los
-        meses anteriores el cultivo esta en periodo de mantenimiento, crecimiento de la
-        planta y formacion del fruto.
+        La duración de la temporada se establece en los meses de julio a agosto,
+         aproximadamente, debido a que en este periodo de tiempo la fruta está apta
+          para ser cosechada y, posteriormente, empacada y exportada, precisando que, 
+          en los meses anteriores el cultivo está en periodo de mantenimiento, 
+          crecimiento de la planta y formación del fruto.
       </P>
 
       <P>
-        Las labores del trabajador (a) son de naturaleza regular, pero con variaciones
-        ciclicas, debido a que en este periodo de tiempo la fruta esta apta para ser
-        cosechada.
+        Las labores del trabajador (a) son de naturaleza regular, pero con 
+        variaciones cíclicas, debido a que en este periodo de tiempo la fruta 
+        está apta para ser cosechada.
       </P>
 
       <P>
-        En este contexto, <span className="font-bold uppercase">LA EMPRESA</span> requiere
-        de los servicios de <span className="font-bold uppercase">EL TRABAJADOR</span>,
-        cuya contratacion se encuentra intimamente vinculada a la circunstancia y
-        temporada descrita precedentemente; lo cual constituye la causa objetiva de la
-        presente contratacion modal a plazo determinado, quedando plenamente justificada
-        su temporalidad.
+        En este contexto, <span className="font-bold uppercase">LA EMPRESA</span> requiere de los servicios de <span className="font-bold uppercase">EL TRABAJADOR</span>, cuya 
+        contratación se encuentra íntimamente vinculada a la circunstancia y 
+        temporada descrita precedentemente; lo cual constituye la causa objetiva
+         de la presente contratación modal a plazo determinado, 
+         quedando plenamente justificada su temporalidad.
       </P>
 
-      <ClauseInline label="TERCERA: CARGO Y FUNCIONES.-">
-        Por el presente documento, <span className="font-bold uppercase">LA EMPRESA</span>{" "}
-        contrata a plazo fijo, bajo la modalidad ya indicada en la clausula precedente,
-        los servicios personales de{" "}
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, para que se
-        realice las labores y funciones propias y complementarias del puesto de{" "}
-        <span className="font-bold italic uppercase">
-          {puestoValue || "OPERARIO AGROINDUSTRIAL PARA EMPAQUE Y EXPORTACION DE ESPARRAGO BLANCO"}
-        </span>{" "}
-        pudiendo tambien desarrollar cualquier otra funcion que le encomienden sus
-        superiores. La prestacion de servicios debera ser efectuada de manera personal,
-        no pudiendo <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>{" "}
-        ser reemplazado ni ayudado por tercera persona. {" "}
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> declara
-        expresamente encontrarse capacitado para la prestacion de los servicios
-        contratados, los cuales llevara adelante segun instrucciones que le imparta{" "}
-        <span className="font-bold uppercase">LA EMPRESA</span>. Asi mismo, las partes
-        convienen que <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>{" "}
-        puede prestar sus servicios tanto por unidad de tiempo o por unidad de obra,
-        de acuerdo a los requerimientos de la produccion diaria, por tal razon, cuando
-        corresponda, el pago sera por jornal diario, de conformidad con lo establecido
-        en la clausula septima del presente contrato; o por destajo o tarea u obra
-        ejecutada.
+      <ClauseInline label="TERCERA:">
+        <span className="font-bold uppercase">CARGO Y FUNCIONES. -</span>
+        Por el presente documento, <span className="font-bold uppercase">LA EMPRESA</span> contrata a plazo fijo, bajo 
+        la modalidad ya indicada en la cláusula precedente, los servicios personales 
+        de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, para que se realice las labores y funciones propias 
+        y complementarias del puesto de <span className="font-bold uppercase">OPERARIO AGROINDUSTRIAL PARA EMPAQUE Y EXPORTACIÓN 
+        DE ESPARRAGO BLANCO</span>  pudiendo también desarrollar cualquier otra función que le 
+        encomienden sus superiores. La prestación de servicios deberá ser efectuada de
+         manera personal, no pudiendo <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> ser reemplazado ni ayudado
+          por tercera persona. <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> declara expresamente encontrarse 
+          capacitado para la prestación de los servicios contratados, los cuales 
+          llevará adelante según instrucciones que le imparta <span className="font-bold uppercase">LA EMPRESA</span>.  
+           Así mismo, las partes convienen que <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, 
+           puede prestar sus servicios tanto por unidad de tiempo o por unidad 
+           de obra, de acuerdo a los requerimientos de la producción diaria, 
+           por tal razón, cuando corresponda, el pago será por jornal diario,
+            de conformidad con lo establecido en la cláusula séptima del presente
+             contrato; o por destajo o tarea u obra ejecutada.
       </ClauseInline>
 
       <P>
-        Para el desarrollo de sus funciones, {" "}
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> recibira
-        equipos de proteccion personal, herramientas u otros, que son de propiedad de{" "}
-        <span className="font-bold uppercase">LA EMPRESA</span>. En caso de termino del
-        vinculo laboral, por cualquiera de los supuestos establecidos en la Ley, o a
-        solicitud de <span className="font-bold uppercase">LA EMPRESA</span>,{" "}
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> devolvera
-        dichos equipos de forma inmediata. En caso de perdida, robo o dano por el uso
-        inadecuado de los equipos, {" "}
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> debera
-        cumplir con reponerlos en plazo breve, y el costo sera asumido en su totalidad
-        por <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, quien
-        autoriza expresamente a <span className="font-bold uppercase">LA EMPRESA</span>{" "}
-        a descontar de su remuneracion y liquidacion de beneficios sociales, el
-        correspondiente valor no devuelto, asi como los gastos que pudieran generarse
-        por la no devolucion oportuna de los mismos.
+        Para el desarrollo de sus funciones, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> recibirá equipos de protección personal, 
+        herramientas u otros, que son de propiedad de <span className="font-bold uppercase">LA EMPRESA</span>. En caso de término del vínculo laboral, 
+        por cualquiera de los supuestos establecidos en la Ley, o a solicitud de <span className="font-bold uppercase">LA EMPRESA</span>, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> 
+        devolverá dichos equipos de forma inmediata. En caso de pérdida, robo o daño por el uso inadecuado de los
+         equipos, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> deberá cumplir con reponerlos en plazo breve, y el costo será asumido 
+         en su totalidad por <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, quien autoriza expresamente a <span className="font-bold uppercase">LA EMPRESA</span> a descontar
+          de su remuneración y liquidación de beneficios sociales, el correspondiente valor no devuelto,
+           así como los gastos que pudieran generarse por la no devolución oportuna de los mismos.
       </P>
 
-      <ClauseInline label="CUARTA: PLAZO Y VIGENCIA.-">
-        El plazo del presente contrato comenzara a regir desde el dia{" "}
+      <ClauseInline label="CUARTA:">
+        <span className="font-bold uppercase">PLAZO Y VIGENCIA.-</span>El plazo del presente contrato  comenzará a regir desde el {" "}
         <span className="font-bold">{fechaInicioValue}</span>, concluyendo el dia{" "}
         <span className="font-bold">{fechaFinValue}</span>, sin necesidad de comunicacion previa
-        por parte de <span className="font-bold uppercase">LA EMPRESA</span>.
+        por parte de <span className="font-bold uppercase">LA EMPRESA</span>. La suspensión de 
+        las labores por alguna de las causas previstas legalmente como: descansos pre y post natal, 
+        accidente de trabajo, enfermedad, etc., no interrumpirá el plazo de duración del presente contrato de temporada.
       </ClauseInline>
 
-      <ClauseInline label="QUINTA: PERIODO DE PRUEBA.-">
-        De conformidad con lo dispuesto en el articulo 10 del TUO del D. Leg.728,{" "}
+      <ClauseInline label="QUINTA:">
+        <span className="font-bold uppercase">PERÍODO DE PRUEBA</span>De conformidad con lo dispuesto en el articulo 10 del TUO del D. Leg.728,{" "}
         <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se
         encontrara sujeto a un periodo de prueba de ley.
       </ClauseInline>
 
-      <ClauseInline label="SEXTA: HORARIO Y JORNADA LABORAL.-">
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> observara
-        bajo responsabilidad, el horario de trabajo establecido por {" "}
-        <span className="font-bold uppercase">LA EMPRESA</span> de conformidad con las
-        normas contenidas en el Decreto Supremo N 007-2002-TR.
+      <ClauseInline label="SEXTA:">
+        <span className="font-bold uppercase"> HORARIO Y JORNADA LABORAL.- EL (LA) TRABAJADOR (A)</span>observará bajo responsabilidad, 
+        el horario de trabajo establecido por <span className="font-bold uppercase">LA EMPRESA</span> de conformidad con las normas contenidas en el 
+        Decreto Supremo N° 007-2002-TR, que aprueba el Texto Único Ordenado de la Ley de Jornada de 
+        Trabajo, Horario y Trabajo en Sobretiempo, y su Reglamento, aprobado por Decreto Supremo N° 008-2002-TR. 
+        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, tendrá una jornada laboral de 48 horas semanales, respetando el día de descanso 
+        semanal obligatorio, y el tiempo de refrigerio mínimo, el mismo que, conforme a Ley, no forma parte de la 
+        jornada de trabajo. En uso de sus facultades directrices, y de acuerdo a lo dispuesto en el artículo 2º del D. Leg.713,
+         según las necesidades del negocio, el descanso podrá ser rotativo. 
       </ClauseInline>
+      <P>
+        EL (LA) TRABAJADOR (A) observará el horario de trabajo establecido en LA EMPRESA; 
+        sin embargo, LA EMPRESA podrá introducir cambios necesarios por la propia naturaleza
+         variable de las actividades agrícolas y agroindustriales. En tal sentido, cuando se generen 
+         las llamadas bajas de producción, no previsibles en términos de tiempo y sujetas por lo general 
+         a factores no siempre determinados y ajenos a LA EMPRESA, la jornada laboral diaria se restringirá 
+         al tiempo necesario de acuerdo a los requerimientos de LA EMPRESA y a la observancia de sus normas técnicas.
+      </P>
+      <P>
+        EL (LA) TRABAJADOR (A) y LA EMPRESA acuerdan que, de existir trabajo en sobretiempo, éste será 
+        compensado con tiempo de descanso equivalente, de acuerdo a lo regulado en el artículo 10° del 
+        Decreto Supremo No. 007-2002-TR. A fin de validar el trabajo en sobretiempo realizado, EL TRABAJADOR
+         deberá cumplir con el procedimiento establecido por LA EMPRESA para la autorización de trabajo en 
+         sobretiempo y firmar el formato de autorización de trabajo en sobretiempo correspondiente.  
+      </P>
+      <P>
+        LA EMPRESA, en ejercicio de su poder de dirección, podrá variar los horarios fijados, 
+        estableciendo nuevos turnos y horarios de trabajo, de acuerdo a sus necesidades de 
+        operación y dentro del marco legal y parámetros establecidos en el antes citado cuerpo 
+        normativo y su Reglamento aprobado por D.S.008-2002-TR. Sin perjuicio de lo pactado en la 
+        presente cláusula, EL (LA) TRABAJADOR (A) se compromete a mantener un permanente involucramiento y 
+        disponibilidad para prestar la colaboración necesaria, y de forma voluntaria, durante la jornada de trabajo, 
+        y en los días u horas, inclusive días de descanso y feriados, que por necesidades concretas de las
+         actividades de LA EMPRESA, o por requerimientos especiales de la misma, LA EMPRESA en ejercicio de
+          sus facultades directrices-, lo requiera, los cuales serán debidamente remunerados conforme a la normatividad vigente.
+      </P>
 
       <ClauseInline label="SEPTIMA: REMUNERACION.-">
         Conforme a lo dispuesto en el literal d) del articulo 3 de la Ley N 31110,{" "}
         <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> percibira una
         Remuneracion diaria (RD) ascendente a <span className="font-bold">{remuneracionDiaria}</span> o {" "}
-        <span className="font-bold">{remuneracionMensual}</span> por periodo mensual.
+        <span className="font-bold">{remuneracionMensual}</span> por periodo mensual.Dicho importe, de acuerdo a los alcances de la Ley N° 31110 Ley del Régimen Laboral Agrario y de
+        Incentivos para el Sector Agrario y Riego, Agroexportador y Agroindustrial, incluye a 
+        la compensación por tiempo de servicios y las gratificaciones de Fiestas Patrias y Navidad, 
+        y se actualizará en el mismo porcentaje que los incrementos de la Remuneración Mínima Vital. 
+        Asimismo, se precisa que en la planilla de remuneraciones se disgregará de manera independiente 
+        la remuneración básica, CTS y gratificaciones, de acuerdo a los porcentajes que corresponden a cada concepto.
       </ClauseInline>
+      <P>
+        El importe remunerativo estará sujeto a las deducciones y retenciones de ley, las ausencias 
+        injustificadas por parte de EL (LA) TRABAJADOR (A) implican la pérdida de la remuneración
+         básica de modo proporcional a la duración de dicha ausencia, sin perjuicio del ejercicio de
+          las facultades disciplinarias propias de LA EMPRESA, previsto en la legislación laboral y 
+          su Reglamento Interno. Será de cargo de EL (LA) TRABAJADOR (A) el pago del Impuesto a la Renta, 
+          aplicable a toda remuneración que se le abone, los aportes y contribuciones previsionales y sociales a su cargo, 
+          así como cualquier otro tributo que grave las remuneraciones del personal dependiente. LA EMPRESA cumplirá con 
+          efectuar las retenciones y descuentos de ley. LA EMPRESA se reserva el derecho de hacer las retenciones que de 
+          acuerdo a ley o mandato judicial correspondiente.
+      </P>
 
       <ClauseInline label="OCTAVA:">
-        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> opta por percibir el
-        pago de sus beneficios sociales (CTS y gratificaciones de Fiestas Patrias y Navidad)
-        de manera conjunta y prorrateada, con la remuneracion diaria.
+        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> de acuerdo a lo prescrito en el 
+        inciso d) del artículo 3 de la Ley N° 31110, opta por percibir el pago de sus beneficios sociales 
+        (CTS y gratificaciones de Fiestas Patrias y Navidad) de manera conjunta y prorrateada, con la remuneración diaria.
       </ClauseInline>
 
       <ClauseInline label="NOVENO: PODER DE DIRECCION.-">
         <span className="font-bold uppercase">LA EMPRESA</span> se reserva el derecho a
-        reubicar a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> en
-        otro cargo de igual categoria dentro de la organizacion.
+        reubicar a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> en otro cargo de 
+        igual categoría dentro de la organización, de acuerdo a sus requerimientos y conveniencias siempre 
+        que dicho cambio no implique reducción inmotivada de remuneración o categoría.
       </ClauseInline>
+      <P>
+        LA EMPRESA, al amparo del artículo 9° de la Ley de Productividad y Competitividad
+         Laboral (LPCL), está facultada para introducir cambios, modificaciones al horario y 
+         jornada de trabajo, establecer jornadas acumulativas, alternativas, flexibles, compensatorias
+          y horarios diferenciados, así como la forma y modalidad de la prestación de las labores,
+           dentro de criterios de razonabilidad y teniendo en cuenta las necesidades del centro de trabajo; 
+           sin que dichas variaciones signifiquen menoscabo de categoría y/o remuneración.
+      </P>
 
       <ClauseInline label="DECIMA: DEBERES DEL TRABAJADOR.-">
         Durante el desarrollo de las labores que le competen a {" "}
@@ -454,6 +511,16 @@ export function ContratoTemporadaPlanForm({
         a las disposiciones de direccion y administracion de {" "}
         <span className="font-bold uppercase">LA EMPRESA</span>.
       </ClauseInline>
+      <P>
+        Asimismo, deberá cumplir con las normas propias del centro de trabajo, 
+        las contenidas en el Reglamento Interno de Trabajo, de Seguridad y Salud 
+        en el Trabajo, de Seguridad Alimentaria y demás normas laborales; y las que 
+        se impartan por necesidades del servicio en ejercicio de las facultades de administración de LA EMPRESA, 
+        de conformidad con el artículo 9° del T.U.O de la Ley de Productividad y Competitividad Laboral aprobado 
+        por D.S. Nº 003-97-TR; asimismo, se compromete a cumplir sus obligaciones con buena fe, lealtad, 
+        eficiencia y responsabilidad, velando por los intereses de LA EMPRESA, y cumpliendo con los 
+        estándares de asistencia laboral y ejecución de las tareas encargadas.
+      </P>
 
       <P>
         <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se obliga ante{" "}
@@ -463,9 +530,9 @@ export function ContratoTemporadaPlanForm({
 
       <ol className="mt-2 list-decimal pl-5 text-justify">
         <li className="mt-1">
-          Cumplir y acatar las ordenes y disposiciones que bajo direccion y control de la
-          empresa pudiera recibir directamente de sus jefes inmediatos superiores o los
-          gerentes de <span className="font-bold uppercase">LA EMPRESA</span>.
+          Cumplir y acatar las órdenes y disposiciones que bajo dirección y control de la empresa pudiera
+           recibir directamente de sus jefes inmediatos superiores o los gerentes
+            de <span className="font-bold uppercase">LA EMPRESA</span>.
         </li>
         <li className="mt-1">
           Cumplir con los procesos y metodos de trabajo inherentes a su puesto de labor,
@@ -660,7 +727,23 @@ export function ContratoTemporadaPlanForm({
 
       <P>
         y el numero telefonico celular {" "}
+<<<<<<< HEAD
         <span className="font-bold uppercase">______________________________</span>; siendo estos validos para las
+=======
+<<<<<<< HEAD
+        <span className="font-bold uppercase">______________________________</span>; siendo estos validos para las
+=======
+<<<<<<< HEAD
+        <span className="font-bold uppercase">______________________________</span>; siendo estos validos para las
+=======
+<<<<<<< HEAD
+        <span className="font-bold uppercase">______________________________</span>; siendo estos validos para las
+=======
+        <span className="font-bold uppercase">_________________________</span>; siendo estos validos para las
+>>>>>>> ec1eabe9348520c82121c88f0e4054c21d1f338e
+>>>>>>> f0e56ed59eb76318885995a3a23a80ecc9c9a8ad
+>>>>>>> cceba747610bb152877dc1cbd902f7f8a601f584
+>>>>>>> 2f8d00b3a06e0a7fd9751ad37c655afdb72d1e13
         comunicaciones que efectuara <span className="font-bold uppercase">LA EMPRESA</span>.
       </P>
     </PdfPage>
