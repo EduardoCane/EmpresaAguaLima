@@ -120,52 +120,57 @@ export function useReportGenerator() {
     return clientes.map(cliente => {
       const contrato = contratosMap.get(cliente.id);
       const ficha = contrato?.ficha_datos as any;
-      
-      const apellidos = [
-        cliente.a_paterno || '',
-        cliente.a_materno || '',
-      ].filter(Boolean).join(' ').trim();
-      const nombres = (cliente.nombre || '').trim();
-      const apellidosNombres = (
-        cliente.apellidos_y_nombres ||
-        [apellidos, nombres].filter(Boolean).join(' ')
-      ).trim();
-      const fechaNacimiento = toDateOrNull(cliente.fecha_nac);
-      const fechaReclutamiento = contrato?.created_at || cliente.fecha_reclutamiento || cliente.created_at || null;
-      const fechaInicioAfiliacion = cliente.fecha_inicio_afiliacion || null;
-      const fechaInicioContrato = getFilled<string | null>(ficha?.periodoDesde, cliente.fecha_inicio_contrato);
-      const fechaTerminoContrato = getFilled<string | null>(ficha?.periodoHasta, cliente.fecha_termino_contrato);
-      const edad = cliente.edad ?? (fechaNacimiento ? differenceInYears(new Date(), fechaNacimiento) : null);
-
-      const area = getFilled<string>(ficha?.unidadArea, cliente.area);
-      const descripcionZona = getFilled<string>(ficha?.descripcion_zona, cliente.descripcion_zona);
-      const asignacion = getFilled<string>(ficha?.asignacion, cliente.asignacion);
-      const direccion = getFilled<string>(ficha?.direccion, cliente.direccion);
-      const distrito = getFilled<string>(ficha?.distrito, cliente.distrito);
-      const provincia = getFilled<string>(ficha?.provincia, cliente.provincia);
-      const departamento = getFilled<string>(ficha?.departamento, cliente.departamento);
-      const cargo = getFilled<string>(ficha?.puesto, cliente.cargo);
-      const remuneracionVal = getFilled<any>(ficha?.remuneracion, cliente.remuneracion);
-      const tipoContratoVal = getFilled<string>(ficha?.tipo_contrato, cliente.tipo_contrato, contrato?.contenido?.split('\n')[0]);
-      const planillaVal = getFilled<string>(ficha?.planilla, cliente.planilla);
-      const observacionesVal = getFilled<string>(ficha?.observaciones, cliente.observaciones);
-      const referidoVal = getFilled<string>(ficha?.referido, cliente.referido);
-      const lugarVal = getFilled<string>(ficha?.lugar, cliente.lugar);
-      const cooperadorVal = getFilled<string>(ficha?.cooperador, cliente.cooperador);
-      const idAfpVal = getFilled<string>(cliente.id_afp);
-      const cusppVal = getFilled<string>(cliente.cuspp);
-      const porcentajeComisionVal = getFilled<number | string>(cliente.porcentaje_comision as any);
-
+      // Priorizar siempre ficha, luego cliente
+      const getFichaOrCliente = (fichaKey: string, clienteKey: keyof Cliente) => {
+        if (ficha && ficha[fichaKey] !== undefined && ficha[fichaKey] !== null && ficha[fichaKey] !== '') {
+          return ficha[fichaKey];
+        }
+        return cliente[clienteKey];
+      };
+      const apellidos = [getFichaOrCliente('a_paterno', 'a_paterno') || '', getFichaOrCliente('a_materno', 'a_materno') || ''].filter(Boolean).join(' ').trim();
+      const nombres = getFichaOrCliente('nombre', 'nombre') || '';
+      const apellidosNombres = getFichaOrCliente('apellidos_y_nombres', 'apellidos_y_nombres') || [apellidos, nombres].filter(Boolean).join(' ');
+      const fechaNacimiento = toDateOrNull(getFichaOrCliente('fecha_nac', 'fecha_nac'));
+      const fechaReclutamiento = getFichaOrCliente('fecha_reclutamiento', 'fecha_reclutamiento') || contrato?.created_at || cliente.created_at || null;
+      const fechaInicioAfiliacion = getFichaOrCliente('fecha_inicio_afiliacion', 'fecha_inicio_afiliacion');
+      const fechaInicioContrato = getFichaOrCliente('fecha_inicio_contrato', 'fecha_inicio_contrato') || ficha?.periodoDesde;
+      const fechaTerminoContrato = getFichaOrCliente('fecha_termino_contrato', 'fecha_termino_contrato') || ficha?.periodoHasta;
+      const edad = getFichaOrCliente('edad', 'edad') ?? (fechaNacimiento ? differenceInYears(new Date(), fechaNacimiento) : null);
+      const area = getFichaOrCliente('area', 'area') || ficha?.unidadArea;
+      const descripcionZona = getFichaOrCliente('descripcion_zona', 'descripcion_zona');
+      const asignacion = getFichaOrCliente('asignacion', 'asignacion');
+      const direccion = getFichaOrCliente('direccion', 'direccion') || ficha?.domicilioActual;
+      const distrito = getFichaOrCliente('distrito', 'distrito') || ficha?.cpDistrito;
+      const provincia = getFichaOrCliente('provincia', 'provincia') || ficha?.provinciaDomicilio;
+      const departamento = getFichaOrCliente('departamento', 'departamento') || ficha?.departamentoNacimiento;
+      const cargo = getFichaOrCliente('cargo', 'cargo') || ficha?.puesto;
+      const remuneracionVal = getFichaOrCliente('remuneracion', 'remuneracion');
+      const tipoContratoVal = getFichaOrCliente('tipo_contrato', 'tipo_contrato') || ficha?.tipo_contrato || contrato?.contenido?.split('\n')[0];
+      const planillaVal = getFichaOrCliente('planilla', 'planilla');
+      const observacionesVal = getFichaOrCliente('observaciones', 'observaciones');
+      const referidoVal = getFichaOrCliente('referido', 'referido');
+      const lugarVal = getFichaOrCliente('lugar', 'lugar');
+      const cooperadorVal = getFichaOrCliente('cooperador', 'cooperador');
+      const idAfpVal = getFichaOrCliente('id_afp', 'id_afp');
+      const cusppVal = getFichaOrCliente('cuspp', 'cuspp');
+      const porcentajeComisionVal = getFichaOrCliente('porcentaje_comision', 'porcentaje_comision');
+      const codVal = getFichaOrCliente('cod', 'cod');
+      const repetirCodigoVal = getFichaOrCliente('repetir_codigo', 'repetir_codigo');
+      const dniVal = getFichaOrCliente('dni', 'dni');
+      const gradoInstruccionVal = getFichaOrCliente('grado_instruccion', 'grado_instruccion');
+      const estadoActualVal = getFichaOrCliente('estado_actual', 'estado_actual') || contrato?.estado;
+      const sexoVal = getFichaOrCliente('sexo', 'sexo');
+      const estadoCivilVal = getFichaOrCliente('estado_civil', 'estado_civil');
       return [
         formatDateOrND(fechaReclutamiento),
-        formatTextOrND(cliente.cod),
-        formatTextOrND((cliente as any).repetir_codigo ?? cliente.cod),
-        formatTextOrND(cliente.a_paterno),
-        formatTextOrND(cliente.a_materno),
+        formatTextOrND(codVal),
+        formatTextOrND(repetirCodigoVal),
+        formatTextOrND(getFichaOrCliente('a_paterno', 'a_paterno')),
+        formatTextOrND(getFichaOrCliente('a_materno', 'a_materno')),
         formatTextOrND(nombres),
         formatTextOrND(apellidosNombres),
-        formatTextOrND(cliente.dni),
-        formatDateOrND(cliente.fecha_nac),
+        formatTextOrND(dniVal),
+        formatDateOrND(getFichaOrCliente('fecha_nac', 'fecha_nac')),
         formatNumberOrND(edad),
         formatTextOrND(area),
         formatTextOrND(descripcionZona),
@@ -175,12 +180,12 @@ export function useReportGenerator() {
         formatNumberOrND(
           typeof porcentajeComisionVal === 'string' ? Number(porcentajeComisionVal) : porcentajeComisionVal ?? null
         ),
-        formatNuevaAfiliacion(cliente.nueva_afiliacion ?? null),
-        formatTextOrND(cliente.grado_instruccion),
+        formatNuevaAfiliacion(getFichaOrCliente('nueva_afiliacion', 'nueva_afiliacion')),
+        formatTextOrND(gradoInstruccionVal),
         formatTextOrND(asignacion),
-        formatTextOrND(cliente.estado_actual ?? contrato?.estado),
-        formatTextOrND(cliente.sexo),
-        formatTextOrND(cliente.estado_civil),
+        formatTextOrND(estadoActualVal),
+        formatTextOrND(sexoVal),
+        formatTextOrND(estadoCivilVal),
         formatTextOrND(direccion),
         formatTextOrND(distrito),
         formatTextOrND(provincia),
