@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Cliente } from '@/types';
@@ -16,7 +16,6 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps) {
-    const [dniTouched, setDniTouched] = useState(false);
   const { addCliente, updateCliente, getClienteByDni, getClienteByCod, getNextCod } = useClientes();
   const { addContrato } = useContratos();
   const PLANILLA_OPTIONS = [
@@ -147,7 +146,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
   useEffect(() => {
     if (editingClient) {
-      setDniTouched(false);
       const fallbackApellidos = splitApellido(editingClient.a_paterno);
       setFormData({
         dni: editingClient.dni ?? '',
@@ -194,7 +192,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       });
       setReingresoCliente(null);
       setReingresoQuery('');
-      // No consultar RENIEC automáticamente al editar
     } else {
       const today = todayIso();
       setFormData({
@@ -252,82 +249,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
   };
 
   const lastAutoApellidosRef = useRef('');
-<<<<<<< HEAD
-  useEffect(() => {
-    const newAuto = [formData.a_paterno, formData.a_materno, formData.nombre]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
-    const current = formData.apellidos_y_nombres ?? '';
-
-    if (current === '' || current === lastAutoApellidosRef.current) {
-      if (newAuto !== lastAutoApellidosRef.current) {
-        setField('apellidos_y_nombres', newAuto);
-        lastAutoApellidosRef.current = newAuto;
-      }
-    }
-  }, [formData.a_paterno, formData.a_materno, formData.nombre]);
-
-=======
-<<<<<<< HEAD
->>>>>>> cebba9ea39b8826a33a8451f802824cc315d7f32
-  useEffect(() => {
-    const newAuto = [formData.a_paterno, formData.a_materno, formData.nombre]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
-    const current = formData.apellidos_y_nombres ?? '';
-
-    if (current === '' || current === lastAutoApellidosRef.current) {
-      if (newAuto !== lastAutoApellidosRef.current) {
-        setField('apellidos_y_nombres', newAuto);
-        lastAutoApellidosRef.current = newAuto;
-      }
-    }
-  }, [formData.a_paterno, formData.a_materno, formData.nombre]);
-
-=======
-<<<<<<< HEAD
->>>>>>> 2f8d00b3a06e0a7fd9751ad37c655afdb72d1e13
-  useEffect(() => {
-    const newAuto = [formData.a_paterno, formData.a_materno, formData.nombre]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
-    const current = formData.apellidos_y_nombres ?? '';
-
-    if (current === '' || current === lastAutoApellidosRef.current) {
-      if (newAuto !== lastAutoApellidosRef.current) {
-        setField('apellidos_y_nombres', newAuto);
-        lastAutoApellidosRef.current = newAuto;
-      }
-    }
-  }, [formData.a_paterno, formData.a_materno, formData.nombre]);
-
-=======
-<<<<<<< HEAD
->>>>>>> cceba747610bb152877dc1cbd902f7f8a601f584
-  useEffect(() => {
-    const newAuto = [formData.a_paterno, formData.a_materno, formData.nombre]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
-    const current = formData.apellidos_y_nombres ?? '';
-
-    if (current === '' || current === lastAutoApellidosRef.current) {
-      if (newAuto !== lastAutoApellidosRef.current) {
-        setField('apellidos_y_nombres', newAuto);
-        lastAutoApellidosRef.current = newAuto;
-      }
-    }
-  }, [formData.a_paterno, formData.a_materno, formData.nombre]);
-
-=======
->>>>>>> f0e56ed59eb76318885995a3a23a80ecc9c9a8ad
   useEffect(() => {
     const newAuto = [formData.a_paterno, formData.a_materno, formData.nombre]
       .filter(Boolean)
@@ -345,7 +266,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
   }, [formData.a_paterno, formData.a_materno, formData.nombre]);
 
   useEffect(() => {
-    if (!dniTouched) return;
     const dni = formData.dni.trim();
     if (dni.length !== 8 || /\D/.test(dni)) {
       setReniecError(null);
@@ -386,7 +306,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       clearTimeout(timer);
       controller.abort();
     };
-  }, [formData.dni, dniTouched]);
+  }, [formData.dni]);
 
   // Calcular edad automáticamente cuando cambia la fecha de nacimiento
   useEffect(() => {
@@ -926,10 +846,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   ref={dniInputRef}
                   type="text"
                   value={formData.dni}
-                  onChange={(e) => {
-                    setField('dni', e.target.value.replace(/\D/g, '').slice(0, 8));
-                    setDniTouched(true);
-                  }}
+                  onChange={(e) => setField('dni', e.target.value.replace(/\D/g, '').slice(0, 8))}
                   className={`input-field ${errors.dni ? 'border-destructive' : ''}`}
                   placeholder="Ej: 12345678"
                   inputMode="numeric"
