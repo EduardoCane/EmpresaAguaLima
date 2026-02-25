@@ -128,16 +128,14 @@ export default function SignPage() {
             if (insertClienteFirmaError) {
               console.error('Error guardando cliente_firma desde SignPage:', insertClienteFirmaError);
               toast.error('No se pudo guardar la firma en el servidor; la firma solo se envió localmente');
-            } else {
+            }
+            if (!insertClienteFirmaError) {
               toast.success('Firma guardada en el cliente (lista para reutilizar)');
             }
           } catch (fallbackSaveErr) {
             console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackSaveErr);
             // No hacemos más, la app principal seguirá recibiendo el mensaje via postMessage/Broadcast
           }
-        } else {
-          // No existe contrato: no intentamos insertar en `firmas` para evitar errores.
-          console.debug('Contrato no existe (probablemente QR con cliente_id). Firma solo se envía por postMessage/Broadcast.');
         }
       } catch (dbErr) {
         console.error('Supabase no disponible; la firma solo se envia por Broadcast/postMessage:', dbErr);
