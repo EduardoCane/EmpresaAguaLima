@@ -190,117 +190,118 @@ function ContratoIntermitentePage4Content({ signatureSrc }: { signatureSrc?: str
   return (
     <div className="flex flex-col" style={{ minHeight: "240mm" }}>
       <P>
-        4. EL (LA) TRABAJADOR (A) debera mantener en reserva su contrasena de acceso a la plataforma digital,
-        y debera asegurarse de cerrar su sesion en el Portal al culminar con sus tareas, para asegurar
-        la inviolabilidad de su informacion.
+        4. <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> deberá mantener en reserva su contraseña de 
+        acceso a la plataforma digital, y deberá asegurarse de cerrar su sesión en el 
+        Portal al culminar su consulta, para asegurar la inviolabilidad de su información.  
       </P>
 
-      <Clause>DECIMO SEPTIMA: REGIMEN LABORAL.-</Clause>
       <P>
-        EL (LA) TRABAJADOR (A) estara sujeto al Regimen Laboral Agrario, dentro de los alcances y efectos
-        de la Ley N 31110 Ley del Regimen Laboral Agrario y de incentivos para el sector agrario y riego,
-        agroexportador y agroindustrial.
+        <span className="font-bold uppercase">DECIMO SEPTIMA: REGIMEN LABORAL.- EL (LA) TRABAJADOR (A) </span> 
+         estará sujeto al Régimen Laboral Agrario, dentro de los alcances y efectos de la Ley N°31110 Ley del Régimen
+         Laboral Agrario y de incentivos para el sector agrario y riego, agroexportador y agroindustrial.
       </P>
 
       <Clause>DECIMO OCTAVA: SUPUESTOS DEL DERECHO PREFERENCIAL DE CONTRATACION.-</Clause>
       <P>
         De conformidad con lo dispuesto en el articulo 4 de la Ley 31110 y su reglamento, el derecho preferencial
-        en la contratacion se configura en los siguientes supuestos:
+        en la contratación se configura en los siguientes supuestos:
       </P>
 
       <HyphenList
         items={[
           <>
-            Cuando el/la trabajador(a) es contratado por{" "}
-            <span className="font-bold uppercase">LA EMPRESA</span> en la misma linea de cultivo, por dos o mas plazos
-            que en conjunto superan los dos meses en un periodo de un ano, tiene derecho preferencial en la
-            contratacion a que se le emplee de manera continua en la misma linea de cultivo.
+            Cuando el/la trabajador/a es contratado por LA EMPRESA en la misma línea de cultivo, por dos o más plazos 
+            que en conjunto superan los dos meses en un periodo de un año, tiene derecho preferencial en la contratación 
+            cada vez que el empleador requiera contratar personal en la misma línea de cultivo.
           </>,
           <>
-            Cuando el/la trabajador(a) es contratado por{" "}
-            <span className="font-bold uppercase">LA EMPRESA</span>, bajo la modalidad de contratos intermitentes o
-            contratos de temporada similares, dos veces consecutivas o no consecutivas, tiene derecho preferencial
-            en la contratacion si el empleador requiere contratar personal en las siguientes temporadas de servicios
-            intermitentes.
+            Cuando el/la trabajador/a es contratado por LA EMPRESA, bajo la modalidad de contratos intermitentes o contratos
+             de temporada o similares, dos veces consecutivas o no consecutivas, tiene derecho preferencial en la contratación 
+             si el empleador requiere contratar personal en las siguientes temporadas o servicios intermitentes.
           </>,
           <>
-            Cuando el/la trabajador(a) es contratado por{" "}
-            <span className="font-bold uppercase">LA EMPRESA</span>, bajo la modalidad de contrato de temporada, por lo
-            menos dos temporadas en un mismo ano, de manera consecutiva o no consecutiva, para prestar servicios en
-            cultivos diversos cuya estacionalidad conjunta cubre todo el ano, tiene derecho preferencial en la
-            contratacion si el empleador requiere contratar personal en las siguientes temporadas.
+            Cuando el/la trabajador/a es contratado por LA EMPRESA, bajo la modalidad de contratos de temporada, por lo menos dos
+             temporadas en un mismo año, de manera consecutiva o no consecutiva, para prestar servicios en cultivos diversos cuya
+              estacionalidad conjunta cubre todo el año, tiene derecho preferencial en la contratación si el empleador requiere 
+              contratar personal en las siguientes temporadas.
           </>,
         ]}
       />
 
       <Clause>VIGESIMA: FORMALIDADES PARA LA EJECUCION DEL DERECHO PREFERENCIAL DE CONTRATACION</Clause>
       <P>
-        Para hacer efectivo el derecho preferencial de contratacion, en los supuestos previstos en el articulo 4
-        de la Ley 31110, LAS PARTES acuerdan que <span className="font-bold uppercase">LA EMPRESA</span> convocara
-        al trabajador(a) mediante avisos en sus redes sociales o sus similares. A fin de que, dentro de los quince (15)
-        dias anteriores al inicio de la prestacion de servicios, manifieste expresamente su voluntad de prestar servicios
-        en la empresa. Para tal efecto, las partes acuerdan la{" "}
-        <span className="font-bold uppercase">CONVOCATORIA</span> y la{" "}
-        <span className="font-bold uppercase">ACEPTACION</span> se efectuaran de la siguiente manera:
+        Para hacer efectivo el derecho preferencial de contratación, en los supuestos previstos 
+        en el artículo 4 de la Ley 31110, LAS PARTES acuerdan que LA EMPRESA convocará al trabajador/a mediante 
+        avisos en sus redes sociales u otros similares a fin de que, dentro de los quince (15) días anteriores 
+        al inicio de la prestación de servicios, manifieste expresamente su voluntad de prestar servicios en la empresa. 
+        Para tal efecto, las partes acuerdan que la CONVOCATORIA y la ACEPTACIÓN O NEGATIVA del trabajador/a se realizará
+         de manera virtual o de cualquiera de las siguientes formas:
       </P>
 
       <HyphenList
         items={[
           <>
-            Via convocatoria por redes sociales, para el caso,{" "}
-            <span className="font-bold uppercase">LA EMPRESA</span> difundira anuncios en sus redes sociales oficiales.
+            Vía convocatoria por redes sociales, para tal efecto, LA EMPRESA difundirá anuncios en sus redes sociales oficiales.
           </>,
-          <>Via convocatoria a traves del WhatsApp corporativo desde el numero celular de la empresa o un SMS.</>,
           <>
-            Via correo electronico; el trabajador recibira una comunicacion a su correo desde la cuenta corporativa:{" "}
-            <span className="underline">postulaciones@agualima.com.pe</span>.
+            Vía convocatoria radial, para tal efecto, LA EMPRESA difundirá anuncios en las principales radios de la localidad.
           </>,
-          <>Via llamada telefonica; el trabajador recibira comunicacion por la empresa desde el numero telefonico que la empresa mantenga expresamente.</>,
+          <>
+            Vía mensaje escrito al número telefónico que el trabajador proporcione, quien recibirá una comunicación 
+            desde el WhatsApp corporativo de la empresa o un SMS.
+          </>,
+          <>
+            Vía correo electrónico; el trabajador/a recibirá una comunicación a su correo desde la 
+            cuenta corporativa bienestarsocial@agualima.com
+          </>,
         ]}
       />
+      <p>
+        Comunicada la negativa del trabajador o trabajadora o vencido el plazo de quince (15) 
+        días sin que aquel manifieste expresamente su voluntad de prestar servicios o sin acercarse 
+        a la empresa para iniciar el proceso de contratación, caduca el derecho preferencial de contratación del/la trabajadora/a.
+      </p>
 
-      <Clause>VIGESIMA PRIMERA: EXTINCION DEL CONTRATO DE TRABAJO.-</Clause>
       <P>
-        Queda entendido que <span className="font-bold uppercase">LA EMPRESA</span> no esta obligada a dar aviso alguno
-        adicional referente al termino del presente contrato, operando su extincion a la expiracion del plazo pactado
-        entre las partes. En el entendido que con lo descrito en el presente contrato.
+        <span className="font-bold uppercase">VIGESIMA PRIMERA: EXTINCION DEL CONTRATO DE TRABAJO.-</span>
+         Queda entendido que <span className="font-bold uppercase">LA EMPRESA</span> no está obligada a dar aviso alguno adicional referente al término 
+         del presente contrato, operando su extinción a la expiración del plazo pactado entre las partes 
+         en el contrato; tal como lo determina el inc. c) del artículo 16º del D.S. 003-97-TR, oportunidad
+          en la cual abonará a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> los beneficios sociales que pudieran corresponderle.
       </P>
 
       <P>
-        EL (LA) TRABAJADOR (A) conoce y acepta que constituye causa justa de terminacion de la relacion laboral,
-        el rendimiento deficiente en relacion con su capacidad y con el rendimiento promedio en el cumplimiento de sus
-        funciones, de conformidad con el articulo 23 inciso b) del TUO de la LPCL y teniendo en cuenta el cumplimiento
-        de los objetivos normalmente deseados por <span className="font-bold uppercase">LA EMPRESA</span>.
+        <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> conoce y acepta que constituye causa justa de terminación de la relación laboral, 
+        el rendimiento deficiente en relación con su capacidad y con el rendimiento promedio en labores y bajo 
+        condiciones similares, conforme a lo previsto en el artículo 23º literal b) del TUO del D. Leg. 728 aprobado 
+        por Decreto Supremo No. 003-97-TR, causal que será evaluada y aplicada de acuerdo a los parámetros 
+        establecidos por “<span className="font-bold uppercase">LA EMPRESA</span>” y teniendo en cuenta el cumplimiento de los objetivos formalmente 
+        diseñados por <span className="font-bold uppercase">LA EMPRESA</span>. Sin perjuicio a lo citado en los párrafos anteriores, será de aplicación
+         al presente contrato, las demás causas generales de extinción previstas en el artículo 16º del D.S. 003-97-TR.
       </P>
 
-      <Clause>VIGESIMA SEGUNDA: ACEPTACION DE COMUNICACION POR VIA ELECTRONICA, DIGITAL Y/O TELEFONICA.-</Clause>
       <P>
-        EL (LA) TRABAJADOR (A) acepta y reconoce que <span className="font-bold uppercase">LA EMPRESA</span> se encuentra
-        facultada para utilizar cualquier medio de comunicacion electronico, digital y/o telefonico, con la finalidad de
-        poner en conocimiento de EL (LA) TRABAJADOR (A) cualquier gestion y/o situacion que guarde correspondencia con la
-        relacion laboral subsistente entre las partes. Para tales efectos, EL (LA) TRABAJADOR (A) proporciona la siguiente
-        direccion electronica:
-      </P>
-      <P>
-        <span className="font-bold">__________________________</span>
+        <span className="font-bold uppercase">VIGESIMA SEGUNDA: ACEPTACION DE COMUNICACION POR VIA ELECTRONICA, DIGITAL Y/O TELEFONICA.- EL (LA) 
+          TRABAJADOR (A)</span> acepta y reconoce que <span className="font-bold uppercase">LA EMPRESA</span> se encuentra facultada para utilizar cualquier medio de comunicación
+           electrónica, digital y/o telefónica; con la finalidad de poner en conocimiento de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>
+           cualquier decisión y/o situación que guarde correspondencia con la relación laboral sostenida entre las partes. 
+           Para tales efectos, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> proporciona la siguiente dirección electrónica  
+           <span className="font-bold">  ________________________________________________________</span>
+           , así como el número de celular ______________________________ mediante los cuales <span className="font-bold uppercase">AUTORIZA</span> que <span className="font-bold uppercase">LA EMPRESA </span>
+           efectúe las comunicaciones que estime pertinente, las mismas que, una vez efectuadas, quedarán válidamente notificadas.
       </P>
 
-      <Clause>VIGESIMA TERCERA: DOMICILIOS Y JURISDICCION.-</Clause>
       <P>
-        Las partes senalan como sus respectivos domicilios los especificados en la introduccion del presente contrato;
+        <span className="font-bold uppercase">VIGESIMA TERCERA: DOMICILIOS Y JURISDICCION.-</span> Las partes senalan
+         como sus respectivos domicilios los especificados en la introduccion del presente contrato;
         por lo que se reputaran validas todas las comunicaciones y notificaciones dirigidas a las mismas con motivo de la
-        ejecucion del presente contrato. Todo cambio de domicilio de EL (LA) TRABAJADOR (A) debera ser comunicado por
+        ejecucion del presente contrato. Todo cambio de domicilio de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> debera ser comunicado por
         escrito a <span className="font-bold uppercase">LA EMPRESA</span> para que surta efectos.
       </P>
 
       <P>
-        Las partes contratantes se someten expresamente a la jurisdiccion de las autoridades judiciales y administrativas
-        de la Provincia de Viru, Departamento La Libertad.
-      </P>
-
-      <P>
-        Ambas partes enteradas del contenido de todas y cada una de las clausulas del presente documento proceden a firmar
-        por duplicado, en senal de conformidad, en la ciudad de Viru el <span className="font-bold"></span>.
+        Las partes contratantes se someten expresamente a la jurisdicción de las autoridades judiciales y administrativas
+         de la Provincia de Virú, Departamento La Libertad.
       </P>
 
       <FirmaPage4 signatureSrc={signatureSrc} />
@@ -674,241 +675,128 @@ export function ContratoIntermitenteForm({
       {pagePart !== 1 && pagePart !== 2 && pagePart !== 4 && (
         <PdfPage headerLeft="Version 02" headerRight={codigo} pageNumber={3} pdfMode={pdfMode}>
   <P tight>
-    <span className="font-bold uppercase">LA EMPRESA</span>, en cumplimiento de lo dispuesto por el artículo 35° de la Ley 29783,
-    Ley de Seguridad y Salud en el trabajo, entrega a{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> una descripción
-    de las recomendaciones de seguridad y salud en el trabajo para el puesto que se
-    ocupará en virtud de la celebración del presente contrato. Dicha descripción se
-    entrega a{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> como documento
-    adjunto al presente contrato y detalla lo siguiente: (i) Los riesgos químicos,
-    físicos, biológicos, ergonómicos, mecánicos, psicosociales, entre otros; a los que
-    se pudiera ver expuesto el trabajador con motivo del desempeño de sus funciones; y
-    (ii) las recomendaciones de seguridad y salud en el trabajo para reducir o mitigar
-    tales riesgos detectados.
+    <span className="font-bold uppercase">LA EMPRESA</span>, en cumplimiento de lo dispuesto por el artículo 35° de la Ley 29783, Ley de Seguridad y Salud en el trabajo, entrega a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> una descripción de las recomendaciones de seguridad y salud en el trabajo para el puesto que este ocupara en virtud a la celebración del presente contrato. Dicha descripción se entrega a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> como documento adjunto al presente contrato y detalla lo siguiente: (i) Los riesgos (químicos, físicos, biológicos, ergonómicos, mecánicos, psicosociales, entre otros) a los que se pudiera ver expuesto el trabajador con motivo del desempeño de sus funciones; y, (ii) Las recomendaciones de seguridad y salud en el trabajo para reducir o mitigar tales riesgos detectados.
   </P>
 
   <P>
-    Por su parte{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete a
-    observar estrictamente las pautas contenidas en la descripción de recomendaciones
-    de seguridad y salud en el trabajo. Cualquier incumplimiento de las referidas
-    pautas expone a{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> a un riesgo
-    mayor, será debidamente sancionado por{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span>.
+    Por su parte <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete a observar estrictamente las pautas contenidas en la descripción de recomendaciones de seguridad y salud en el trabajo. Cualquier inobservancia de las recomendaciones referidas, que exponga a <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> a un riesgo mayor, será debidamente sancionada por <span className="font-bold uppercase">LA EMPRESA</span>.
   </P>
 
   <P>
-    <span className="font-bold uppercase">LA EMPRESA</span> se compromete a actualizar periódicamente la descripción de las
-    recomendaciones de seguridad y salud en el trabajo de{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, en particular,
-    en aquellos supuestos en que se le asignen nuevas funciones o cuando las nuevas
-    pautas de seguridad y salud, con motivo de la mejora continua del Sistema de
-    Gestión de Seguridad y Salud en el trabajo de{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span>.
+    <span className="font-bold uppercase">LA EMPRESA</span> se compromete a actualizar periódicamente la descripción de las recomendaciones de seguridad y salud en el trabajo de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>; en particular, en aquellos supuestos en que se le asignen nuevas funciones o cuando se detecten riesgos adicionales para su seguridad y salud, con motivo de la mejora continua del Sistema de Gestión de la Seguridad y Salud en el trabajo de <span className="font-bold uppercase">LA EMPRESA</span>.
   </P>
 
   <P>
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se obliga a
-    cuidar de su persona y los bienes de su propiedad; no es ajeno, y a no exponer
-    voluntaria o negligentemente a situaciones de riesgo en que pudieren encontrarse
-    otros; cumplir estrictamente con las normas; no compartir con los demás
-    trabajadores ni sus utensilios o consumos; retirar de ser el caso las informaciones
-    de emergencia; asimismo, cumplir con las sanciones establecidas en los
-    reglamentos, normas y procedimientos de la empresa y en las disposiciones legales
-    vigentes en materia de seguridad y salud en el trabajo.
-  </P>
-
-  <Clause>DECIMO QUINTA: AUTORIZACIÓN DE DESCUENTO POR PLANILLA.-</Clause>
-  <P>
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, en caso incurra
-    en faltas y/o procedimientos establecidos por{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span>, y tal situación conlleve
-    un perjuicio económico para ésta, autoriza que la misma le descuente de su
-    remuneración la cantidad equivalente al perjuicio o pérdida ocasionados en
-    infracción de tales estándares.
+    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se obliga a cuidar de su persona y los bienes de su propiedad o posesión, y a no exponerse voluntaria o negligentemente a situaciones de riesgo en que pudiere contraer enfermedades o sufrir accidentes en el trabajo. Asimismo, no compartirá sus útiles personales con los demás trabajadores ni sus utensilios al consumir su refrigerio, de ser el caso. El incumplimiento de estas disposiciones da lugar a la imposición de las sanciones establecidas en los reglamentos, normas y procedimientos de la empresa y en los dispositivos legales vigentes, en materia de seguridad y salud en el trabajo.
   </P>
 
   <P>
-    Asimismo,{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> deberá
-    reintegrar a{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span> el valor de los bienes que
-    de su custodia haya sido su responsabilidad o custodia se perdieran o deterioren,
-    o se afectaren por descuido o negligencia debidamente comprobada; así como los
-    montos de dinero de propiedad de{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span>, a los que tuviere acceso
-    con ocasión de sus funciones o que estén bajo su custodia y que durante la
-    ejecución de servicio, negligencia o dejación de la presente cláusula o la
-    conducta de sus actos o labores le causen daños o pérdidas a{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span>; o para cubrir su descargo
-    y/o préstamos por{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span> con autorización igualmente
-    expresa; así como su deducción por planillas, con cargo a su liquidación de
-    beneficios sociales en caso de cese de la relación laboral.
+    <span className="font-bold uppercase">DECIMO QUINTA: AUTORIZACIÓN DE DESCUENTO POR PLANILLA.- EL (LA) TRABAJADOR (A)</span>, en caso vulnere los estándares y procedimientos establecidos por LA EMPRESA, y tal situación ocasionare un perjuicio económico para ésta, autoriza que la misma le descuente de su remuneración la cantidad equivalente al perjuicio o pérdida ocasionados en infracción de tales estándares. 
   </P>
 
-  <Clause>DECIMO SEXTA: AUTORIZACIÓN PARA RECOPILACIÓN Y TRATAMIENTO DE DATOS PERSONALES.-</Clause>
+  <P>
+    Asimismo, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> deberá reintegrar a <span className="font-bold uppercase">LA EMPRESA</span> el valor de los bienes que estando bajo su responsabilidad o custodia se perdieren o deterioraren por descuido o negligencia debidamente comprobada; así como los montos de dinero de propiedad de <span className="font-bold uppercase">LA EMPRESA</span>, a los que pudiere tener acceso con ocasión de sus funciones o que estén bajo su custodia; o los valores que resultaren en deudas derivadas de la ejecución del presente contrato o préstamos personales que le hubiere otorgado LA EMPRESA; o daños ocasionados durante la ejecución del mismo que originen un saldo deudor de cargo de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, para lo cual autoriza igualmente el respectivo descuento por planillas, o con cargo a su liquidación de beneficios sociales en caso de cese de la relación laboral.
+  </P>
+
+   <P>
+    <span className="font-bold uppercase">DECIMO SEXTA: AUTORIZACIÓN PARA RECOPILACIÓN Y TRATAMIENTO DE DATOS PERSONALES.-</span> declara:
+   </P>
+
   <ol className="mt-2 list-decimal pl-5 text-justify">
     <li className="mt-1">
-      Declaro expresamente, que, para efectos de la suscripción del presente contrato,
-      he suministrado mis datos personales. Asimismo, durante la ejecución del servicio{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span> podrá tener acceso a otros
-      datos personales, mismos suministrados o no por mí, o de ser el caso por cualquier
-      otra persona.
+      Declaro expresamente, que, para efectos de la suscripción del presente contrato, he suministrado mis datos personales. Asimismo, durante la ejecución del servicio LA EMPRESA podrá tener acceso a otros datos personales míos, suministrados o no por mí, o de ser el caso de cualquier otra persona.    
     </li>
     <li className="mt-1">
-      Declaro que{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span> me ha informado de manera
-      expresa que la información que he proporcionado, como son: nombre, apellido,
-      nacionalidad, estado civil, documento de identidad, ocupación, estudios,
-      domicilio, correo electrónico, teléfono, estado de salud, actividades que realiza,
-      ingresos económicos, patrimonio, gastos, entre otros, así como la referida a los
-      rasgos físicos y de conducta que lo identifican o lo hacen identificable como son
-      huella dactilar, firma, voz, etc. (datos biométricos), conforme a Ley es considerada
-      como Datos Personales.
+      Declaro que LA EMPRESA me ha informado de manera expresa que la información que he proporcionado, como son: nombre, apellido, nacionalidad, estado civil, documento de identidad, ocupación, estudios, domicilio, correo electrónico, teléfono, estado de salud, actividades que realiza, ingresos económicos, patrimonio, gastos, entre otros, así como la referida a los rasgos físicos y/o de conducta que lo identifican o lo hacen identificable como es su huella dactilar, firma, voz, etc. (datos biométricos), conforme a Ley es considerada como Datos Personales.
     </li>
     <li className="mt-1">
-      Doy mi consentimiento libre, previo, expreso e informado para que mis Datos
-      Personales sean tratados por{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span>, es decir, que puedan ser:
-      recolectados, registrados, organizados, almacenados, conservados, elaborados,
-      modificados, bloqueados, suprimidos, extraídos, consultados, utilizados,
-      transferidos, o procesados de cualquier otra forma prevista por Ley. Estas
-      autorizaciones indefinidas y se mantendrán vigentes después de terminado el
-      servicio y/o el presente Contrato.
+      Doy mi consentimiento libre, previo, expreso e informado para que mis Datos Personales sean tratados por <span className="font-bold uppercase">LA EMPRESA</span>, es decir, que puedan ser: recopilados, registrados, organizados, almacenados, conservados, elaborados, modificados, bloqueados, suprimidos, extraídos, consultados, utilizados, transferidos o procesados de cualquier otra forma prevista por Ley. Esta autorización es indefinida y se mantendrá inclusive después de terminado el servicio y/o el presente Contrato.
     </li>
     <li className="mt-1">
-      Autorizo que mis datos sean compartidos, transmitidos, entregados, transferidos
-      o divulgados para las finalidades mencionadas a: i) Personas jurídicas que tienen
-      la calidad de filiales, subsidiarias, controlantes o vinculadas, o de matriz de{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span>; ii) Los operadores
-      necesarios para el cumplimiento de los servicios que presta{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span>, a los como por ejemplo
-      servicios de transporte de personal, seguros, operadores necesarios para el
-      informe de consultas o cruce de perfil de calidades y competencia de personal
-      para llenar sus vacantes de entre otros.
+      Autorizo que mis datos sean compartidos, transmitidos, entregados, transferidos o divulgados para las finalidades mencionadas a: i) Personas jurídicas que tienen la calidad de filiales, subsidiarias, contratistas o vinculadas, o de matriz de <span className="font-bold uppercase">LA EMPRESA</span>, ii) Los operadores necesarios para el cumplimiento de los servicios que presta <span className="font-bold uppercase">LA EMPRESA</span>, tales como: call centers, investigadores, compañías de asistencia, contratistas, y empresas interesadas en las labores de consultoría sobre el perfil de calidades y competencia de personal para llenar sus vacantes de trabajo, entre otros.
     </li>
     <li className="mt-1">
-      Declaro que me han informado que tengo derecho a no proporcionar mis Datos
-      Personales y que si no los proporciono no podrán tratar mis Datos Personales en
-      la forma explicada en la presente cláusula, o que no me proporcionarán la
-      ejecución y cumplimiento del Contrato.
+      Declaro que me han informado que tengo derecho a no proporcionar mis Datos Personales y que si no los proporciona no podrán tratar mis Datos Personales en la forma explicada en la presente cláusula, lo que no impide su uso para la ejecución y cumplimiento del Contrato.
     </li>
     <li className="mt-1">
-      Asimismo, declaro conocer que puedo revocar el consentimiento para tratar mis
-      Datos Personales en cualquier momento. Para ejercer este derecho o cualquier otro
-      de que la Ley establece en relación a sus Datos Personales deberá remitirme el
-      presente.
-    </li>
-    <li className="mt-1">
-      COMO SEXTA: USO Y ENTREGA DIGITAL DE DOCUMENTOS LABORALES.-{" "}
-      <span className="font-normal">
-        (Se continúa en la cláusula siguiente.)
-      </span>
+      Asimismo, declaro conocer que puedo revocar el consentimiento para tratar mis Datos Personales en cualquier momento. Para ejercer este derecho o cualquier otro que la Ley establece con relación a sus Datos Personales deberá presentar una solicitud escrita a mi empleador.
     </li>
   </ol>
 
-  {/* En la imagen, aquí ya arranca el bloque grande de “Uso y entrega digital...” */}
-  <Clause>USO Y ENTREGA DIGITAL DE DOCUMENTOS LABORALES.-</Clause>
   <P>
-    De acuerdo a lo dispuesto en el artículo 1° del Decreto Supremo N° 09-2011-TR, que
-    modifica los artículos 18, 19 y 20 del Decreto Supremo N° 001-98-TR, y dentro de
-    los alcances de las normas de simplificación en materia laboral contenidas en el
-    Decreto Legislativo 1310,{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span> se encuentra facultada para
-    sustituir las boletas de pago de manera digital. Asimismo, podrá hacer uso del
-    sistema digital de entrega de dichas boletas, a través de mecanismos electrónicos.
+    <span className="font-bold uppercase">DÉCIMO SEXTA: USO Y ENTREGA DIGITAL DE DOCUMENTOS LABORALES. -</span> Al amparo de lo dispuesto en el artículo 1° del Decreto Supremo 009-2011-TR, que modificó los artículos 18, 19 y 20 del Decreto Supremo N° 001-98-TR, y dentro de los alcances de las normas de simplificación en materia laboral contenidas en el Decreto Legislativo 1310, <span className="font-bold uppercase">LA EMPRESA</span> se encuentra facultada a suscribir las boletas de pago de manera digital. Asimismo, podrá hacer uso del sistema digital de entrega de dichas boletas, a través de mecanismos electrónicos.
   </P>
 
   <P>
-    De igual manera,{" "}
-    <span className="font-bold uppercase">LA EMPRESA</span> se encuentra facultada para
-    implementar el sistema de firma y entrega digital de los documentos laborales
-    parte de las boletas de pago, tales como las hojas de liquidación por tiempo de
-    servicios - CTS, hojas de liquidaciones de participación en las utilidades, hoja
-    de ejercicio gravable, gratificaciones, liquidaciones de beneficios sociales,
-    certificado de renta y retenciones, certificado de trabajo, comprobante de
-    retenciones por aportes al sistema privado de pensiones, entre otros documentos
-    (en adelante, los Documentos Laborales).
+    De igual manera, <span className="font-bold uppercase">LA EMPRESA</span>, se encuentra facultada para implementar el sistema de firma y entrega digital de otros documentos laborales aparte de las boletas de pago, tales como las hojas de liquidación por tiempo de servicios – CTS, hojas de liquidaciones de participación en las utilidades por el ejercicio gravable, gratificaciones, liquidaciones de beneficios sociales, certificado de renta y retenciones de quinta categoría, certificado de trabajo, comprobante de retenciones por aportes al sistema privado de pensiones, entre otros documentos (en adelante, los Documentos Laborales).
   </P>
 
   <P>
-    LA EMPRESA, en virtud de lo dispuesto en el Decreto Legislativo 1310, se encuentra
-    facultada para sustituir el uso de firma y huella manuscrita por su firma digital
-    y el sello manual por su firma digital, conforme lo regulado por el artículo 141-A
-    del Código Civil; su firma electrónica, emitida conforme a lo regulado por la Ley
-    número 27269, Ley de Firmas y Certificados Digitales, en todos los Documentos
-    Laborales señalados. Por otra parte,{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>, (en beneficio
-    de facilidad y seguridad) autoriza la entrega de manera digital de sus boletas y
-    demás remuneraciones y beneficios; sustituyendo el uso de firma y huella, y
-    reconociendo que dichos documentos serán puestos a su disposición mediante el uso
-    de tecnologías de la información y comunicación.
-  </P>
-
-  <P>
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> otorga para la
-    comunicación remota (medio de datos circunstanciales), el correo electrónico:
-    <BlankPdf widthMm={70} /> y el número telefónico celular: <BlankPdf widthMm={55} value={celularValue} />;
+    <span className="font-bold uppercase">LA EMPRESA</span>, en virtud de lo dispuesto en el Decreto
+     Legislativo 1310, se encuentra facultado para sustituir su firma ológrafa y el sellado manual por 
+     su firma digital, conforme lo regulado por el artículo 141-A del Código Civil; o, su firma electrónica,
+      emitida conforme a lo regulado por la Ley número 27269, Ley de Firmas y Certificados Digitales, en todos 
+      los documentos laborales que emita. Por su parte, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> 
+      reconoce dicha facultad del empleador, y <span className="font-bold uppercase">autoriza</span> 
+      la entrega de manera digital de sus boletas de pago de remuneraciones, vacaciones, liquidación de CTS, 
+      de utilidades, de Beneficios Sociales, y cualquier otro documento en materia laboral; 
+      reconociendo <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> que 
+      no se requiere firma de recepción de su parte en el supuesto que dichos documentos 
+      sean puestos a su disposición mediante el uso de tecnologías de la información y 
+      comunicación. Incluso, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> otorgará para 
+      la comunicación vía remota (debido a estas circunstancias), el correo electrónico :
+    <span className="font-bold">  ________________________________________________________</span> y el número telefónico celular: <span className="font-bold">  ____________________________</span>;
     siendo estos válidos para las comunicaciones que efectuará{" "}
     <span className="font-bold uppercase">LA EMPRESA</span>.
   </P>
 
+
   <P>
     Asimismo, a través del portal digital y/o cuenta de correo electrónico del
-    trabajador, la empresa remitirá otros documentos de índole laboral tales como:
-    Reglamento Interno de Trabajo, Reglamento de Seguridad y Salud en el Trabajo,
-    Directivas, Procedimientos y demás normas conexas. Por su parte{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete a
-    descargar dichos documentos durante su vigencia, y a dar cumplimiento estricto con
-    las normas, procedimientos y documentos conexos puestos a su disposición; de no
-    realizarlo a los términos señalados, a través de dichos medios de tecnología de la
-    información y comunicación, se tendrá de conformidad con su entrega. De igual
-    manera,{" "}
-    <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete a
-    lo siguiente:
+     trabajador, la empresa remitirá otros documentos de índole laboral tales como: 
+     Reglamento Interno de Trabajo, Reglamento de Seguridad y Salud en el Trabajo, 
+     Directivas, Procedimientos y demás normas conexas. Por su parte, <span 
+     className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se compromete 
+     a descargar los documentos laborales, revisar su contenido, y a dar cabal 
+     cumplimiento en cuanto corresponda a sus obligaciones; declarando estar 
+     instruido que la remisión de los mismos, a través de dichos medios de tecnología
+      de la información y comunicación, es señal de conformidad con su entrega. De 
+      igual manera, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> se 
+      compromete a lo siguiente:
   </P>
 
   <ol className="mt-2 list-decimal pl-5 text-justify">
     <li className="mt-1">
-      Contar con una cuenta de correo electrónico, a la cual deberá proporcionar a{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span> en el plazo de{" "}
-      <BlankPdf widthMm={18} /> días hábiles de iniciada la relación laboral. En caso{" "}
-      <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> no confirme su
-      dirección de correo electrónico en el plazo antes mencionado, acepta que{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span> envíe los Documentos
-      Laborales al Portal digital o al portal web que utiliza la empresa para tal
-      efecto.
+      Contar con una cuenta activa de correo electrónico, la cual deberá proporcionar
+       a LA EMPRESA en el plazo de 02 días hábiles de iniciada la relación laboral. 
+       En caso <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> no confirme su dirección de correo electrónico
+        en el plazo antes mencionado, acepta que LA EMPRESA envíe los Documentos
+         Laborales al Portal digital o al portal que ésta contrate, dándolos por 
+         aceptados por parte de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> y por notificados por <span className="font-bold uppercase">LA EMPRESA</span>. 
+         No obstante, lo anterior, en el momento que <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> cuente con 
+         un correo electrónico y este sea comunicado a LA EMPRESA podrá acceder a la
+          información disponible en el Portal.
     </li>
     <li className="mt-1">
-      Mantener activo el correo electrónico y revisar periódicamente la plataforma en
-      la cual{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span> ponga a su disposición
-      los Documentos Laborales remitidos por{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span>.
+      Mantener activo el correo electrónico y revisar 
+      periódicamente la plataforma digital a fin de tomar conocimiento de 
+      los Documentos Laborales remitidos por <span className="font-bold uppercase">LA EMPRESA</span>.
     </li>
     <li className="mt-1">
-      No proporcionar su cuenta de correo electrónico ni contraseña a ninguna persona
-      distinta a la de{" "}
-      <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span>; de no ser
-      así asumirá toda la responsabilidad que derive de esta acción.
-    </li>
-    <li className="mt-1">
-      Acusar recibo de la recepción de cada uno de los Documentos Laborales remitidos
-      al trabajador por parte de{" "}
-      <span className="font-bold uppercase">LA EMPRESA</span>, dando conformidad de
-      recepción de los documentos marcando la opción correspondiente a través de la
-      plataforma digital mediante el acuse de recibo o a través del correo electrónico.
-      En caso <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> no
-      manifieste el descargo dentro del plazo establecido, se entenderá por aceptados
-      los documentos laborales. En caso tuviera alguna consulta, duda, observación o
-      declaración de un error, deberá acercarse inmediatamente o enviar una
-      comunicación escrita dentro de dicho término al correo corporativo del
-      Departamento de Asuntos Corporativos y Gestión Humana:{" "}
-      <span className="underline text-blue-700">acgh@agualima.com</span>, a fin de
-      procurar resolverlos de común acuerdo entre las partes.
+      Dado que bajo este procedimiento de entrega digital de Documentos Laborales, 
+      la firma de <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> no es obligatoria, aquel deberá confirmar 
+      expresamente la recepción de cada uno de los Documentos Laborales remitidos al 
+      trabajador por parte de <span className="font-bold uppercase">LA EMPRESA</span>, dando conformidad de recepción de los 
+      documentos marcando la opción correspondiente a través de la plataforma digital 
+      o mediante el acuse de recibo a través de su cuenta de correo electrónico o a 
+      través de otro mecanismo análogo de confirmación. En caso <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> 
+      no realice el reclamo dentro del plazo establecido (3 días hábiles de remitidos 
+      los documentos laborales), se entenderá por aceptados la entrega y contenido de 
+      los documentos. En caso tuviera alguna consulta, queja, observación o detectara 
+      un error, deberá acercarse inmediatamente o enviar una comunicación escrita dentro
+       de dicho término al correo corporativo del Departamento de Asuntos Corporativos & 
+       Gestión Humana : <span className="underline text-blue-700">acgh@agualima.com</span>  a fin de procurar resolverlo de común acuerdo 
+       entre las partes. En caso no lo hiciera, se entenderá que está conforme con su contenido.
     </li>
   </ol>
         </PdfPage>
