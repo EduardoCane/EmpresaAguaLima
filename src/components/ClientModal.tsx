@@ -33,6 +33,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     cod: '',
     repetir_codigo: '',
     nombre: '',
+    apellidos_y_nombres: '',
     a_paterno: '',
     a_materno: '',
     fecha_nac: '',
@@ -151,6 +152,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         cod: editingClient.cod ?? '',
         repetir_codigo: editingClient.repetir_codigo ?? '',
         nombre: editingClient.nombre ?? '',
+        apellidos_y_nombres: editingClient.apellidos_y_nombres ?? '',
         a_paterno: editingClient.a_paterno ?? fallbackApellidos.paterno,
         a_materno: editingClient.a_materno ?? fallbackApellidos.materno,
         fecha_nac: editingClient.fecha_nac ?? '',
@@ -197,6 +199,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
         cod: '',
         repetir_codigo: '',
         nombre: '',
+        apellidos_y_nombres: '',
         a_paterno: '',
         a_materno: '',
         fecha_nac: '',
@@ -244,6 +247,23 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     setFormData(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
+
+  const lastAutoApellidosRef = useRef('');
+  useEffect(() => {
+    const newAuto = [formData.a_paterno, formData.a_materno, formData.nombre]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const current = formData.apellidos_y_nombres ?? '';
+
+    if (current === '' || current === lastAutoApellidosRef.current) {
+      if (newAuto !== lastAutoApellidosRef.current) {
+        setField('apellidos_y_nombres', newAuto);
+        lastAutoApellidosRef.current = newAuto;
+      }
+    }
+  }, [formData.a_paterno, formData.a_materno, formData.nombre]);
 
   useEffect(() => {
     const dni = formData.dni.trim();
@@ -296,7 +316,17 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
     }
 
     try {
-      const birthDate = new Date(fechaNacimiento);
+      // Parse YYYY-MM-DD safely to avoid timezone shifts: build local Date
+      let birthDate: Date;
+      const iso = fechaNacimiento.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) {
+        const y = Number(iso[1]);
+        const m = Number(iso[2]);
+        const d = Number(iso[3]);
+        birthDate = new Date(y, m - 1, d);
+      } else {
+        birthDate = new Date(fechaNacimiento);
+      }
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -374,7 +404,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       requireText('codigogrupotrabajo', 'Código Grupo Trabajo');
       requireText('area', 'Área');
       requireText('descripcion_zona', 'Descripción de Zona');
-      requireText('asignacion', 'Asignación');
+      // asignacion no es obligatorio
       requireText('cargo', 'Cargo');
 
       // Información de Contrato
@@ -492,12 +522,31 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       (base as any)[key] = val?.toString().trim() || '';
     };
 
+    const formatDateToDMY = (val?: string | null) => {
+      const v = (val ?? '').toString().trim();
+      if (!v) return '';
+      // ISO yyyy-mm-dd -> dd/mm/yyyy
+      const isoMatch = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+      // already dd/mm/yyyy
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v;
+      // fallback: try Date parsing
+      const d = new Date(v);
+      if (!Number.isNaN(d.getTime())) {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = String(d.getFullYear());
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      return v;
+    };
+
     copyString('remuneracion', source.remuneracion);
     copyString('unidadArea', source.area);
     copyString('puesto', source.cargo);
     copyString('periodoDesde', source.fecha_inicio_contrato);
     copyString('periodoHasta', source.fecha_termino_contrato);
-    copyString('fechaNacimiento', source.fecha_nac);
+    copyString('fechaNacimiento', formatDateToDMY(source.fecha_nac));
     copyString('estadoCivil', source.estado_civil);
     copyString('domicilioActual', source.direccion);
     copyString('distritoDomicilio', source.distrito);
@@ -844,27 +893,55 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   <p className="mt-1 text-sm text-destructive">{errors.dni}</p>
                 )}
               </div>
-
-              {/* Nombres y apellidos */}
+              {/* Datos personales (orden solicitado) */}
               <div className="md:col-span-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Datos personales</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Nombre *
+                  Fecha de reclutamiento *
+                </label>
+                <input
+                  type="date"
+                  value={formData.fecha_reclutamiento}
+                  onChange={(e) => setField('fecha_reclutamiento', e.target.value)}
+                  className="input-field"
+                  disabled={isFormLocked}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Codigo
                 </label>
                 <input
                   type="text"
-                  value={formData.nombre}
-                  onChange={(e) => setField('nombre', e.target.value)}
-                  className={`input-field ${errors.nombre ? 'border-destructive' : ''}`}
-                  placeholder="Ej: María"
-                  disabled={isFormLocked}
+                  value={formData.cod}
+                  onChange={(e) => setField('cod', e.target.value.toUpperCase().replace(/\s+/g, '').slice(0, 30))}
+                  className={`input-field ${errors.cod ? 'border-destructive' : ''}`}
+                  placeholder="Se autogenera si lo dejas vacio"
+                  maxLength={30}
+                  disabled={isFormLocked || isReingreso}
                 />
-                {errors.nombre && (
-                  <p className="mt-1 text-sm text-destructive">{errors.nombre}</p>
+                {errors.cod && (
+                  <p className="mt-1 text-sm text-destructive">{errors.cod}</p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Repetir codigo
+                </label>
+                <input
+                  type="text"
+                  value={formData.repetir_codigo}
+                  onChange={(e) => setField('repetir_codigo', e.target.value)}
+                  className="input-field"
+                  placeholder="Ej: 44000"
+                  maxLength={20}
+                  disabled={isFormLocked || isReingreso}
+                />
               </div>
 
               <div>
@@ -900,6 +977,37 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) => setField('nombre', e.target.value)}
+                  className={`input-field ${errors.nombre ? 'border-destructive' : ''}`}
+                  placeholder="Ej: María"
+                  disabled={isFormLocked}
+                />
+                {errors.nombre && (
+                  <p className="mt-1 text-sm text-destructive">{errors.nombre}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Apellidos y nombres
+                </label>
+                <input
+                  type="text"
+                  value={formData.apellidos_y_nombres}
+                  onChange={(e) => setField('apellidos_y_nombres', e.target.value)}
+                  className="input-field"
+                  placeholder="Ej: García López María"
+                  disabled={isFormLocked}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Fecha de nacimiento *
                 </label>
                 <input
@@ -929,93 +1037,33 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de reclutamiento *
-                </label>
-                <input
-                  type="date"
-                  value={formData.fecha_reclutamiento}
-                  onChange={(e) => setField('fecha_reclutamiento', e.target.value)}
-                  className="input-field"
-                  disabled={isFormLocked}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Sexo *
-                </label>
-                <select
-                  value={formData.sexo}
-                  onChange={(e) => setField('sexo', e.target.value)}
-                  className="input-field"
-                  disabled={isFormLocked}
-                >
-                  <option value="">Seleccionar</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Estado civil *
-                </label>
-                <select
-                  value={formData.estado_civil}
-                  onChange={(e) => setField('estado_civil', e.target.value)}
-                  className="input-field"
-                  disabled={isFormLocked}
-                >
-                  <option value="">Seleccionar</option>
-                  <option value="SOLTERO">Soltero</option>
-                  <option value="CASADO">Casado</option>
-                  <option value="VIUDO">Viudo</option>
-                  <option value="CONVIVIENTE">Conviviente</option>
-                  <option value="DIVORCIADO">Divorciado</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Repetir codigo
+                  Área *
                 </label>
                 <input
                   type="text"
-                  value={formData.repetir_codigo}
-                  onChange={(e) => setField('repetir_codigo', e.target.value)}
+                  value={formData.area}
+                  onChange={(e) => setField('area', e.target.value)}
                   className="input-field"
-                  placeholder="Ej: 44000"
-                  maxLength={20}
-                  disabled={isFormLocked || isReingreso}
+                  placeholder="Ej: Ventas"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Codigo
+                  Descripción de Zona *
                 </label>
                 <input
                   type="text"
-                  value={formData.cod}
-                  onChange={(e) => setField('cod', e.target.value.toUpperCase().replace(/\s+/g, '').slice(0, 30))}
-                  className={`input-field ${errors.cod ? 'border-destructive' : ''}`}
-                  placeholder="Se autogenera si lo dejas vacio"
-                  maxLength={30}
-                  disabled={isFormLocked || isReingreso}
+                  value={formData.descripcion_zona}
+                  onChange={(e) => setField('descripcion_zona', e.target.value)}
+                  className="input-field"
+                  placeholder="Ej: Zona Norte"
                 />
-                {errors.cod && (
-                  <p className="mt-1 text-sm text-destructive">{errors.cod}</p>
-                )}
-              </div>
-
-              {/* AFP */}
-              <div className="md:col-span-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">AFP / Afiliación</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  AFP
+                  ID-AFP
                 </label>
                 <input
                   type="text"
@@ -1081,11 +1129,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 </label>
               </div>
 
-              {/* Estudios */}
-              <div className="md:col-span-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estudios</p>
-              </div>
-
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Grado de instrucción
@@ -1099,9 +1142,52 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 />
               </div>
 
-              {/* Direccion */}
-              <div className="md:col-span-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dirección</p>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Asignación
+                </label>
+                <input
+                  type="text"
+                  value={formData.asignacion}
+                  onChange={(e) => setField('asignacion', e.target.value)}
+                  className="input-field"
+                  placeholder="Ej: Planta Norte"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Sexo *
+                </label>
+                <select
+                  value={formData.sexo}
+                  onChange={(e) => setField('sexo', e.target.value)}
+                  className="input-field"
+                  disabled={isFormLocked}
+                >
+                  <option value="">Seleccionar</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Estado civil *
+                </label>
+                <select
+                  value={formData.estado_civil}
+                  onChange={(e) => setField('estado_civil', e.target.value)}
+                  className="input-field"
+                  disabled={isFormLocked}
+                >
+                  <option value="">Seleccionar</option>
+                  <option value="SOLTERO">Soltero</option>
+                  <option value="CASADO">Casado</option>
+                  <option value="VIUDO">Viudo</option>
+                  <option value="CONVIVIENTE">Conviviente</option>
+                  <option value="DIVORCIADO">Divorciado</option>
+                </select>
               </div>
 
               <div className="md:col-span-2">
@@ -1156,7 +1242,20 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                 />
               </div>
 
-              {/* Laboral */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Cargo *
+                </label>
+                <input
+                  type="text"
+                  value={formData.cargo}
+                  onChange={(e) => setField('cargo', e.target.value)}
+                  className="input-field"
+                  placeholder="Ej: Gerente de Proyectos"
+                />
+              </div>
+
+              {/* Información Laboral (mantener Código Grupo Trabajo) */}
               <div className="md:col-span-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Información Laboral</p>
               </div>
@@ -1172,58 +1271,6 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   className="input-field"
                   placeholder="Ej: 001"
                   maxLength={20}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Área *
-                </label>
-                <input
-                  type="text"
-                  value={formData.area}
-                  onChange={(e) => setField('area', e.target.value)}
-                  className="input-field"
-                  placeholder="Ej: Ventas"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Descripción de Zona *
-                </label>
-                <input
-                  type="text"
-                  value={formData.descripcion_zona}
-                  onChange={(e) => setField('descripcion_zona', e.target.value)}
-                  className="input-field"
-                  placeholder="Ej: Zona Norte"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Asignación *
-                </label>
-                <input
-                  type="text"
-                  value={formData.asignacion}
-                  onChange={(e) => setField('asignacion', e.target.value)}
-                  className="input-field"
-                  placeholder="Ej: Planta Norte"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Cargo *
-                </label>
-                <input
-                  type="text"
-                  value={formData.cargo}
-                  onChange={(e) => setField('cargo', e.target.value)}
-                  className="input-field"
-                  placeholder="Ej: Gerente de Proyectos"
                 />
               </div>
 
