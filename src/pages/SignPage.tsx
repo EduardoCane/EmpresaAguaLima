@@ -134,8 +134,6 @@ export default function SignPage() {
           } catch (fallbackSaveErr) {
             console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackSaveErr);
             // No hacemos más, la app principal seguirá recibiendo el mensaje via postMessage/Broadcast
-=======
->>>>>>> 205b1098276496cb54cdcbeba98e8dedb0c711de
           }
         } else {
           // No existe contrato: no intentamos insertar en `firmas` para evitar errores.
