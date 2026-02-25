@@ -110,7 +110,6 @@ export default function SignPage() {
               console.error('Fallback al guardar cliente_firmas falló:', fallbackErr);
               toast.error('No se pudo guardar la firma en Supabase');
             }
-<<<<<<< HEAD
           }
         } else {
           // No existe contrato: tratar de guardar la firma como cliente_firma (fallback),
