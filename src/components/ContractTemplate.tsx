@@ -180,11 +180,16 @@ export const PersonalDataSheetTemplate = forwardRef<HTMLDivElement, Props>(
       if (value === null || value === undefined) return undefined;
       const trimmed = String(value).trim();
       if (!trimmed) return undefined;
-      if (trimmed.includes("/")) return trimmed;
+      // If already contains slash, assume it's dd/mm/yyyy
+      if (trimmed.includes('/')) return trimmed;
+      // If ISO yyyy-mm-dd, format without constructing a Date (avoids tz shifts)
+      const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+      // Fallback to Date parsing for other formats
       const parsed = new Date(trimmed);
       if (Number.isNaN(parsed.getTime())) return trimmed;
-      const day = String(parsed.getDate()).padStart(2, "0");
-      const month = String(parsed.getMonth() + 1).padStart(2, "0");
+      const day = String(parsed.getDate()).padStart(2, '0');
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
       return `${day}/${month}/${parsed.getFullYear()}`;
     };
     const formatDateDash = (value?: string | number | null) => {
@@ -253,7 +258,7 @@ export const PersonalDataSheetTemplate = forwardRef<HTMLDivElement, Props>(
     const apellidoPaterno = data?.apellidoPaterno ?? client?.a_paterno;
     const apellidoMaterno = data?.apellidoMaterno ?? client?.a_materno;
     const celular = data?.celular;
-    const fechaNacimiento = data?.fechaNacimiento ?? formatDate(client?.fecha_nac);
+    const fechaNacimiento = formatDate(data?.fechaNacimiento ?? client?.fecha_nac);
     const distritoNacimiento = data?.distritoNacimiento ?? client?.distrito;
     const provinciaNacimiento = data?.provinciaNacimiento ?? client?.provincia;
     const departamentoNacimiento = data?.departamentoNacimiento ?? client?.departamento;

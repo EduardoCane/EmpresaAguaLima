@@ -67,27 +67,53 @@ export default function SignPage() {
         channel.close();
       }
 
-      // Persistir en Supabase para que escritorio lo lea
+      // Persistir en Supabase para que escritorio lo lea *solo si el contrato existe*.
+      // Cuando el QR fue generado para un cliente (no existe contrato aún), el contractId
+      // es en realidad un cliente_id y no debemos insertar en `firmas` (evita errores 400).
       try {
-        const { error: insertFirmaError } = await supabase
-          .from('firmas')
-          .insert({ contrato_id: contractId, firma_url: signatureData, origen: 'capturada' });
+        let contratoExists = false;
+        try {
+          const { data: contratoData, error: contratoError } = await supabase
+            .from('contratos')
+            .select('id')
+            .eq('id', contractId)
+            .maybeSingle();
 
-        if (insertFirmaError) {
-          await supabase
-            .from('cliente_firmas')
-            .update({ activa: false })
-            .eq('cliente_id', contractId)
-            .eq('activa', true);
+          if (!contratoError && contratoData && contratoData.id) contratoExists = true;
+        } catch (checkErr) {
+          console.warn('No se pudo verificar existencia de contrato; continuando sin persistir en DB:', checkErr);
+        }
 
-          const { error: insertClienteFirmaError } = await supabase
-            .from('cliente_firmas')
-            .insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
+        if (contratoExists) {
+          const { error: insertFirmaError } = await supabase
+            .from('firmas')
+            .insert({ contrato_id: contractId, firma_url: signatureData, origen: 'capturada' });
 
-          if (insertClienteFirmaError) {
-            console.error('Error guardando firma en cliente_firmas:', insertClienteFirmaError);
-            toast.error('No se pudo guardar la firma en Supabase');
+          if (insertFirmaError) {
+            // Intento de fallback para guardar como cliente_firma si la inserción falla
+            try {
+              await supabase
+                .from('cliente_firmas')
+                .update({ activa: false })
+                .eq('cliente_id', contractId)
+                .eq('activa', true);
+
+              const { error: insertClienteFirmaError } = await supabase
+                .from('cliente_firmas')
+                .insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
+
+              if (insertClienteFirmaError) {
+                console.error('Error guardando firma en cliente_firmas:', insertClienteFirmaError);
+                toast.error('No se pudo guardar la firma en Supabase');
+              }
+            } catch (fallbackErr) {
+              console.error('Fallback al guardar cliente_firmas falló:', fallbackErr);
+              toast.error('No se pudo guardar la firma en Supabase');
+            }
           }
+        } else {
+          // No existe contrato: no intentamos insertar en `firmas` para evitar errores.
+          console.debug('Contrato no existe (probablemente QR con cliente_id). Firma solo se envía por postMessage/Broadcast.');
         }
       } catch (dbErr) {
         console.error('Supabase no disponible; la firma solo se envia por Broadcast/postMessage:', dbErr);

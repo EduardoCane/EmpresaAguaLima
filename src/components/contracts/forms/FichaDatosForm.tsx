@@ -30,6 +30,10 @@ export type FichaDatosValues = {
   celular: string;
   emergenciaContacto: string;
   emergenciaCelular: string;
+  observaciones: string;
+  referido: string;
+  lugar: string;
+  cooperador: string;
   educacion: {
     primaria: { marcado: boolean; aniosEstudio: string; anioEgreso: string; ciudad: string };
     secundaria: { marcado: boolean; aniosEstudio: string; anioEgreso: string; ciudad: string };
@@ -66,6 +70,10 @@ export const emptyFichaDatosValues: FichaDatosValues = {
   celular: '',
   emergenciaContacto: '',
   emergenciaCelular: '',
+  observaciones: '',
+  referido: '',
+  lugar: '',
+  cooperador: '',
   educacion: {
     primaria: { marcado: false, aniosEstudio: '', anioEgreso: '', ciudad: '' },
     secundaria: { marcado: false, aniosEstudio: '', anioEgreso: '', ciudad: '' },
@@ -179,6 +187,10 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
     'celular',
     'emergenciaContacto',
     'emergenciaCelular',
+    'observaciones',
+    'referido',
+    'lugar',
+    'cooperador',
     'entidadBancaria',
     'numeroCuenta',
   ];
@@ -188,6 +200,21 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
 
   useEffect(() => {
     if (!client) return;
+    const formatDateToDMY = (val?: string | null) => {
+      const v = (val ?? '').toString().trim();
+      if (!v) return '';
+      const isoMatch = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v;
+      const d = new Date(v);
+      if (!Number.isNaN(d.getTime())) {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = String(d.getFullYear());
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      return v;
+    };
     const merged: FichaDatosValues = {
       ...value,
       remuneracion: value.remuneracion || (client.remuneracion ? String(client.remuneracion) : ''),
@@ -195,7 +222,7 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
       puesto: value.puesto || client.cargo || '',
       periodoDesde: value.periodoDesde || client.fecha_inicio_contrato || '',
       periodoHasta: value.periodoHasta || client.fecha_termino_contrato || '',
-      fechaNacimiento: value.fechaNacimiento || client.fecha_nac || '',
+      fechaNacimiento: value.fechaNacimiento || formatDateToDMY(client.fecha_nac) || '',
       distritoNacimiento: value.distritoNacimiento || client.distrito || '',
       provinciaNacimiento: value.provinciaNacimiento || client.provincia || '',
       departamentoNacimiento: value.departamentoNacimiento || client.departamento || '',
@@ -203,7 +230,6 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
       domicilioActual: value.domicilioActual || client.direccion || '',
       distritoDomicilio: value.distritoDomicilio || client.distrito || '',
       provinciaDomicilio: value.provinciaDomicilio || client.provincia || '',
-      celular: value.celular || client.celular || '',
     };
     const same =
       merged.remuneracion === value.remuneracion &&
@@ -295,6 +321,10 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
     celular: 'Celular',
     emergenciaContacto: 'Contacto de emergencia',
     emergenciaCelular: 'Celular de emergencia',
+    observaciones: 'Observaciones',
+    referido: 'Referido',
+    lugar: 'Lugar',
+    cooperador: 'Cooperador',
     familiares: 'Datos familiares (conyuge, hijos, dependientes)',
     educacion: 'Educacion y formacion academica',
     entidadBancaria: 'Entidad bancaria',
