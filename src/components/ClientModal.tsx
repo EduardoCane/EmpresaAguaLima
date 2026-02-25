@@ -16,6 +16,7 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps) {
+    const [dniTouched, setDniTouched] = useState(false);
   const { addCliente, updateCliente, getClienteByDni, getClienteByCod, getNextCod } = useClientes();
   const { addContrato } = useContratos();
   const PLANILLA_OPTIONS = [
@@ -146,6 +147,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
 
   useEffect(() => {
     if (editingClient) {
+      setDniTouched(false);
       const fallbackApellidos = splitApellido(editingClient.a_paterno);
       setFormData({
         dni: editingClient.dni ?? '',
@@ -192,6 +194,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       });
       setReingresoCliente(null);
       setReingresoQuery('');
+      // No consultar RENIEC automáticamente al editar
     } else {
       const today = todayIso();
       setFormData({
@@ -266,6 +269,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
   }, [formData.a_paterno, formData.a_materno, formData.nombre]);
 
   useEffect(() => {
+    if (!dniTouched) return;
     const dni = formData.dni.trim();
     if (dni.length !== 8 || /\D/.test(dni)) {
       setReniecError(null);
@@ -306,7 +310,7 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
       clearTimeout(timer);
       controller.abort();
     };
-  }, [formData.dni]);
+  }, [formData.dni, dniTouched]);
 
   // Calcular edad automáticamente cuando cambia la fecha de nacimiento
   useEffect(() => {
@@ -846,7 +850,10 @@ export function ClientModal({ isOpen, onClose, editingClient }: ClientModalProps
                   ref={dniInputRef}
                   type="text"
                   value={formData.dni}
-                  onChange={(e) => setField('dni', e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  onChange={(e) => {
+                    setField('dni', e.target.value.replace(/\D/g, '').slice(0, 8));
+                    setDniTouched(true);
+                  }}
                   className={`input-field ${errors.dni ? 'border-destructive' : ''}`}
                   placeholder="Ej: 12345678"
                   inputMode="numeric"
