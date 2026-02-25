@@ -30,6 +30,10 @@ export type FichaDatosValues = {
   celular: string;
   emergenciaContacto: string;
   emergenciaCelular: string;
+  observaciones: string;
+  referido: string;
+  lugar: string;
+  cooperador: string;
   educacion: {
     primaria: { marcado: boolean; aniosEstudio: string; anioEgreso: string; ciudad: string };
     secundaria: { marcado: boolean; aniosEstudio: string; anioEgreso: string; ciudad: string };
@@ -66,6 +70,10 @@ export const emptyFichaDatosValues: FichaDatosValues = {
   celular: '',
   emergenciaContacto: '',
   emergenciaCelular: '',
+  observaciones: '',
+  referido: '',
+  lugar: '',
+  cooperador: '',
   educacion: {
     primaria: { marcado: false, aniosEstudio: '', anioEgreso: '', ciudad: '' },
     secundaria: { marcado: false, aniosEstudio: '', anioEgreso: '', ciudad: '' },
@@ -179,6 +187,10 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
     'celular',
     'emergenciaContacto',
     'emergenciaCelular',
+    'observaciones',
+    'referido',
+    'lugar',
+    'cooperador',
     'entidadBancaria',
     'numeroCuenta',
   ];
@@ -203,7 +215,6 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
       domicilioActual: value.domicilioActual || client.direccion || '',
       distritoDomicilio: value.distritoDomicilio || client.distrito || '',
       provinciaDomicilio: value.provinciaDomicilio || client.provincia || '',
-      celular: value.celular || client.celular || '',
     };
     const same =
       merged.remuneracion === value.remuneracion &&
@@ -295,6 +306,10 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
     celular: 'Celular',
     emergenciaContacto: 'Contacto de emergencia',
     emergenciaCelular: 'Celular de emergencia',
+    observaciones: 'Observaciones',
+    referido: 'Referido',
+    lugar: 'Lugar',
+    cooperador: 'Cooperador',
     familiares: 'Datos familiares (conyuge, hijos, dependientes)',
     educacion: 'Educacion y formacion academica',
     entidadBancaria: 'Entidad bancaria',

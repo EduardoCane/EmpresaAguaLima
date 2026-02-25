@@ -297,7 +297,11 @@ export function ContratoTemporadaPlanForm({
         11829370 del Registro de Personas Juridicas de Lima, y de la otra parte el Sr (a).
       </P>
 
-      <IntroFieldsRow name={fullName} dni={dni} address={fullAddress} />
+       <P center>
+           <span className="font-bold">{fullName}</span> identificado (a) con DNI Nº{" "}
+           <span className="font-bold">{dni}</span> con domicilio en{" "}
+           <span className="font-bold">{fullAddress}</span>
+        </P>
 
       <P>
         a quien en adelante se le denominara{" "}
@@ -651,16 +655,12 @@ export function ContratoTemporadaPlanForm({
 
       <P>
         Incluso, <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> otorgara para la comunicacion via remota
-        el correo electronico
+        el correo electronico <span className="font-bold uppercase">____________________________________________________________</span>
       </P>
-
-      <div className="mt-2 flex justify-center">
-        <LineField value="______________________________" widthMm={170} />
-      </div>
 
       <P>
         y el numero telefonico celular {" "}
-        <LineField value={celularValue} widthMm={90} /> ; siendo estos validos para las
+        <span className="font-bold uppercase">______________________________</span>; siendo estos validos para las
         comunicaciones que efectuara <span className="font-bold uppercase">LA EMPRESA</span>.
       </P>
     </PdfPage>
@@ -791,19 +791,11 @@ export function ContratoTemporadaPlanForm({
           cualquier decision y/o situacion que guarde correspondencia con la relacion laboral
           sostenida entre las partes. Para tales efectos,{" "}
           <span className="font-bold uppercase">EL (LA) TRABAJADOR (A)</span> proporciona la siguiente
-          direccion electronica
-        </ClauseInline>
-
-        <div className="mt-2">
-          <UnderlineOnly widthMm={170} />
-        </div>
-
-        <P>
-          , asi como el numero de celular <UnderlineOnly widthMm={70} value={celularValueUnderline} /> mediante los cuales{" "}
+          direccion electronica <span className="font-bold uppercase">_________________________________________________</span>,asi como el numero de celular <span className="font-bold uppercase">______________________________</span> mediante los cuales{" "}
           <span className="font-bold uppercase">AUTORIZA</span> que{" "}
           <span className="font-bold uppercase">LA EMPRESA</span> efectue las comunicaciones que estime
           pertinente, las mismas que, una vez efectuadas, quedaran validamente notificadas.
-        </P>
+        </ClauseInline>
 
         <ClauseInline label="VIGESIMO PRIMERA: DOMICILIOS Y JURISDICCION.-">
           Las partes senalan como sus respectivos domicilios los especificados en la introduccion del
@@ -840,9 +832,3 @@ export function ContratoTemporadaPlanForm({
 }
 
 export default ContratoTemporadaPlanForm;
-
-
-
-
-
-
