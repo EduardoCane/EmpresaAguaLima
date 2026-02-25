@@ -80,52 +80,58 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       // Obtener el próximo código
       const codIngresado = (clienteData.cod ?? '').trim();
       const cod = codIngresado || await getNextCod();
-      
+
       // Si no hay fecha_reclutamiento, usar la fecha actual
       const fechaReclutamiento = clienteData.fecha_reclutamiento || new Date().toISOString().split('T')[0];
-      
+
+      // Helper para limpiar strings vacíos a null
+      const clean = (val: any) => {
+        if (val === undefined || val === null) return null;
+        if (typeof val === 'string' && val.trim() === '') return null;
+        return val;
+      };
+
       // Generar apellidos_y_nombres si viene en el clienteData
-      const apellidosYNombres = (clienteData.apellidos_y_nombres ?? '').trim();
-      
-      const repetirCodigo = (clienteData.repetir_codigo ?? '').trim();
+      const apellidosYNombres = clean(clienteData.apellidos_y_nombres);
+      const repetirCodigo = clean(clienteData.repetir_codigo);
       const payload = {
         cod,
         repetir_codigo: repetirCodigo || cod,
-        dni: clienteData.dni,
-        a_paterno: clienteData.a_paterno ?? null,
-        a_materno: clienteData.a_materno ?? null,
-        nombre: clienteData.nombre ?? null,
+        dni: (clienteData.dni ?? '').trim(),
+        a_paterno: clean(clienteData.a_paterno),
+        a_materno: clean(clienteData.a_materno),
+        nombre: clean(clienteData.nombre),
         apellidos_y_nombres: apellidosYNombres || null,
-        fecha_nac: clienteData.fecha_nac ?? null,
+        fecha_nac: clean(clienteData.fecha_nac),
         edad: (clienteData.edad && typeof clienteData.edad === 'number' && !isNaN(clienteData.edad)) ? clienteData.edad : null,
         fecha_reclutamiento: fechaReclutamiento,
-        sexo: clienteData.sexo ?? null,
-        estado_civil: clienteData.estado_civil ?? null,
-        codigogrupotrabajo: clienteData.codigogrupotrabajo ?? null,
-        id_afp: clienteData.id_afp ?? null,
-        cuspp: clienteData.cuspp ?? null,
-        fecha_inicio_afiliacion: clienteData.fecha_inicio_afiliacion ?? null,
+        sexo: clean(clienteData.sexo),
+        estado_civil: clean(clienteData.estado_civil),
+        codigogrupotrabajo: clean(clienteData.codigogrupotrabajo),
+        id_afp: clean(clienteData.id_afp),
+        cuspp: clean(clienteData.cuspp),
+        fecha_inicio_afiliacion: clean(clienteData.fecha_inicio_afiliacion),
         porcentaje_comision: (clienteData.porcentaje_comision && typeof clienteData.porcentaje_comision === 'number' && !isNaN(clienteData.porcentaje_comision)) ? clienteData.porcentaje_comision : null,
-        nueva_afiliacion: clienteData.nueva_afiliacion ?? null,
-        grado_instruccion: clienteData.grado_instruccion ?? null,
-        direccion: clienteData.direccion ?? null,
-        distrito: clienteData.distrito ?? null,
-        provincia: clienteData.provincia ?? null,
-        departamento: clienteData.departamento ?? null,
-        area: clienteData.area ?? null,
-        descripcion_zona: clienteData.descripcion_zona ?? null,
-        asignacion: clienteData.asignacion ?? null,
-        estado_actual: clienteData.estado_actual ?? null,
-        cargo: clienteData.cargo ?? null,
-        fecha_inicio_contrato: clienteData.fecha_inicio_contrato ?? null,
-        fecha_termino_contrato: clienteData.fecha_termino_contrato ?? null,
+        nueva_afiliacion: clean(clienteData.nueva_afiliacion),
+        grado_instruccion: clean(clienteData.grado_instruccion),
+        direccion: clean(clienteData.direccion),
+        distrito: clean(clienteData.distrito),
+        provincia: clean(clienteData.provincia),
+        departamento: clean(clienteData.departamento),
+        area: clean(clienteData.area),
+        descripcion_zona: clean(clienteData.descripcion_zona),
+        asignacion: clean(clienteData.asignacion),
+        estado_actual: clean(clienteData.estado_actual),
+        cargo: clean(clienteData.cargo),
+        fecha_inicio_contrato: clean(clienteData.fecha_inicio_contrato),
+        fecha_termino_contrato: clean(clienteData.fecha_termino_contrato),
         remuneracion: (clienteData.remuneracion && typeof clienteData.remuneracion === 'number' && !isNaN(clienteData.remuneracion)) ? clienteData.remuneracion : null,
-        tipo_contrato: clienteData.tipo_contrato ?? null,
-        planilla: clienteData.planilla ?? null,
-        observaciones: clienteData.observaciones ?? null,
-        referido: clienteData.referido ?? null,
-        lugar: clienteData.lugar ?? null,
-        cooperador: clienteData.cooperador ?? null,
+        tipo_contrato: clean(clienteData.tipo_contrato),
+        planilla: clean(clienteData.planilla),
+        observaciones: clean(clienteData.observaciones),
+        referido: clean(clienteData.referido),
+        lugar: clean(clienteData.lugar),
+        cooperador: clean(clienteData.cooperador),
       };
       const { data: insertedCliente, error: insertError } = await supabase
         .from('clientes')
