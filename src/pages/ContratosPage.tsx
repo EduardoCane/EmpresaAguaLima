@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+// import { Calendar } from '@/components/ui/calendar';
 import { Plus, FileText, Clock, CheckCircle2, AlertCircle, Download, Lock, Edit3, Eye, Trash2, FileArchive } from 'lucide-react';
 import html2canvas, { type Options as Html2CanvasOptions } from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -44,6 +45,20 @@ interface ValidationErrors {
 }
 
 export default function ContratosPage() {
+    // Date filter state: 'today', 'all', or 'custom'
+    const [contractDateFilter, setContractDateFilter] = useState<'today' | 'all' | 'custom'>('today');
+    const [showDateFilter, setShowDateFilter] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [pendingDate, setPendingDate] = useState<string>('');
+
+    // Helper to get today's date in yyyy-mm-dd
+    const getTodayString = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
   const { getClienteById, getClienteByDni, getClienteByCod, clientes, addCliente, getNextCod } = useClientes();
   const {
     contratos, addContrato, updateContrato, deleteContrato, reloadContratos, firmarContrato,
@@ -64,6 +79,7 @@ export default function ContratosPage() {
     dni,
     cod: '',
     repetir_codigo: '',
+    apellidos_y_nombres: '',
     nombre: '',
     a_paterno: '',
     a_materno: '',
@@ -107,7 +123,7 @@ export default function ContratosPage() {
   const [pensionChoice, setPensionChoice] = useState<'ONP' | 'AFP' | ''>('');
   const [selectionMethod, setSelectionMethod] = useState<'scanner' | 'manual' | null>(null);
   const [showRegistroModal, setShowRegistroModal] = useState(false);
-  const [registroFormData, setRegistroFormData] = useState(() => createRegistroInitialState());
+  const [registroFormData, setRegistroFormData] = useState<ReturnType<typeof createRegistroInitialState>>(() => createRegistroInitialState());
   const [activeContractForm, setActiveContractForm] = useState('ficha-datos');
   const [lockedExclusiveContract, setLockedExclusiveContract] = useState<string | null>(null);
   const [lockReason, setLockReason] = useState<'from-client' | null>(null);
@@ -227,18 +243,52 @@ export default function ContratosPage() {
     return grupos;
   }, [contratos, getClienteById]);
 
+  // Filter contracts by search and date
   const filteredContratosPorCliente = useMemo(() => {
+    // Helper to normalize date string to yyyy-mm-dd
+    const normalizeDate = (dateValue: Date | string) => {
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return '';
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const term = contractSearch.trim().toLowerCase();
-    if (!term) return contratosPorCliente;
-    return contratosPorCliente.filter(grupo => {
-      const cliente = grupo.cliente;
-      if (!cliente) return false;
-      const fullName = getFullName(cliente).toLowerCase();
-      const reverseName = getSearchName(cliente).toLowerCase();
-      const cod = (cliente.cod || '').toLowerCase();
-      return fullName.includes(term) || reverseName.includes(term) || cod.includes(term);
-    });
-  }, [contratosPorCliente, contractSearch]);
+    let filtered = contratosPorCliente;
+    if (term) {
+      filtered = filtered.filter(grupo => {
+        const cliente = grupo.cliente;
+        if (!cliente) return false;
+        const fullName = getFullName(cliente).toLowerCase();
+        const reverseName = getSearchName(cliente).toLowerCase();
+        const cod = (cliente.cod || '').toLowerCase();
+        return fullName.includes(term) || reverseName.includes(term) || cod.includes(term);
+      });
+    }
+
+    // Date filter: show contracts by selected mode
+    if (contractDateFilter === 'today') {
+      const todayStr = getTodayString();
+      filtered = filtered
+        .map(grupo => ({
+          ...grupo,
+          contratos: grupo.contratos.filter(c => normalizeDate(c.created_at) === todayStr)
+        }))
+        .filter(grupo => grupo.contratos.length > 0);
+    } else if (contractDateFilter === 'custom' && selectedDate) {
+      const dateStr = normalizeDate(selectedDate);
+      filtered = filtered
+        .map(grupo => ({
+          ...grupo,
+          contratos: grupo.contratos.filter(c => normalizeDate(c.created_at) === dateStr)
+        }))
+        .filter(grupo => grupo.contratos.length > 0);
+    }
+    // 'all' muestra todos
+    return filtered;
+  }, [contratosPorCliente, contractSearch, contractDateFilter, selectedDate]);
 
   const latestSignedContractByClient = useMemo(() => {
     const map = new Map<string, Contrato>();
@@ -334,19 +384,39 @@ export default function ContratosPage() {
     }
 
     const handleMessage = (event: MessageEvent) => {
-      if (signatureMode !== 'qr') return;
+      console.log('[ContratosPage] message event received:', event?.data);
       if (event.data.type === 'SIGNATURE_COMPLETE') {
         const { contractId, signature } = event.data;
-        // Acepta coincidencia por contrato o por cliente (compatibilidad)
-        const matches =
+
+        // If we don't have a selected client, try to find a matching contrato by id
+        let contratoMatch: Contrato | undefined;
+        try {
+          contratoMatch = contratos.find(c => c.id === contractId);
+        } catch (e) {
+          contratoMatch = undefined;
+        }
+
+        const matchesExisting =
           (!!latestContract && latestContract.id === contractId) ||
-          (selectedClient && contractId === selectedClient.id);
-        if (!selectedClient || !matches) return;
+          (selectedClient && contractId === selectedClient.id) ||
+          !!contratoMatch;
+
+        if (!matchesExisting) return;
+
+        // If we found a contract but no selectedClient, set them so UI updates
+        if (contratoMatch && !selectedClient) {
+          const cliente = getClienteById(contratoMatch.cliente_id);
+          setViewingContract(contratoMatch);
+          setSelectedClient(cliente || null);
+        }
+
         if (signature) {
           setSignatureData(signature);
           setSignatureSource('capturada');
           setValidationErrors(prev => ({ ...prev, signature: undefined }));
-          setSignatureMode('qr');
+          // switch to digital signature view so the received signature is visible
+          console.log('[ContratosPage] signature received via message, setting signatureMode=direct');
+          setSignatureMode('direct');
           toast.success('Firma recibida del celular');
         }
       }
@@ -361,6 +431,78 @@ export default function ContratosPage() {
       signatureChannelRef.current?.close();
     };
   }, [selectedClient, signatureMode, latestContract]);
+
+  // Realtime listener: actualiza la firma en la UI cuando se inserta una nueva firma
+  useEffect(() => {
+    const contractId = latestContract?.id;
+    const clientId = selectedClient?.id;
+    if (!contractId && !clientId) return;
+
+    const channelName = `signatures-${clientId || contractId}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'firmas', filter: contractId ? `contrato_id=eq.${contractId}` : 'contrato_id=is.null' },
+        (payload: any) => {
+          console.log('[ContratosPage] realtime firmas payload:', payload);
+          try {
+            const newRow = payload?.new;
+            if (!newRow) return;
+            if (newRow.contrato_id && newRow.contrato_id !== contractId) return;
+                if (newRow.firma_url) {
+                  setSignatureData(newRow.firma_url);
+                  setSignatureSource(newRow.origen ?? 'capturada');
+                  setValidationErrors(prev => ({ ...prev, signature: undefined }));
+                  console.log('[ContratosPage] signature received via realtime (firmas), setting signatureMode=direct');
+                  setSignatureMode('direct');
+                  toast.success('Firma recibida (realtime)');
+                }
+          } catch (e) {
+            console.error('Error handling realtime firma insert:', e);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'cliente_firmas', filter: clientId ? `cliente_id=eq.${clientId}` : 'cliente_id=is.null' },
+        (payload: any) => {
+          console.log('[ContratosPage] realtime cliente_firmas payload:', payload);
+          try {
+            const newRow = payload?.new;
+            if (!newRow) return;
+            if (newRow.cliente_id && newRow.cliente_id !== clientId) return;
+            if (newRow.firma_url) {
+              setSignatureData(newRow.firma_url);
+              setSignatureSource('reutilizada');
+              setValidationErrors(prev => ({ ...prev, signature: undefined }));
+              console.log('[ContratosPage] signature received via realtime (cliente_firmas), setting signatureMode=direct');
+              setSignatureMode('direct');
+              toast.success('Firma de cliente recibida (realtime)');
+            }
+          } catch (e) {
+            console.error('Error handling realtime cliente_firma insert:', e);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, [latestContract?.id, selectedClient?.id]);
+
+  // Ensure UI switches to digital signature view when a signature is present
+  useEffect(() => {
+    if (signatureData) {
+      setSignatureMode('direct');
+    }
+  }, [signatureData]);
+  
 
   const clientSectionComplete = !!selectedClient;
 
@@ -451,68 +593,121 @@ export default function ContratosPage() {
         edad: row.edad.trim(),
       }));
 
-    return {
-      remuneracion: fichaDatosValues.remuneracion ? String(fichaDatosValues.remuneracion) : undefined,
-      unidadArea: normalize(fichaDatosValues.unidadArea),
-      puesto: normalize(fichaDatosValues.puesto),
-      periodoDesde: normalize(fichaDatosValues.periodoDesde),
-      periodoHasta: normalize(fichaDatosValues.periodoHasta),
-      fechaNacimiento: normalize(fichaDatosValues.fechaNacimiento),
-      distritoNacimiento: normalize(fichaDatosValues.distritoNacimiento),
-      provinciaNacimiento: normalize(fichaDatosValues.provinciaNacimiento),
-      departamentoNacimiento: normalize(fichaDatosValues.departamentoNacimiento),
-      estadoCivil: normalize(fichaDatosValues.estadoCivil) as Cliente['estado_civil'] | undefined,
-      domicilioActual: normalize(fichaDatosValues.domicilioActual),
-      cpDistrito: normalize(fichaDatosValues.distritoDomicilio),
-      provinciaDomicilio: normalize(fichaDatosValues.provinciaDomicilio),
-      telefonoFijo: normalize(fichaDatosValues.telefonoFijo),
-      celular: normalize(fichaDatosValues.celular),
-      emergenciaContacto: normalize(fichaDatosValues.emergenciaContacto),
-      emergenciaCelular: normalize(fichaDatosValues.emergenciaCelular),
-      entidadBancaria: normalize(fichaDatosValues.entidadBancaria),
-      numeroCuenta: normalize(fichaDatosValues.numeroCuenta),
-      familiares: familiares.length ? familiares : undefined,
-      experienciaLaboral: (fichaDatosValues.experienciaLaboral || [])
-        .filter(row => row.cargo.trim() || row.empresa.trim())
-        .map(row => ({ cargo: row.cargo.trim(), empresa: row.empresa.trim() })),
-      sinExperiencia: fichaDatosValues.sinExperiencia,
-      educacion: {
-        primaria: fichaDatosValues.educacion.primaria.marcado
-          ? {
-              marcado: true,
-              aniosEstudio: normalize(fichaDatosValues.educacion.primaria.aniosEstudio),
-              anioEgreso: normalize(fichaDatosValues.educacion.primaria.anioEgreso),
-              ciudad: normalize(fichaDatosValues.educacion.primaria.ciudad),
-            }
-          : undefined,
-        secundaria: fichaDatosValues.educacion.secundaria.marcado
-          ? {
-              marcado: true,
-              aniosEstudio: normalize(fichaDatosValues.educacion.secundaria.aniosEstudio),
-              anioEgreso: normalize(fichaDatosValues.educacion.secundaria.anioEgreso),
-              ciudad: normalize(fichaDatosValues.educacion.secundaria.ciudad),
-            }
-          : undefined,
-        tecnico: fichaDatosValues.educacion.tecnico.marcado
-          ? {
-              marcado: true,
-              aniosEstudio: normalize(fichaDatosValues.educacion.tecnico.aniosEstudio),
-              anioEgreso: normalize(fichaDatosValues.educacion.tecnico.anioEgreso),
-              ciudad: normalize(fichaDatosValues.educacion.tecnico.ciudad),
-              carreraTecnica: normalize(fichaDatosValues.educacion.tecnico.carrera),
-            }
-          : undefined,
-        universitario: fichaDatosValues.educacion.universitario.marcado
-          ? {
-              marcado: true,
-              aniosEstudio: normalize(fichaDatosValues.educacion.universitario.aniosEstudio),
-              anioEgreso: normalize(fichaDatosValues.educacion.universitario.anioEgreso),
-              ciudad: normalize(fichaDatosValues.educacion.universitario.ciudad),
-              carreraProfesional: normalize(fichaDatosValues.educacion.universitario.carrera),
-            }
-          : undefined,
-      },
+    // Limpiar campos vacíos o no usados, pero guardar siempre los campos clave de ficha
+    const fichaLimpia: Record<string, any> = {};
+    const addIfNotEmpty = (key: string, value: any, force = false) => {
+      if (force || (value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0))) {
+        fichaLimpia[key] = value;
+      }
     };
+    // Campos clave de ficha (siempre guardar)
+    // Datos de registro para reportes antiguos
+    const registro = registroFormData;
+    addIfNotEmpty('fecha_reclutamiento', registro.fecha_reclutamiento || new Date().toISOString(), true);
+    addIfNotEmpty('cod', registro.cod || selectedClient?.cod || '', true);
+    addIfNotEmpty('repetir_codigo', registro.repetir_codigo || '', true);
+    addIfNotEmpty('a_paterno', registro.a_paterno || selectedClient?.a_paterno || '', true);
+    addIfNotEmpty('a_materno', registro.a_materno || selectedClient?.a_materno || '', true);
+    addIfNotEmpty('nombre', registro.nombre || selectedClient?.nombre || '', true);
+    addIfNotEmpty('apellidos_y_nombres', registro.apellidos_y_nombres || '', true);
+    addIfNotEmpty('dni', registro.dni || selectedClient?.dni || '', true);
+    addIfNotEmpty('fecha_nac', registro.fecha_nac || fichaDatosValues.fechaNacimiento || '', true);
+    addIfNotEmpty('edad', registro.edad || '', true);
+    addIfNotEmpty('area', registro.area || fichaDatosValues.unidadArea || '', true);
+    addIfNotEmpty('descripcion_zona', registro.descripcion_zona || '', true);
+    addIfNotEmpty('id_afp', registro.id_afp || '', true);
+    addIfNotEmpty('cuspp', registro.cuspp || '', true);
+    addIfNotEmpty('fecha_inicio_afiliacion', registro.fecha_inicio_afiliacion || '', true);
+    addIfNotEmpty('porcentaje_comision', registro.porcentaje_comision || '', true);
+    addIfNotEmpty('nueva_afiliacion', registro.nueva_afiliacion || '', true);
+    addIfNotEmpty('grado_instruccion', registro.grado_instruccion || '', true);
+    addIfNotEmpty('asignacion', registro.asignacion || '', true);
+    addIfNotEmpty('estado_actual', registro.estado_actual || '', true);
+    addIfNotEmpty('sexo', registro.sexo || '', true);
+    addIfNotEmpty('estado_civil', registro.estado_civil || fichaDatosValues.estadoCivil || '', true);
+    addIfNotEmpty('direccion', registro.direccion || fichaDatosValues.domicilioActual || '', true);
+    addIfNotEmpty('distrito', registro.distrito || fichaDatosValues.distritoDomicilio || '', true);
+    addIfNotEmpty('provincia', registro.provincia || fichaDatosValues.provinciaDomicilio || '', true);
+    addIfNotEmpty('departamento', registro.departamento || fichaDatosValues.departamentoNacimiento || '', true);
+    addIfNotEmpty('cargo', registro.cargo || fichaDatosValues.puesto || '', true);
+    addIfNotEmpty('fecha_inicio_contrato', registro.fecha_inicio_contrato || fichaDatosValues.periodoDesde || '', true);
+    addIfNotEmpty('fecha_termino_contrato', registro.fecha_termino_contrato || fichaDatosValues.periodoHasta || '', true);
+    addIfNotEmpty('remuneracion', registro.remuneracion || fichaDatosValues.remuneracion || '', true);
+    addIfNotEmpty('tipo_contrato', registro.tipo_contrato || '', true);
+    addIfNotEmpty('planilla', registro.planilla || '', true);
+    addIfNotEmpty('observaciones', registro.observaciones || fichaDatosValues.observaciones || '', true);
+    addIfNotEmpty('referido', registro.referido || fichaDatosValues.referido || '', true);
+    addIfNotEmpty('lugar', registro.lugar || fichaDatosValues.lugar || '', true);
+    addIfNotEmpty('cooperador', registro.cooperador || fichaDatosValues.cooperador || '', true);
+    // Resto de campos ficha
+    addIfNotEmpty('remuneracion', fichaDatosValues.remuneracion ? String(fichaDatosValues.remuneracion) : undefined);
+    addIfNotEmpty('unidadArea', normalize(fichaDatosValues.unidadArea));
+    addIfNotEmpty('puesto', normalize(fichaDatosValues.puesto));
+    addIfNotEmpty('periodoDesde', normalize(fichaDatosValues.periodoDesde));
+    addIfNotEmpty('periodoHasta', normalize(fichaDatosValues.periodoHasta));
+    addIfNotEmpty('fechaNacimiento', normalize(fichaDatosValues.fechaNacimiento));
+    addIfNotEmpty('distritoNacimiento', normalize(fichaDatosValues.distritoNacimiento));
+    addIfNotEmpty('provinciaNacimiento', normalize(fichaDatosValues.provinciaNacimiento));
+    addIfNotEmpty('departamentoNacimiento', normalize(fichaDatosValues.departamentoNacimiento));
+    addIfNotEmpty('estadoCivil', normalize(fichaDatosValues.estadoCivil));
+    addIfNotEmpty('domicilioActual', normalize(fichaDatosValues.domicilioActual));
+    addIfNotEmpty('cpDistrito', normalize(fichaDatosValues.distritoDomicilio));
+    addIfNotEmpty('provinciaDomicilio', normalize(fichaDatosValues.provinciaDomicilio));
+    addIfNotEmpty('telefonoFijo', normalize(fichaDatosValues.telefonoFijo));
+    addIfNotEmpty('celular', normalize(fichaDatosValues.celular));
+    addIfNotEmpty('emergenciaContacto', normalize(fichaDatosValues.emergenciaContacto));
+    addIfNotEmpty('emergenciaCelular', normalize(fichaDatosValues.emergenciaCelular));
+    addIfNotEmpty('entidadBancaria', normalize(fichaDatosValues.entidadBancaria));
+    addIfNotEmpty('numeroCuenta', normalize(fichaDatosValues.numeroCuenta));
+    if (familiares.length) addIfNotEmpty('familiares', familiares);
+    const experiencia = (fichaDatosValues.experienciaLaboral || [])
+      .filter(row => row.cargo.trim() || row.empresa.trim())
+      .map(row => ({ cargo: row.cargo.trim(), empresa: row.empresa.trim() }));
+    if (experiencia.length) addIfNotEmpty('experienciaLaboral', experiencia);
+    if (fichaDatosValues.sinExperiencia) fichaLimpia['sinExperiencia'] = true;
+    // Educación
+    const educacion: Record<string, any> = {};
+    if (fichaDatosValues.educacion.primaria.marcado) {
+      educacion.primaria = {
+        marcado: true,
+        aniosEstudio: normalize(fichaDatosValues.educacion.primaria.aniosEstudio),
+        anioEgreso: normalize(fichaDatosValues.educacion.primaria.anioEgreso),
+        ciudad: normalize(fichaDatosValues.educacion.primaria.ciudad),
+      };
+    }
+    if (fichaDatosValues.educacion.secundaria.marcado) {
+      educacion.secundaria = {
+        marcado: true,
+        aniosEstudio: normalize(fichaDatosValues.educacion.secundaria.aniosEstudio),
+        anioEgreso: normalize(fichaDatosValues.educacion.secundaria.anioEgreso),
+        ciudad: normalize(fichaDatosValues.educacion.secundaria.ciudad),
+      };
+    }
+    if (fichaDatosValues.educacion.tecnico.marcado) {
+      educacion.tecnico = {
+        marcado: true,
+        aniosEstudio: normalize(fichaDatosValues.educacion.tecnico.aniosEstudio),
+        anioEgreso: normalize(fichaDatosValues.educacion.tecnico.anioEgreso),
+        ciudad: normalize(fichaDatosValues.educacion.tecnico.ciudad),
+        carreraTecnica: normalize(fichaDatosValues.educacion.tecnico.carrera),
+      };
+    }
+    if (fichaDatosValues.educacion.universitario.marcado) {
+      educacion.universitario = {
+        marcado: true,
+        aniosEstudio: normalize(fichaDatosValues.educacion.universitario.aniosEstudio),
+        anioEgreso: normalize(fichaDatosValues.educacion.universitario.anioEgreso),
+        ciudad: normalize(fichaDatosValues.educacion.universitario.ciudad),
+        carreraProfesional: normalize(fichaDatosValues.educacion.universitario.carrera),
+      };
+    }
+    if (Object.keys(educacion).length) fichaLimpia['educacion'] = educacion;
+    // Campos ocultos
+    addIfNotEmpty('observaciones', fichaDatosValues.observaciones);
+    addIfNotEmpty('referido', fichaDatosValues.referido);
+    addIfNotEmpty('lugar', fichaDatosValues.lugar);
+    addIfNotEmpty('cooperador', fichaDatosValues.cooperador);
+    return fichaLimpia;
   };
 
   const contractForms = [
@@ -681,6 +876,12 @@ export default function ContratosPage() {
     let isMounted = true;
     const fetchContractSignature = async () => {
       try {
+        // Debug: avoid referencing save-payload variables here (out of scope).
+        console.debug('fetchContractSignature invoked for', {
+          viewingContractId: viewingContract?.id,
+          selectedClientId: selectedClient?.id,
+          latestContractId: latestContract?.id,
+        });
         let firma: FirmaRow | null = null;
         let firmaActivaCliente: ClienteFirmaActivaRow | null = null;
 
@@ -748,12 +949,20 @@ export default function ContratosPage() {
 
         if (!isMounted) return;
         if (firma?.firma_url) {
-          setSignatureData(firma.firma_url);
-          setSignatureSource(firma.origen ?? 'reutilizada');
-          setValidationErrors(prev => ({ ...prev, signature: undefined }));
+          if (!allowReplaceSignature) {
+            setSignatureData(firma.firma_url);
+            setSignatureSource(firma.origen ?? 'reutilizada');
+            setValidationErrors(prev => ({ ...prev, signature: undefined }));
+          } else {
+            console.log('[ContratosPage] skip setting signatureData because allowReplaceSignature=true');
+          }
         } else {
-          setSignatureData('');
-          setSignatureSource(null);
+          if (!allowReplaceSignature) {
+            setSignatureData('');
+            setSignatureSource(null);
+          } else {
+            console.log('[ContratosPage] skip clearing signatureData because allowReplaceSignature=true');
+          }
         }
       } catch (err) {
         if (!isMounted) return;
@@ -765,7 +974,7 @@ export default function ContratosPage() {
     return () => {
       isMounted = false;
     };
-  }, [viewingContract, selectedClient, latestContract, signatureMode, viewMode, contratos, signatureData, signatureSource]);
+  }, [viewingContract, selectedClient, latestContract, signatureMode, viewMode, contratos]);
 
   const handleSaveContract = async () => {
     if (!selectedClient) {
@@ -1178,9 +1387,43 @@ export default function ContratosPage() {
               firmadoAt,
               signatureSource === 'capturada' ? signatureData : undefined
             );
+          } else {
+            // Si ya existe una firma para este contrato y el usuario está reemplazando,
+            // actualizar la fila existente con la nueva imagen.
+            if (allowReplaceSignature || signatureSource === 'capturada') {
+              try {
+                const { error: updateFirmaError } = await supabase
+                  .from('firmas')
+                  .update({ firma_url: signatureData, origen: 'capturada' })
+                  .eq('id', existingFirma.id);
+
+                if (updateFirmaError) {
+                  console.error('Error actualizando firma existente:', updateFirmaError);
+                  toast.error('No se pudo actualizar la firma existente');
+                } else {
+                  console.log('[ContratosPage] firma existente actualizada');
+                  setAllowReplaceSignature(false);
+                }
+              } catch (e) {
+                console.error('Exception updating existing firma:', e);
+                toast.error('Error al actualizar la firma');
+              }
+            }
           }
-        } catch (err) {
+        } catch (err: any) {
+          // Mostrar detalles útiles del error para depuración (message, details, hint, code, status)
           console.error('No se pudo guardar la firma:', err);
+          try {
+            console.error('Firma error details:', {
+              message: err?.message ?? err?.error ?? String(err),
+              details: err?.details,
+              hint: err?.hint,
+              code: err?.code,
+              status: err?.status,
+            });
+          } catch (e) {
+            console.error('Error al serializar error de firma:', e);
+          }
           toast.error('Contrato guardado, pero no se pudo guardar la firma');
         }
       }
@@ -1192,8 +1435,19 @@ export default function ContratosPage() {
           : 'Contrato guardado como firmado (firma fisica)'
       );
       resetForm();
-    } catch (err) {
+    } catch (err: any) {
       console.error('No se pudo guardar el contrato:', err);
+      try {
+        console.error('Contrato save error details:', {
+          message: err?.message ?? err?.error ?? String(err),
+          details: err?.details,
+          hint: err?.hint,
+          code: err?.code,
+          status: err?.status,
+        });
+      } catch (e) {
+        console.error('Error al serializar error de contrato:', e);
+      }
       toast.error('No se pudo guardar el contrato');
     } finally {
       setSavingContract(false);
@@ -1634,6 +1888,103 @@ export default function ContratosPage() {
 
     const pages = container.querySelectorAll('[data-pdf-page]');
 
+    // Inline remote images as data URLs to avoid CORS/loader issues during html2canvas
+    const inlineRemoteImages = async (root: HTMLElement, timeout = 10000) => {
+      const imgs = Array.from(root.querySelectorAll('img')) as HTMLImageElement[];
+      const originals: Array<{ img: HTMLImageElement; src: string; crossOrigin?: string | null }> = [];
+
+      const waitForImgLoad = (img: HTMLImageElement, t = timeout) =>
+        new Promise<void>(resolve => {
+          if (!img) return resolve();
+          if (img.complete) return resolve();
+          let done = false;
+          const ondone = () => {
+            if (done) return;
+            done = true;
+            img.removeEventListener('load', ondone);
+            img.removeEventListener('error', ondone);
+            resolve();
+          };
+          img.addEventListener('load', ondone);
+          img.addEventListener('error', ondone);
+          setTimeout(() => resolve(), t);
+        });
+
+      for (const img of imgs) {
+        try {
+          const src = img.src || '';
+          if (!src) continue;
+          if (src.startsWith('data:')) continue;
+
+          originals.push({ img, src, crossOrigin: img.getAttribute('crossorigin') });
+
+          // Try fetch -> blob -> dataURL (best effort). If fetch fails (CORS), fall back to set crossOrigin and wait.
+          let replaced = false;
+          try {
+            const res = await fetch(src, { mode: 'cors' });
+            if (res.ok) {
+              const blob = await res.blob();
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => reject(new Error('FileReader failed'));
+                reader.readAsDataURL(blob);
+              });
+              img.src = dataUrl;
+              await waitForImgLoad(img);
+              replaced = true;
+            }
+          } catch (e) {
+            // ignore and try fallback
+          }
+
+          if (!replaced) {
+            try {
+              img.setAttribute('crossorigin', 'anonymous');
+              // reassigning src to force reload with crossOrigin
+              const current = img.src;
+              img.src = current;
+              await waitForImgLoad(img);
+            } catch {
+              // last resort: continue, html2canvas may still capture if resource cached
+            }
+          }
+        } catch {
+          // continue on any image-level error
+          continue;
+        }
+      }
+
+      return () => {
+        for (const o of originals) {
+          try {
+            if (o.img && o.img.src && !o.img.src.startsWith('data:')) {
+              // if we changed crossorigin attr, restore it
+              if (o.crossOrigin === null || o.crossOrigin === undefined) {
+                o.img.removeAttribute('crossorigin');
+              } else {
+                o.img.setAttribute('crossorigin', o.crossOrigin);
+              }
+            }
+            // restore original src if it was replaced by a data URL
+            if (o.img && o.img.src && o.img.src.startsWith('data:')) {
+              o.img.src = o.src;
+            }
+          } catch {
+            // ignore
+          }
+        }
+      };
+    };
+
+    // Try to inline images for entire container before capturing pages
+    let restoreImages: (() => void) | null = null;
+    try {
+      restoreImages = await inlineRemoteImages(container, 10000);
+    } catch (err) {
+      console.warn('Failed to inline remote images before capture', err);
+    }
+
     const captureFixedA4 = async (el: HTMLElement) => {
       const prev = {
         width: el.style.width,
@@ -1728,8 +2079,8 @@ export default function ContratosPage() {
         await waitForFonts();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        const tryCapture = async (opts: Html2CanvasOptions) => {
-          return await html2canvas(el, opts);
+        const tryCapture = async (opts: Partial<Html2CanvasOptions>) => {
+          return await html2canvas(el, opts as Html2CanvasOptions);
         };
 
         const strategies: Array<Pick<Html2CanvasOptions, 'scale' | 'foreignObjectRendering'>> = [
@@ -1741,7 +2092,7 @@ export default function ContratosPage() {
         let canvas: HTMLCanvasElement | null = null;
 
         for (const s of strategies) {
-          const opts: Html2CanvasOptions = {
+          const opts: Partial<Html2CanvasOptions> = {
             useCORS: true,
             backgroundColor: '#ffffff',
             logging: false,
@@ -1799,7 +2150,21 @@ export default function ContratosPage() {
     const images: string[] = [];
     for (const pageElement of targets) {
       const canvas = await captureFixedA4(pageElement);
+      try {
+        // Debug: log canvas sizes and element page number to help diagnose
+        // cases where the captured content appears very small inside the PDF.
+        console.debug('[capture] page', pageElement.dataset?.pdfPage, 'bounds', pageElement.getBoundingClientRect(), 'canvas', canvas.width, 'x', canvas.height);
+      } catch (e) {
+        // ignore
+      }
       images.push(canvas.toDataURL('image/png'));
+    }
+
+    // restore image src/crossorigin after capture
+    try {
+      if (restoreImages) restoreImages();
+    } catch {
+      // ignore
     }
 
     return images;
@@ -1879,6 +2244,7 @@ export default function ContratosPage() {
       returnBlob?: boolean;
       orientation?: 'portrait' | 'landscape';
       trimWhiteMargins?: boolean;
+      fitToPage?: boolean;
     }
   ) => {
     const images = await capturePdfPageImagesFromRef(ref);
@@ -1907,12 +2273,22 @@ export default function ContratosPage() {
         if (props?.width && props?.height) {
           const imageAspect = props.width / props.height;
           const pageAspect = pdfWidth / pdfHeight;
-          if (imageAspect > pageAspect) {
+          if (options?.fitToPage) {
+            // Force the image to fill the entire page (cover). This avoids
+            // cases where html2canvas returns a canvas with the content
+            // centered in a small area and leaves large margins when placed
+            // in the PDF. It may crop slightly if aspect ratios differ.
             renderWidth = pdfWidth;
-            renderHeight = renderWidth / imageAspect;
-          } else {
             renderHeight = pdfHeight;
-            renderWidth = renderHeight * imageAspect;
+          } else {
+            // Preserve aspect ratio and fit within the page (contain).
+            if (imageAspect > pageAspect) {
+              renderWidth = pdfWidth;
+              renderHeight = renderWidth / imageAspect;
+            } else {
+              renderHeight = pdfHeight;
+              renderWidth = renderHeight * imageAspect;
+            }
           }
         }
       } catch {
@@ -1940,13 +2316,22 @@ export default function ContratosPage() {
       };
     }
 
+    // For some contracts (ej. contrato-temporada-plan) force fit-to-page to avoid
+    // first-page scaling issues when html2canvas returns different canvas sizes.
+    if (formId === 'contrato-temporada-plan') {
+      return {
+        returnBlob,
+        fitToPage: true,
+      } as any;
+    }
+
     return returnBlob ? { returnBlob } : undefined;
   };
 
 
 
   const handleDownloadPDF = async () => {
-    if (!fullContractRef.current) return;
+    if (activeContractForm !== 'ficha-datos' && !fullContractRef.current) return;
 
     if (!isContractComplete && !isContractLocked) {
       toast.error('El contrato debe estar completo y firmado para descargarlo');
@@ -1962,7 +2347,12 @@ export default function ContratosPage() {
       const safeName = clientName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
 
       if (activeContractForm === 'ficha-datos') {
-        await generatePdfFromRef(fullContractRef, safeName);
+        setDownloadContext({ contract: viewingContract || null, client: selectedClient || null, signature: signatureData });
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const blob = await generatePdfFromRef(downloadContractRef, `${safeName}_ficha_de_datos`, { returnBlob: true });
+        if (blob instanceof Blob) triggerBlobDownload(blob, `${safeName}_ficha_de_datos.pdf`);
+        setDownloadContext(null);
       } else {
         const currentForm = contractForms.find(form => form.id === activeContractForm);
         setZipRenderState({
@@ -2055,10 +2445,28 @@ export default function ContratosPage() {
       setDeclaracionParentescoValues(prev => ({
         ...prev,
         ...parentesco,
-        familiares: parentesco.familiares ?? prev.familiares,
+        parientes: parentesco.parientes ?? prev.parientes,
       }));
     }
-    setActiveContractForm('ficha-datos');
+    // Seleccionar la pestaña correspondiente según el contenido del contrato
+    try {
+      const hasIntermitente = contrato.contrato_intermitente && Object.keys(contrato.contrato_intermitente).length > 0 && Object.values(contrato.contrato_intermitente).some(v => v !== null && v !== '' );
+      const hasTemporada = contrato.contrato_temporada_plan && Object.keys(contrato.contrato_temporada_plan).length > 0 && Object.values(contrato.contrato_temporada_plan).some(v => v !== null && v !== '' );
+
+      if (hasIntermitente && !hasTemporada) {
+        setActiveContractForm('contrato-intermitente');
+        setLockedExclusiveContract('contrato-intermitente');
+      } else if (hasTemporada && !hasIntermitente) {
+        setActiveContractForm('contrato-temporada-plan');
+        setLockedExclusiveContract('contrato-temporada-plan');
+      } else {
+        setActiveContractForm('ficha-datos');
+        setLockedExclusiveContract(null);
+      }
+    } catch (e) {
+      setActiveContractForm('ficha-datos');
+      setLockedExclusiveContract(null);
+    }
     setSignatureData('');
     setSignatureSource(null);
     setViewMode('view');
@@ -2077,6 +2485,21 @@ export default function ContratosPage() {
     setSignatureData('');
     setSignatureSource(null);
     setViewMode('create');
+    // Al editar, seleccionar la pestaña correspondiente si el contrato ya contiene datos
+    try {
+      const hasIntermitente = contrato.contrato_intermitente && Object.keys(contrato.contrato_intermitente).length > 0 && Object.values(contrato.contrato_intermitente).some(v => v !== null && v !== '' );
+      const hasTemporada = contrato.contrato_temporada_plan && Object.keys(contrato.contrato_temporada_plan).length > 0 && Object.values(contrato.contrato_temporada_plan).some(v => v !== null && v !== '' );
+
+      if (hasIntermitente && !hasTemporada) {
+        setActiveContractForm('contrato-intermitente');
+        setLockedExclusiveContract('contrato-intermitente');
+      } else if (hasTemporada && !hasIntermitente) {
+        setActiveContractForm('contrato-temporada-plan');
+        setLockedExclusiveContract('contrato-temporada-plan');
+      }
+    } catch (e) {
+      // ignore
+    }
   };
 
   const handleDeleteContract = (contrato: Contrato) => {
@@ -2212,7 +2635,7 @@ export default function ContratosPage() {
       setDeclaracionParentescoValues(prev => ({
         ...prev,
         ...parentesco,
-        familiares: parentesco.familiares ?? prev.familiares,
+        parientes: parentesco.parientes ?? prev.parientes,
       }));
     }
   }, [viewingContract]);
@@ -2334,10 +2757,14 @@ export default function ContratosPage() {
     }
 
     try {
-      toast.loading('Generando ZIP...');
       const zip = new JSZip();
 
-      for (const contrato of contratosList) {
+      const total = contratosList.length;
+      setZipProgress({ active: true, progress: 0, total, current: 0, clientName: zipName });
+
+      for (let idx = 0; idx < contratosList.length; idx++) {
+        const contrato = contratosList[idx];
+        setZipProgress(prev => ({ ...(prev || {}), progress: Math.round(((idx) / total) * 100), current: idx + 1 } as any));
         await yieldToMainThread();
         const cliente = getClienteById(contrato.cliente_id);
 
@@ -2356,25 +2783,29 @@ export default function ContratosPage() {
 
         const clientName = cliente ? getFullName(cliente) : contrato.id;
         const safeName = clientName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
-        const blob = await generatePdfFromRef(fullContractRef, safeName, { returnBlob: true });
+        const blob = await generatePdfFromRef(downloadContractRef, safeName, { returnBlob: true });
         if (blob instanceof Blob) {
           zip.file(`contrato_${safeName}_${contrato.id}.pdf`, blob);
         }
       }
-
       setDownloadContext(null);
       const zipBlob = await zip.generateAsync({
         type: 'blob',
         compression: 'DEFLATE',
         compressionOptions: { level: 1 },
+      }, metadata => {
+        // metadata.percent is 0..100
+        setZipProgress(prev => ({ ...(prev || {}), progress: Math.round(metadata.percent) } as any));
       });
       triggerBlobDownload(zipBlob, zipName);
       toast.dismiss();
       toast.success('ZIP descargado correctamente');
+      setZipProgress(null);
     } catch (error) {
       toast.dismiss();
       toast.error('Error al generar el ZIP');
       console.error(error);
+      setZipProgress(null);
     }
   };
 
@@ -2427,8 +2858,10 @@ export default function ContratosPage() {
       return;
     }
 
+    // show progress UI immediately when invoked from external row/button
+    setZipProgress({ active: true, progress: 0, total: formsToDownload.length, current: 0, clientName: safeName });
+
     try {
-      toast.loading('Generando ZIP...');
       let fichaDatosForZip = fichaDatosValues;
       let pensionChoiceForZip = pensionChoice;
       const sistemaPensionarioForZip = (targetContrato?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
@@ -2495,12 +2928,17 @@ export default function ContratosPage() {
 
       for (let i = 0; i < formsToDownload.length; i++) {
         const form = formsToDownload[i];
+        setZipProgress({ active: true, progress: Math.round(((i) / formsToDownload.length) * 100), total: formsToDownload.length, current: i + 1, clientName: safeName });
 
         if (form.id === 'ficha-datos') {
-          const blob = await generatePdfFromRef(fullContractRef, safeName, { returnBlob: true });
+          setDownloadContext({ contract: targetContrato, client: cliente || null, signature: signatureForZip });
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          await new Promise(resolve => setTimeout(resolve, 0));
+          const blob = await generatePdfFromRef(downloadContractRef, safeName, { returnBlob: true });
           if (blob instanceof Blob) {
-            zip.file(`${safeName}_ficha_datos.pdf`, blob);
+            zip.file(`${safeName}_ficha_de_datos.pdf`, blob);
           }
+          setDownloadContext(null);
           continue;
         }
 
@@ -2540,11 +2978,14 @@ export default function ContratosPage() {
         type: 'blob',
         compression: 'DEFLATE',
         compressionOptions: { level: 1 },
+      }, metadata => {
+        setZipProgress(prev => ({ ...(prev || {}), progress: Math.round(metadata.percent) } as any));
       });
       triggerBlobDownload(zipBlob, `contratos_${safeName}.zip`);
 
       toast.dismiss();
       toast.success('ZIP descargado correctamente');
+      setZipProgress(null);
     } catch (error) {
       toast.dismiss();
       toast.error('Error al generar el ZIP');
@@ -3102,7 +3543,7 @@ export default function ContratosPage() {
   };
 
   const handleSignatureChange = (signature: string) => {
-    if (isContractLocked) {
+    if (isContractLocked && !allowReplaceSignature) {
       toast.error('No se puede modificar un contrato firmado');
       return;
     }
@@ -3110,6 +3551,8 @@ export default function ContratosPage() {
     setSignatureSource('capturada');
     setValidationErrors(prev => ({ ...prev, signature: undefined }));
   };
+
+  const [allowReplaceSignature, setAllowReplaceSignature] = useState(false);
 
   const getStatusBadge = (estado: Contrato['estado']) => {
     const styles = {
@@ -3448,11 +3891,24 @@ export default function ContratosPage() {
 
                       {(signatureMode === 'direct' || isContractLocked) && (
                         <div className="space-y-4">
-                          {isContractLocked ? (
+                          {isContractLocked && !allowReplaceSignature ? (
                             <div className="border-2 border-success rounded-lg p-4 bg-success/5">
-                              <div className="flex items-center gap-2 text-success mb-3">
-                                <CheckCircle2 className="w-5 h-5" />
-                                <span className="font-medium">Firma registrada</span>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-success mb-3">
+                                  <CheckCircle2 className="w-5 h-5" />
+                                  <span className="font-medium">Firma registrada</span>
+                                </div>
+                                <div>
+                                  <button
+                                    className="px-3 py-1 text-sm rounded-md border"
+                                    onClick={() => {
+                                      setAllowReplaceSignature(true);
+                                      setSignatureMode('direct');
+                                    }}
+                                  >
+                                    Reemplazar firma
+                                  </button>
+                                </div>
                               </div>
                               {signatureData && (
                                 <img
@@ -3468,6 +3924,20 @@ export default function ContratosPage() {
                                 onSignatureComplete={handleSignatureChange}
                                 existingSignature={signatureData}
                               />
+                              {isContractLocked && allowReplaceSignature && (
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    className="px-3 py-1 text-sm rounded-md border"
+                                    onClick={() => {
+                                      setAllowReplaceSignature(false);
+                                      // restore signatureData from viewingContract if available
+                                      // we fetch signature separately; here just clear local edits
+                                    }}
+                                  >
+                                    Cancelar reemplazo
+                                  </button>
+                                </div>
+                              )}
                               {validationErrors.signature && (
                                 <p className="mt-2 text-sm text-destructive flex items-center gap-1">
                                   <AlertCircle className="w-4 h-4" />
@@ -3502,9 +3972,11 @@ export default function ContratosPage() {
                 </div>
 
                 <div className="dashboard-card p-6 space-y-3">
+
                   <h3 className="font-semibold text-foreground mb-4">Acciones</h3>
-                  
-                  {(viewMode === 'view' || viewingContract) && (
+
+                  {/* Botones de descarga solo si el contrato está firmado */}
+                  {viewingContract?.estado === 'firmado' && (
                     <>
                       <Button
                         className="w-full"
@@ -3528,7 +4000,8 @@ export default function ContratosPage() {
                     </>
                   )}
 
-                  {!isContractLocked && viewMode === 'create' && (
+                  {/* Botones de guardar solo si el contrato NO está firmado */}
+                  {viewingContract?.estado !== 'firmado' && !isContractLocked && viewMode === 'create' && (
                     <>
                       <Button
                         className="w-full"
@@ -3546,7 +4019,7 @@ export default function ContratosPage() {
                         disabled={!isContractComplete || savingContract || savingDraft}
                       >
                         <CheckCircle2 className="w-4 h-4 mr-2" />
-                        {savingContract ? 'Guardando...' : 'Guardar y Firmar Contrato'}
+                        {savingContract ? 'Guardando...' : 'Guardar Contrato'}
                       </Button>
                     </>
                   )}
@@ -3699,15 +4172,105 @@ export default function ContratosPage() {
             <div className="border-b border-slate-200 bg-slate-50/80 p-6 dark:border-gray-700 dark:bg-gray-800/70">
               <h3 className="font-semibold text-foreground text-lg">Contratos Registrados</h3>
               <p className="text-sm text-muted-foreground mt-1">Total: {contratos.length} ficha(s)</p>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                   type="text"
                   value={contractSearch}
                   onChange={(e) => setContractSearch(e.target.value)}
                   placeholder="Buscar por nombre o COD"
-                  className="input-field w-full"
+                  className="input-field w-full sm:max-w-xs"
                 />
+                <Button
+                  variant="outline"
+                  className="ml-0 sm:ml-4"
+                  onClick={() => {
+                    setPendingDate('');
+                    setShowDateFilter(true);
+                  }}
+                >
+                  Filtrar por fecha
+                </Button>
+                {contractDateFilter === 'custom' && selectedDate && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    Fecha: {selectedDate.toLocaleDateString('es-ES')}
+                  </span>
+                )}
+                {contractDateFilter === 'today' && (
+                  <span className="ml-2 text-xs text-muted-foreground">Mostrando solo hoy</span>
+                )}
+                {contractDateFilter === 'all' && (
+                  <span className="ml-2 text-xs text-muted-foreground">Mostrando todos</span>
+                )}
               </div>
+              {/* Modal de filtro de fecha */}
+              {showDateFilter && (
+                <div className="fixed inset-0 z-50 flex items-start justify-center" style={{paddingTop: 60}}>
+                  <div className="bg-white rounded-xl shadow-xl p-3 w-full max-w-[320px] flex flex-col gap-3 border border-slate-200">
+                    <h2 className="text-base font-semibold mb-1 text-center">Opciones de filtrado</h2>
+                    <input
+                      type="date"
+                      value={pendingDate}
+                      onChange={e => setPendingDate(e.target.value)}
+                      className="input-field w-full text-center text-lg mb-2"
+                      style={{fontSize:'1.1rem',padding:'0.5rem'}}
+                    />
+                    <Button
+                      className="w-full text-base py-2"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        if (pendingDate) {
+                          const [year, month, day] = pendingDate.split('-').map(Number);
+                          const d = new Date(year, (month || 1) - 1, day || 1);
+                          d.setHours(0, 0, 0, 0);
+                          setSelectedDate(d);
+                          setContractDateFilter('custom');
+                        }
+                        setShowDateFilter(false);
+                      }}
+                      disabled={!pendingDate}
+                    >
+                      Filtrar por fecha
+                    </Button>
+                    <Button
+                      className="w-full text-base py-2"
+                      variant="outline"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        setContractDateFilter('today');
+                        setSelectedDate(null);
+                        setPendingDate('');
+                        setShowDateFilter(false);
+                      }}
+                    >
+                      Mostrar solo hoy
+                    </Button>
+                    <Button
+                      className="w-full text-base py-2"
+                      variant="outline"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        setContractDateFilter('all');
+                        setSelectedDate(null);
+                        setPendingDate('');
+                        setShowDateFilter(false);
+                      }}
+                    >
+                      Mostrar todos
+                    </Button>
+                    <Button
+                      className="w-full text-base py-2"
+                      variant="ghost"
+                      style={{ fontSize: '0.95rem' }}
+                      onClick={() => {
+                        setShowDateFilter(false);
+                        setPendingDate('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full">
@@ -4536,6 +5099,7 @@ export default function ContratosPage() {
         onConfirm={handleConfirmAction}
         onCancel={handleConfirmClose}
       />
+      {/* progress UI handled by DashboardLayout; removed duplicate small center bar */}
     </>
   );
 }

@@ -620,6 +620,14 @@ export default function ClientesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => handleCreateNewContrato(cliente)}
+                          >
+                            <FilePlus className="w-4 h-4" />
+                            <span className="sr-only sm:not-sr-only sm:ml-1">Crear Contrato</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleEdit(cliente)}
                           >
                             <Edit2 className="w-4 h-4" />

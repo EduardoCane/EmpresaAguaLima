@@ -142,6 +142,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
 
   const addContrato = async (contratoData: Omit<Contrato, 'id' | 'created_at'>) => {
     try {
+      console.debug('addContrato payload:', contratoData);
       const { data, error: insertError } = await supabase
         .from('contratos')
         .insert([{
@@ -168,6 +169,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (insertError) {
+        console.error('Supabase insert contrato error:', insertError);
         throw insertError;
       }
 
@@ -202,12 +204,21 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       if ('declaracion_parentesco' in contratoData) updateData.declaracion_parentesco = contratoData.declaracion_parentesco ?? {};
       if ('dj_patrimonial' in contratoData) updateData.dj_patrimonial = contratoData.dj_patrimonial ?? {};
 
+      console.debug('updateContrato id:', id, 'updateData:', updateData);
+
       const { error: updateError } = await supabase
         .from('contratos')
         .update(updateData)
         .eq('id', id);
 
       if (updateError) {
+        console.error('Supabase update contrato error:', updateError);
+        const msg = String(updateError?.message ?? updateError?.error ?? '');
+        if (updateError?.code === 'P0001' || msg.toLowerCase().includes('firmado')) {
+          console.warn('Update aborted: contrato already signed. Reloading contratos.');
+          await loadContratos();
+          return;
+        }
         throw updateError;
       }
 

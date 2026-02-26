@@ -67,26 +67,78 @@ export default function SignPage() {
         channel.close();
       }
 
-      // Persistir en Supabase para que escritorio lo lea
+      // Persistir en Supabase para que escritorio lo lea *solo si el contrato existe*.
+      // Cuando el QR fue generado para un cliente (no existe contrato aún), el contractId
+      // es en realidad un cliente_id y no debemos insertar en `firmas` (evita errores 400).
       try {
-        const { error: insertFirmaError } = await supabase
-          .from('firmas')
-          .insert({ contrato_id: contractId, firma_url: signatureData, origen: 'capturada' });
+        let contratoExists = false;
+        let contratoClienteId: string | null = null;
+        try {
+          const { data: contratoData, error: contratoError } = await supabase
+            .from('contratos')
+            .select('id, cliente_id')
+            .eq('id', contractId)
+            .maybeSingle();
 
-        if (insertFirmaError) {
-          await supabase
-            .from('cliente_firmas')
-            .update({ activa: false })
-            .eq('cliente_id', contractId)
-            .eq('activa', true);
+          if (!contratoError && contratoData && contratoData.id) {
+            contratoExists = true;
+            contratoClienteId = contratoData.cliente_id ?? null;
+          }
+        } catch (checkErr) {
+          console.warn('No se pudo verificar existencia de contrato; continuando sin persistir en DB:', checkErr);
+        }
 
-          const { error: insertClienteFirmaError } = await supabase
-            .from('cliente_firmas')
-            .insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
+        // IMPORTANT: avoid inserting directly into `firmas` from the mobile signer because
+        // DB triggers may mark the contrato as firmado immediately. Instead save into
+        // `cliente_firmas` (so the desktop app can reuse the signature) and rely on
+        // postMessage/Broadcast to display the signature in the UI. The desktop app
+        // should be the one to insert into `firmas` when the user explicitly clicks Save.
+        if (contratoExists) {
+          try {
+            const clienteIdToUse = contratoClienteId || contractId;
+            await supabase
+              .from('cliente_firmas')
+              .update({ activa: false })
+              .eq('cliente_id', clienteIdToUse)
+              .eq('activa', true);
 
-          if (insertClienteFirmaError) {
-            console.error('Error guardando firma en cliente_firmas:', insertClienteFirmaError);
-            toast.error('No se pudo guardar la firma en Supabase');
+            const { error: insertClienteFirmaError } = await supabase
+              .from('cliente_firmas')
+              .insert({ cliente_id: clienteIdToUse, firma_url: signatureData, activa: true });
+
+            if (insertClienteFirmaError) {
+              console.error('Error guardando cliente_firma desde SignPage (contrato exists):', insertClienteFirmaError);
+              toast.error('No se pudo guardar la firma en el servidor; la firma solo se envió localmente');
+            } else {
+              toast.success('Firma guardada en el cliente (lista para reutilizar)');
+            }
+          } catch (fallbackErr) {
+            console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackErr);
+          }
+        } else {
+          // No existe contrato: tratar de guardar la firma como cliente_firma (fallback),
+          // de forma que cuando la app principal cree el contrato pueda reutilizarla.
+          try {
+            await supabase
+              .from('cliente_firmas')
+              .update({ activa: false })
+              .eq('cliente_id', contractId)
+              .eq('activa', true);
+
+            const { error: insertClienteFirmaError } = await supabase
+              .from('cliente_firmas')
+              .insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
+
+            if (insertClienteFirmaError) {
+              console.error('Error guardando cliente_firma desde SignPage:', insertClienteFirmaError);
+              toast.error('No se pudo guardar la firma en el servidor; la firma solo se envió localmente');
+            }
+            if (!insertClienteFirmaError) {
+              toast.success('Firma guardada en el cliente (lista para reutilizar)');
+            }
+          } catch (fallbackSaveErr) {
+            console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackSaveErr);
+            // No hacemos más, la app principal seguirá recibiendo el mensaje via postMessage/Broadcast
           }
         }
       } catch (dbErr) {
