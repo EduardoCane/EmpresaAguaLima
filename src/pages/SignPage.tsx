@@ -66,10 +66,7 @@ export default function SignPage() {
       // Intentar persistir en Supabase si el contrato existe; si no, guardar como cliente_firma
       try {
         let contratoExists = false;
-<<<<<<< HEAD
-=======
 
->>>>>>> c1b1b3a77abbbc6ea73a18e1a3b32de1cc552051
         let contratoClienteId: string | null = null;
 
         try {
@@ -83,8 +80,7 @@ export default function SignPage() {
             contratoExists = true;
             contratoClienteId = contratoData.cliente_id ?? null;
           }
-<<<<<<< HEAD
-=======
+
 
         try {
           const { data: contratoData, error: contratoError } = await supabase
@@ -95,19 +91,16 @@ export default function SignPage() {
 
           if (!contratoError && contratoData && contratoData.id) contratoExists = true;
 
->>>>>>> c1b1b3a77abbbc6ea73a18e1a3b32de1cc552051
         } catch (checkErr) {
           console.warn('No se pudo verificar existencia de contrato; continuando sin persistir en DB:', checkErr);
         }
 
-<<<<<<< HEAD
-=======
         // IMPORTANT: avoid inserting directly into `firmas` from the mobile signer because
         // DB triggers may mark the contrato as firmado immediately. Instead save into
         // `cliente_firmas` (so the desktop app can reuse the signature) and rely on
         // postMessage/Broadcast to display the signature in the UI. The desktop app
         // should be the one to insert into `firmas` when the user explicitly clicks Save.
->>>>>>> c1b1b3a77abbbc6ea73a18e1a3b32de1cc552051
+
         if (contratoExists) {
           try {
             const clienteIdToUse = contratoClienteId || contractId;
@@ -122,8 +115,7 @@ export default function SignPage() {
             }
           } catch (fallbackErr) {
             console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackErr);
-<<<<<<< HEAD
-=======
+
 
         if (contratoExists) {
           const { error: insertFirmaError } = await supabase
@@ -151,7 +143,7 @@ export default function SignPage() {
               console.error('Fallback al guardar cliente_firmas falló:', fallbackErr);
               toast.error('No se pudo guardar la firma en Supabase');
             }
->>>>>>> c1b1b3a77abbbc6ea73a18e1a3b32de1cc552051
+
           }
         } else {
           try {
