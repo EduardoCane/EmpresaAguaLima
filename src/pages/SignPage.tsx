@@ -72,7 +72,7 @@ export default function SignPage() {
       // es en realidad un cliente_id y no debemos insertar en `firmas` (evita errores 400).
       try {
         let contratoExists = false;
-<<<<<<< HEAD
+
         let contratoClienteId: string | null = null;
         try {
           const { data: contratoData, error: contratoError } = await supabase
@@ -85,7 +85,7 @@ export default function SignPage() {
             contratoExists = true;
             contratoClienteId = contratoData.cliente_id ?? null;
           }
-=======
+
         try {
           const { data: contratoData, error: contratoError } = await supabase
             .from('contratos')
@@ -94,12 +94,12 @@ export default function SignPage() {
             .maybeSingle();
 
           if (!contratoError && contratoData && contratoData.id) contratoExists = true;
->>>>>>> eaa5bf79896fb0012c4994ae4724eec78043b6cc
+
         } catch (checkErr) {
           console.warn('No se pudo verificar existencia de contrato; continuando sin persistir en DB:', checkErr);
         }
 
-<<<<<<< HEAD
+
         // IMPORTANT: avoid inserting directly into `firmas` from the mobile signer because
         // DB triggers may mark the contrato as firmado immediately. Instead save into
         // `cliente_firmas` (so the desktop app can reuse the signature) and rely on
@@ -126,7 +126,7 @@ export default function SignPage() {
             }
           } catch (fallbackErr) {
             console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackErr);
-=======
+
         if (contratoExists) {
           const { error: insertFirmaError } = await supabase
             .from('firmas')
@@ -153,7 +153,6 @@ export default function SignPage() {
               console.error('Fallback al guardar cliente_firmas falló:', fallbackErr);
               toast.error('No se pudo guardar la firma en Supabase');
             }
->>>>>>> eaa5bf79896fb0012c4994ae4724eec78043b6cc
           }
         } else {
           // No existe contrato: tratar de guardar la firma como cliente_firma (fallback),
