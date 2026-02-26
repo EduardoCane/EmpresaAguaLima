@@ -52,31 +52,22 @@ export default function SignPage() {
             contractId,
             signature: signatureData,
           },
-          '*',
+          '*'
         );
       }
 
-      // Broadcast opcional por canal (funciona aunque no haya opener)
+      // Broadcast opcional por canal
       if (typeof BroadcastChannel !== 'undefined') {
         const channel = new BroadcastChannel('signature-updates');
-        channel.postMessage({
-          type: 'SIGNATURE_COMPLETE',
-          contractId,
-          signature: signatureData,
-        });
+        channel.postMessage({ type: 'SIGNATURE_COMPLETE', contractId, signature: signatureData });
         channel.close();
       }
 
-      // Persistir en Supabase para que escritorio lo lea *solo si el contrato existe*.
-      // Cuando el QR fue generado para un cliente (no existe contrato aún), el contractId
-      // es en realidad un cliente_id y no debemos insertar en `firmas` (evita errores 400).
+      // Intentar persistir en Supabase si el contrato existe; si no, guardar como cliente_firma
       try {
         let contratoExists = false;
-<<<<<<< HEAD
-=======
-
->>>>>>> 6742946b321b1c79d5f2666e148c44ff084c6faa
         let contratoClienteId: string | null = null;
+
         try {
           const { data: contratoData, error: contratoError } = await supabase
             .from('contratos')
@@ -88,44 +79,15 @@ export default function SignPage() {
             contratoExists = true;
             contratoClienteId = contratoData.cliente_id ?? null;
           }
-<<<<<<< HEAD
-=======
-
-        try {
-          const { data: contratoData, error: contratoError } = await supabase
-            .from('contratos')
-            .select('id')
-            .eq('id', contractId)
-            .maybeSingle();
-
-          if (!contratoError && contratoData && contratoData.id) contratoExists = true;
-
->>>>>>> 6742946b321b1c79d5f2666e148c44ff084c6faa
         } catch (checkErr) {
           console.warn('No se pudo verificar existencia de contrato; continuando sin persistir en DB:', checkErr);
         }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6742946b321b1c79d5f2666e148c44ff084c6faa
-        // IMPORTANT: avoid inserting directly into `firmas` from the mobile signer because
-        // DB triggers may mark the contrato as firmado immediately. Instead save into
-        // `cliente_firmas` (so the desktop app can reuse the signature) and rely on
-        // postMessage/Broadcast to display the signature in the UI. The desktop app
-        // should be the one to insert into `firmas` when the user explicitly clicks Save.
         if (contratoExists) {
           try {
             const clienteIdToUse = contratoClienteId || contractId;
-            await supabase
-              .from('cliente_firmas')
-              .update({ activa: false })
-              .eq('cliente_id', clienteIdToUse)
-              .eq('activa', true);
-
-            const { error: insertClienteFirmaError } = await supabase
-              .from('cliente_firmas')
-              .insert({ cliente_id: clienteIdToUse, firma_url: signatureData, activa: true });
+            await supabase.from('cliente_firmas').update({ activa: false }).eq('cliente_id', clienteIdToUse).eq('activa', true);
+            const { error: insertClienteFirmaError } = await supabase.from('cliente_firmas').insert({ cliente_id: clienteIdToUse, firma_url: signatureData, activa: true });
 
             if (insertClienteFirmaError) {
               console.error('Error guardando cliente_firma desde SignPage (contrato exists):', insertClienteFirmaError);
@@ -135,67 +97,27 @@ export default function SignPage() {
             }
           } catch (fallbackErr) {
             console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackErr);
-<<<<<<< HEAD
-=======
-
-        if (contratoExists) {
-          const { error: insertFirmaError } = await supabase
-            .from('firmas')
-            .insert({ contrato_id: contractId, firma_url: signatureData, origen: 'capturada' });
-
-          if (insertFirmaError) {
-            // Intento de fallback para guardar como cliente_firma si la inserción falla
-            try {
-              await supabase
-                .from('cliente_firmas')
-                .update({ activa: false })
-                .eq('cliente_id', contractId)
-                .eq('activa', true);
-
-              const { error: insertClienteFirmaError } = await supabase
-                .from('cliente_firmas')
-                .insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
-
-              if (insertClienteFirmaError) {
-                console.error('Error guardando firma en cliente_firmas:', insertClienteFirmaError);
-                toast.error('No se pudo guardar la firma en Supabase');
-              }
-            } catch (fallbackErr) {
-              console.error('Fallback al guardar cliente_firmas falló:', fallbackErr);
-              toast.error('No se pudo guardar la firma en Supabase');
-            }
->>>>>>> 6742946b321b1c79d5f2666e148c44ff084c6faa
           }
         } else {
-          // No existe contrato: tratar de guardar la firma como cliente_firma (fallback),
-          // de forma que cuando la app principal cree el contrato pueda reutilizarla.
           try {
-            await supabase
-              .from('cliente_firmas')
-              .update({ activa: false })
-              .eq('cliente_id', contractId)
-              .eq('activa', true);
-
-            const { error: insertClienteFirmaError } = await supabase
-              .from('cliente_firmas')
-              .insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
+            await supabase.from('cliente_firmas').update({ activa: false }).eq('cliente_id', contractId).eq('activa', true);
+            const { error: insertClienteFirmaError } = await supabase.from('cliente_firmas').insert({ cliente_id: contractId, firma_url: signatureData, activa: true });
 
             if (insertClienteFirmaError) {
               console.error('Error guardando cliente_firma desde SignPage:', insertClienteFirmaError);
               toast.error('No se pudo guardar la firma en el servidor; la firma solo se envió localmente');
-            }
-            if (!insertClienteFirmaError) {
+            } else {
               toast.success('Firma guardada en el cliente (lista para reutilizar)');
             }
           } catch (fallbackSaveErr) {
             console.warn('No fue posible guardar cliente_firma (probablemente RLS). Firma enviada localmente:', fallbackSaveErr);
-            // No hacemos más, la app principal seguirá recibiendo el mensaje via postMessage/Broadcast
           }
         }
       } catch (dbErr) {
         console.error('Supabase no disponible; la firma solo se envia por Broadcast/postMessage:', dbErr);
         toast.error('Supabase no disponible, la firma se envio solo localmente');
       }
+
       setIsSuccess(true);
       toast.success('Firma guardada correctamente');
     } catch (error) {
@@ -244,9 +166,7 @@ export default function SignPage() {
         <div className="bg-card border border-border rounded-lg shadow-2xl overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-primary/80 p-6 text-primary-foreground">
             <h1 className="text-2xl font-bold">Firma del Contrato</h1>
-            <p className="text-sm text-primary-foreground/90 mt-1">
-              Contrato ID: {contractId || 'Cargando...'}
-            </p>
+            <p className="text-sm text-primary-foreground/90 mt-1">Contrato ID: {contractId || 'Cargando...'}</p>
           </div>
 
           <div className="p-6 space-y-6">
@@ -259,16 +179,10 @@ export default function SignPage() {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-foreground">
-                Area de Firma
-              </label>
+              <label className="block text-sm font-medium text-foreground">Area de Firma</label>
               <div className="border-2 border-border rounded-lg overflow-hidden bg-white dark:bg-black/20">
                 {contractId ? (
-                  <SignaturePad
-                    onSignatureComplete={handleSignatureSave}
-                    existingSignature={signatureData}
-                    clearSignal={clearSignal}
-                  />
+                  <SignaturePad onSignatureComplete={handleSignatureSave} existingSignature={signatureData} clearSignal={clearSignal} />
                 ) : (
                   <div className="w-full h-40 flex items-center justify-center text-muted-foreground">
                     <p>Cargando...</p>
@@ -285,19 +199,10 @@ export default function SignPage() {
             )}
 
             <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleClear}
-                variant="outline"
-                disabled={isSending}
-                className="flex-1"
-              >
+              <Button onClick={handleClear} variant="outline" disabled={isSending} className="flex-1">
                 Limpiar
               </Button>
-              <Button
-                onClick={handleSubmitSignature}
-                disabled={!signatureData || isSending || !contractId}
-                className="flex-1"
-              >
+              <Button onClick={handleSubmitSignature} disabled={!signatureData || isSending || !contractId} className="flex-1">
                 {isSending ? 'Guardando...' : 'Guardar Firma'}
               </Button>
             </div>
@@ -317,4 +222,3 @@ export default function SignPage() {
     </div>
   );
 }
-
