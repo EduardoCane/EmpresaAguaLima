@@ -4,7 +4,6 @@ import { AlertCircle, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import personaImg from '@/img/persona.jpg';
 
 interface LocationState {
@@ -44,7 +43,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,43 +99,6 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion.');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    setError(null);
-    setResetMessage(null);
-
-    const sanitizedEmail = email.trim();
-    if (!sanitizedEmail) {
-      setError('Escribe tu correo para enviarte el enlace de recuperación.');
-      return;
-    }
-
-    setResetLoading(true);
-    try {
-      const configuredPublicUrl = (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.trim();
-      const appBaseUrl = configuredPublicUrl
-        ? configuredPublicUrl.replace(/\/$/, '')
-        : window.location.origin;
-
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
-        redirectTo: `${appBaseUrl}/reset-password`,
-      });
-
-      if (resetError) {
-        const lowerMessage = resetError.message.toLowerCase();
-        if (lowerMessage.includes('rate limit') || lowerMessage.includes('limite')) {
-          throw new Error('Se excedió el límite de correos. Espera unos minutos e inténtalo nuevamente.');
-        }
-        throw resetError;
-      }
-
-      setResetMessage('Te enviamos un enlace para restablecer tu contraseña. Revisa tu correo.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo enviar el correo de recuperación.');
-    } finally {
-      setResetLoading(false);
     }
   };
 
@@ -350,17 +311,6 @@ export default function LoginPage() {
                     background: palette.inputBg,
                   }}
                 />
-                <div className="pt-1 text-right">
-                  <button
-                    type="button"
-                    onClick={() => void handleForgotPassword()}
-                    disabled={submitting || loading || resetLoading}
-                    className="text-xs font-medium underline-offset-2 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ color: palette.accent }}
-                  >
-                    {resetLoading ? 'Enviando enlace...' : 'Olvide mi contrasena'}
-                  </button>
-                </div>
               </div>
 
               <button
