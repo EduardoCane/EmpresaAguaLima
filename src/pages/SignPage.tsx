@@ -66,57 +66,22 @@ export default function SignPage() {
       // ==============================
       // Persistencia en Supabase
       // ==============================
+      const { error: submitError } = await supabase.rpc('submit_mobile_signature', {
+        p_target_id: contractId,
+        p_firma_url: signatureData,
+      });
 
-      let contratoClienteId: string | null = null;
-
-      try {
-        const { data, error } = await supabase
-          .from('contratos')
-          .select('id, cliente_id')
-          .eq('id', contractId)
-          .maybeSingle();
-
-        if (!error && data) {
-          contratoClienteId = data.cliente_id ?? null;
-        }
-      } catch (checkErr) {
-        console.warn('No se pudo verificar contrato:', checkErr);
+      if (submitError) {
+        console.error('Error guardando firma por RPC:', submitError);
+        throw submitError;
       }
 
-      const clienteIdToUse = contratoClienteId || contractId;
-
-      try {
-        // Desactivar firma activa previa
-        await supabase
-          .from('cliente_firmas')
-          .update({ activa: false })
-          .eq('cliente_id', clienteIdToUse)
-          .eq('activa', true);
-
-        // Insertar nueva firma
-        const { error: insertError } = await supabase
-          .from('cliente_firmas')
-          .insert({
-            cliente_id: clienteIdToUse,
-            firma_url: signatureData,
-            activa: true,
-          });
-
-        if (insertError) {
-          console.error('Error guardando cliente_firma:', insertError);
-          toast.error('No se pudo guardar la firma en el servidor');
-        } else {
-          toast.success('Firma guardada correctamente');
-        }
-      } catch (dbErr) {
-        console.error('Error en Supabase:', dbErr);
-        toast.error('Supabase no disponible, firma enviada solo localmente');
-      }
+      toast.success('Firma guardada correctamente');
 
       setIsSuccess(true);
     } catch (err) {
       console.error('Error general:', err);
-      toast.error('Error al guardar la firma');
+      toast.error('No se pudo guardar la firma en el servidor');
     } finally {
       setIsSending(false);
     }
