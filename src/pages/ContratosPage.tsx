@@ -717,125 +717,309 @@ export default function ContratosPage() {
     return fichaLimpia;
   };
 
+  const isSignedReadOnlyView = viewMode === 'view' && viewingContract?.estado === 'firmado';
+
+  const fichaDatosPersisted = (viewingContract?.ficha_datos as Record<string, unknown> | null | undefined) ?? null;
+  const contratoIntermitentePersisted =
+    (viewingContract?.contrato_intermitente as Record<string, unknown> | null | undefined) ?? null;
+  const contratoTemporadaPersisted =
+    (viewingContract?.contrato_temporada_plan as Record<string, unknown> | null | undefined) ?? null;
+  const sistemaPensionarioPersisted =
+    (viewingContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
+  const reglamentosPersisted = (viewingContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null;
+  const consentimientoPersisted =
+    (viewingContract?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null;
+  const induccionPersisted = (viewingContract?.induccion as Record<string, unknown> | null | undefined) ?? null;
+  const cuentaBancariaPersisted =
+    (viewingContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null;
+  const declaracionConflictoPersisted =
+    (viewingContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null;
+  const acuerdoConfidencialidadPersisted =
+    (viewingContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null;
+  const cartaNoSobornoPersisted =
+    (viewingContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null;
+  const declaracionParentescoPersisted =
+    (viewingContract?.declaracion_parentesco as Record<string, unknown> | null | undefined) ?? null;
+  const djPatrimonialPersisted = (viewingContract?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null;
+
+  const pickText = (...values: unknown[]) => {
+    for (const value of values) {
+      if (value === null || value === undefined) continue;
+      const text = String(value).trim();
+      if (text) return text;
+    }
+    return '';
+  };
+
+  const toNullable = (value: string) => (value ? value : null);
+
+  const buildClientFromSnapshot = (record: Record<string, unknown> | null): Cliente | null => {
+    if (!record || typeof record !== 'object') return null;
+    const snapshot = record.clientSnapshot;
+    if (!snapshot || typeof snapshot !== 'object') return null;
+
+    const snap = snapshot as Record<string, unknown>;
+    const fromNombre = [snap.nombre, snap.a_paterno, snap.a_materno]
+      .map(part => pickText(part))
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const mapped: Cliente = {
+      id: viewingContract?.cliente_id || selectedClient?.id || '',
+      dni: pickText(snap.dni),
+      cod: pickText(snap.cod),
+      nombre: toNullable(pickText(snap.nombre)),
+      a_paterno: toNullable(pickText(snap.a_paterno)),
+      a_materno: toNullable(pickText(snap.a_materno)),
+      apellidos_y_nombres: toNullable(pickText(snap.apellidos_y_nombres, fromNombre)),
+      fecha_nac: toNullable(pickText(snap.fecha_nac)),
+      estado_civil: toNullable(pickText(snap.estado_civil)) as Cliente['estado_civil'],
+      direccion: toNullable(pickText(snap.direccion)),
+      distrito: toNullable(pickText(snap.distrito)),
+      provincia: toNullable(pickText(snap.provincia)),
+      departamento: toNullable(pickText(snap.departamento)),
+      cargo: toNullable(pickText(snap.cargo)),
+      area: toNullable(pickText(snap.area)),
+      remuneracion: (() => {
+        const raw = pickText(snap.remuneracion);
+        if (!raw) return null;
+        const num = Number(raw);
+        return Number.isFinite(num) ? num : null;
+      })(),
+    };
+
+    const hasData =
+      !!mapped.dni ||
+      !!mapped.cod ||
+      !!mapped.nombre ||
+      !!mapped.apellidos_y_nombres ||
+      !!mapped.direccion ||
+      !!mapped.cargo ||
+      !!mapped.area;
+
+    return hasData ? mapped : null;
+  };
+
+  const fallbackSignedClient: Cliente | null = isSignedReadOnlyView
+    ? {
+        id: viewingContract?.cliente_id || selectedClient?.id || '',
+        dni: '',
+        cod: '',
+      }
+    : selectedClient;
+
+  const getClientForForm = (record: Record<string, unknown> | null): Cliente | null => {
+    if (!isSignedReadOnlyView) return selectedClient;
+    return buildClientFromSnapshot(record) ?? buildClientFromSnapshot(fichaDatosPersisted) ?? fallbackSignedClient;
+  };
+
+  const fichaDatosFormValue: FichaDatosValues =
+    isSignedReadOnlyView && fichaDatosPersisted
+      ? ({
+          ...emptyFichaDatosValues,
+          ...(fichaDatosPersisted as Partial<FichaDatosValues>),
+        } as FichaDatosValues)
+      : fichaDatosValues;
+
+  const intermitentePuesto = isSignedReadOnlyView
+    ? pickText(contratoIntermitentePersisted?.puesto, fichaDatosPersisted?.puesto)
+    : fichaDatosValues.puesto;
+  const intermitenteFechaInicio = isSignedReadOnlyView
+    ? pickText(contratoIntermitentePersisted?.fechaInicio, fichaDatosPersisted?.periodoDesde)
+    : fichaDatosValues.periodoDesde;
+  const intermitenteFechaFin = isSignedReadOnlyView
+    ? pickText(contratoIntermitentePersisted?.fechaFin, fichaDatosPersisted?.periodoHasta)
+    : fichaDatosValues.periodoHasta;
+  const intermitenteRemuneracion = isSignedReadOnlyView
+    ? pickText(contratoIntermitentePersisted?.remuneracion, fichaDatosPersisted?.remuneracion)
+    : fichaDatosValues.remuneracion;
+  const intermitenteCelular = isSignedReadOnlyView
+    ? pickText(contratoIntermitentePersisted?.celular, fichaDatosPersisted?.celular)
+    : fichaDatosValues.celular;
+
+  const temporadaPuesto = isSignedReadOnlyView
+    ? pickText(contratoTemporadaPersisted?.puesto, fichaDatosPersisted?.puesto)
+    : fichaDatosValues.puesto;
+  const temporadaFechaInicio = isSignedReadOnlyView
+    ? pickText(contratoTemporadaPersisted?.fechaInicio, fichaDatosPersisted?.periodoDesde)
+    : fichaDatosValues.periodoDesde;
+  const temporadaFechaFin = isSignedReadOnlyView
+    ? pickText(contratoTemporadaPersisted?.fechaFin, fichaDatosPersisted?.periodoHasta)
+    : fichaDatosValues.periodoHasta;
+  const temporadaRemuneracion = isSignedReadOnlyView
+    ? pickText(contratoTemporadaPersisted?.remuneracion, fichaDatosPersisted?.remuneracion)
+    : fichaDatosValues.remuneracion;
+  const temporadaCelular = isSignedReadOnlyView
+    ? pickText(contratoTemporadaPersisted?.celular, fichaDatosPersisted?.celular)
+    : fichaDatosValues.celular;
+
+  const sistemaChoiceRaw = pickText(sistemaPensionarioPersisted?.pensionChoice);
+  const sistemaChoicePersisted: 'ONP' | 'AFP' | '' =
+    sistemaChoiceRaw === 'ONP' || sistemaChoiceRaw === 'AFP' ? sistemaChoiceRaw : '';
+  const sistemaPensionarioChoice = isSignedReadOnlyView ? sistemaChoicePersisted : pensionChoice;
+
+  const induccionCargo = isSignedReadOnlyView
+    ? pickText(induccionPersisted?.cargo, fichaDatosPersisted?.puesto)
+    : fichaDatosValues.puesto;
+  const induccionUnidadArea = isSignedReadOnlyView
+    ? pickText(induccionPersisted?.unidadArea, fichaDatosPersisted?.unidadArea)
+    : fichaDatosValues.unidadArea;
+  const induccionCodigo = isSignedReadOnlyView
+    ? pickText(induccionPersisted?.codigo, (buildClientFromSnapshot(induccionPersisted) as Cliente | null)?.cod)
+    : selectedClient?.cod || '';
+
+  const cuentaEntidad = isSignedReadOnlyView
+    ? pickText(cuentaBancariaPersisted?.entidadBancaria, fichaDatosPersisted?.entidadBancaria)
+    : fichaDatosValues.entidadBancaria;
+  const cuentaNumero = isSignedReadOnlyView
+    ? pickText(cuentaBancariaPersisted?.numeroCuenta, fichaDatosPersisted?.numeroCuenta)
+    : fichaDatosValues.numeroCuenta;
+
+  const acuerdoCargo = isSignedReadOnlyView
+    ? pickText(acuerdoConfidencialidadPersisted?.cargo, fichaDatosPersisted?.puesto)
+    : fichaDatosValues.puesto;
+
+  const cartaCargo = isSignedReadOnlyView
+    ? pickText(cartaNoSobornoPersisted?.cargo, fichaDatosPersisted?.puesto)
+    : fichaDatosValues.puesto;
+  const cartaUnidadArea = isSignedReadOnlyView
+    ? pickText(
+        cartaNoSobornoPersisted?.unidadArea,
+        cartaNoSobornoPersisted?.gerencia,
+        cartaNoSobornoPersisted?.gerente,
+        fichaDatosPersisted?.unidadArea,
+      )
+    : fichaDatosValues.unidadArea;
+
+  const parentescoValuesForForm: DeclaracionParentescoValues = isSignedReadOnlyView
+    ? ({
+        ...emptyDeclaracionParentescoValues,
+        ...(declaracionParentescoPersisted as Partial<DeclaracionParentescoValues>),
+      } as DeclaracionParentescoValues)
+    : declaracionParentescoValues;
+
   const contractForms = [
     {
       id: 'ficha-datos',
       label: 'Ficha de Datos',
       component: (
                       <FichaDatosForm
-                        client={selectedClient}
-                        value={fichaDatosValues}
+                        client={getClientForForm(fichaDatosPersisted)}
+                        value={fichaDatosFormValue}
                         onChange={setFichaDatosValues}
                         onMissingChange={setFichaDatosMissing}
                         currentPage={previewPage as 1 | 2}
+                        disableClientAutofill={isSignedReadOnlyView}
                       />
       ),
     },
     { id: 'contrato-intermitente', label: 'Contrato Intermitente', component: (
       <ContratoIntermitenteForm
-        client={selectedClient}
-        puesto={fichaDatosValues.puesto}
-        fechaInicio={fichaDatosValues.periodoDesde}
-        fechaFin={fichaDatosValues.periodoHasta}
-        remuneracion={fichaDatosValues.remuneracion}
-        celular={fichaDatosValues.celular}
+        client={getClientForForm(contratoIntermitentePersisted)}
+        puesto={intermitentePuesto}
+        fechaInicio={intermitenteFechaInicio}
+        fechaFin={intermitenteFechaFin}
+        remuneracion={intermitenteRemuneracion}
+        celular={intermitenteCelular}
         signatureSrc={signatureData}
       />
     ) },
     { id: 'contrato-temporada-plan', label: 'Contrato por Temporada Plan', component: (
       <ContratoTemporadaPlanForm
-        client={selectedClient}
-        puesto={fichaDatosValues.puesto}
-        fechaInicio={fichaDatosValues.periodoDesde}
-        fechaFin={fichaDatosValues.periodoHasta}
-        remuneracion={fichaDatosValues.remuneracion}
+        client={getClientForForm(contratoTemporadaPersisted)}
+        puesto={temporadaPuesto}
+        fechaInicio={temporadaFechaInicio}
+        fechaFin={temporadaFechaFin}
+        remuneracion={temporadaRemuneracion}
         signatureSrc={signatureData}
-        celular={fichaDatosValues.celular}
+        celular={temporadaCelular}
         pagePart={previewPage as 1 | 2 | 3}
       />
     ) },
     { id: 'sistema-pensionario', label: 'Sistema Pensionario', component: (
       <SistemaPensionarioForm
-        client={selectedClient}
-        ficha={fichaDatosValues}
-        sistemaPensionarioValues={(viewingContract?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(sistemaPensionarioPersisted)}
+        ficha={fichaDatosFormValue}
+        sistemaPensionarioValues={sistemaPensionarioPersisted}
         signatureSrc={signatureData}
-        pensionChoice={pensionChoice}
+        pensionChoice={sistemaPensionarioChoice}
         onChangeChoice={setPensionChoice}
       />
     ) },
     { id: 'reglamentos', label: 'Reglamentos', component: (
       <ReglamentosForm
-        client={selectedClient}
-        reglamentosValues={(viewingContract?.reglamentos as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(reglamentosPersisted)}
+        reglamentosValues={reglamentosPersisted}
         signatureSrc={signatureData}
         pagePart={previewPage as 1 | 2 | "all"}
       />
     ) },
     { id: 'consentimiento-informado', label: 'Consentimiento Informado', component: (
       <ConsentimientoInformadoForm
-        client={selectedClient}
-        consentimientoInformadoValues={(viewingContract?.consentimiento_informado as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(consentimientoPersisted)}
+        consentimientoInformadoValues={consentimientoPersisted}
         pagePart={previewPage as 1 | 2 | 3 | 4 | "all"}
         signatureSrc={signatureData || undefined}
       />
     ) },
     { id: 'induccion', label: 'Inducción', component: (
       <InduccionForm
-        client={selectedClient}
-        cargo={fichaDatosValues.puesto}
-        unidadArea={fichaDatosValues.unidadArea}
-        codigo={selectedClient?.cod || undefined}
-        induccionValues={(viewingContract?.induccion as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(induccionPersisted)}
+        cargo={induccionCargo}
+        unidadArea={induccionUnidadArea}
+        codigo={induccionCodigo || undefined}
+        induccionValues={induccionPersisted}
         signatureSrc={signatureData || undefined}
       />
     ) },
     { id: 'cuenta-bancaria', label: 'Cuenta Bancaria', component: (
       <CuentaBancariaForm 
-        client={selectedClient}
-        cuentaBancariaValues={(viewingContract?.cuenta_bancaria as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(cuentaBancariaPersisted)}
+        cuentaBancariaValues={cuentaBancariaPersisted}
         signatureSrc={signatureData || undefined}
-        entidadBancaria={fichaDatosValues.entidadBancaria}
-        numeroCuenta={fichaDatosValues.numeroCuenta}
+        entidadBancaria={cuentaEntidad}
+        numeroCuenta={cuentaNumero}
       />
     ) },
     { id: 'declaracion-conflicto', label: 'Declaración de Conflicto de Intereses', component: (
       <DeclaracionConflictoInteresesForm
-        client={selectedClient}
-        declaracionConflictoValues={(viewingContract?.declaracion_conflicto_intereses as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(declaracionConflictoPersisted)}
+        declaracionConflictoValues={declaracionConflictoPersisted}
         signatureSrc={signatureData || undefined}
       />
     ) },
     { id: 'acuerdo-confidencialidad', label: 'Acuerdo de Confidencialidad', component: (
       <AcuerdoConfidencialidadForm
-        client={selectedClient}
-        acuerdoConfidencialidadValues={(viewingContract?.acuerdo_confidencialidad as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(acuerdoConfidencialidadPersisted)}
+        acuerdoConfidencialidadValues={acuerdoConfidencialidadPersisted}
         signatureSrc={signatureData || undefined}
-        cargo={fichaDatosValues.puesto}
+        cargo={acuerdoCargo}
       />
     ) },
     { id: 'carta-no-soborno', label: 'Carta de C. de No Soborno', component: (
       <CartaNoSobornoForm
-        client={selectedClient}
-        cartaNoSobornoValues={(viewingContract?.carta_no_soborno as Record<string, unknown> | null | undefined) ?? null}
+        client={getClientForForm(cartaNoSobornoPersisted)}
+        cartaNoSobornoValues={cartaNoSobornoPersisted}
         signatureSrc={signatureData || undefined}
-        cargo={fichaDatosValues.puesto}
-        unidadArea={fichaDatosValues.unidadArea}
+        cargo={cartaCargo}
+        unidadArea={cartaUnidadArea}
+        preferPersistedOnly={isSignedReadOnlyView}
       />
     ) },
     { id: 'declaracion-parentesco', label: 'Declaración de Parentesco', component: (
       <DeclaracionParentescoForm
-        client={selectedClient}
+        client={getClientForForm(declaracionParentescoPersisted)}
         signatureSrc={signatureData || undefined}
-        parentescoValues={declaracionParentescoValues}
+        parentescoValues={parentescoValuesForForm}
         previewCurrentDate={!viewingContract}
       />
     ) },
     { id: 'dj-patrimonial', label: 'DJ Patrimonial', component: (
       <DjPatrimonialForm
-        client={selectedClient}
+        client={getClientForForm(djPatrimonialPersisted)}
         signatureSrc={signatureData || undefined}
-        djPatrimonialValues={(viewingContract?.dj_patrimonial as Record<string, unknown> | null | undefined) ?? null}
+        djPatrimonialValues={djPatrimonialPersisted}
       />
     ) },
   ];
@@ -1272,19 +1456,44 @@ export default function ContratosPage() {
       typeof existingCartaNoSoborno?.ciudad === 'string' && existingCartaNoSoborno.ciudad.trim()
         ? existingCartaNoSoborno.ciudad
         : '';
+    const existingCartaNoSobornoCargo =
+      typeof existingCartaNoSoborno?.cargo === 'string' && existingCartaNoSoborno.cargo.trim()
+        ? existingCartaNoSoborno.cargo
+        : '';
+    const existingCartaNoSobornoUnidadArea =
+      typeof existingCartaNoSoborno?.unidadArea === 'string' && existingCartaNoSoborno.unidadArea.trim()
+        ? existingCartaNoSoborno.unidadArea
+        : '';
+    const existingCartaNoSobornoGerencia =
+      typeof existingCartaNoSoborno?.gerencia === 'string' && existingCartaNoSoborno.gerencia.trim()
+        ? existingCartaNoSoborno.gerencia
+        : '';
+    const existingCartaNoSobornoGerente =
+      typeof existingCartaNoSoborno?.gerente === 'string' && existingCartaNoSoborno.gerente.trim()
+        ? existingCartaNoSoborno.gerente
+        : '';
+    const cartaNoSobornoCargo = fichaDatosValues.puesto || selectedClient.cargo || existingCartaNoSobornoCargo;
+    const cartaNoSobornoUnidadArea =
+      fichaDatosValues.unidadArea ||
+      selectedClient.area ||
+      existingCartaNoSobornoUnidadArea ||
+      existingCartaNoSobornoGerencia ||
+      existingCartaNoSobornoGerente;
 
     const cartaNoSobornoPayload = {
       carta_no_soborno: {
         fecha_registro: existingCartaNoSobornoFechaRegistro || new Date().toISOString(),
         ciudad: existingCartaNoSobornoCiudad || 'Virú',
-        cargo: fichaDatosValues.puesto,
-        unidadArea: fichaDatosValues.unidadArea,
+        cargo: cartaNoSobornoCargo,
+        unidadArea: cartaNoSobornoUnidadArea,
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
           a_paterno: selectedClient.a_paterno,
           a_materno: selectedClient.a_materno,
           nombre: selectedClient.nombre,
+          cargo: selectedClient.cargo,
+          area: selectedClient.area,
         }
       }
     };
@@ -1767,19 +1976,44 @@ export default function ContratosPage() {
       typeof existingCartaNoSoborno?.ciudad === 'string' && existingCartaNoSoborno.ciudad.trim()
         ? existingCartaNoSoborno.ciudad
         : '';
+    const existingCartaNoSobornoCargo =
+      typeof existingCartaNoSoborno?.cargo === 'string' && existingCartaNoSoborno.cargo.trim()
+        ? existingCartaNoSoborno.cargo
+        : '';
+    const existingCartaNoSobornoUnidadArea =
+      typeof existingCartaNoSoborno?.unidadArea === 'string' && existingCartaNoSoborno.unidadArea.trim()
+        ? existingCartaNoSoborno.unidadArea
+        : '';
+    const existingCartaNoSobornoGerencia =
+      typeof existingCartaNoSoborno?.gerencia === 'string' && existingCartaNoSoborno.gerencia.trim()
+        ? existingCartaNoSoborno.gerencia
+        : '';
+    const existingCartaNoSobornoGerente =
+      typeof existingCartaNoSoborno?.gerente === 'string' && existingCartaNoSoborno.gerente.trim()
+        ? existingCartaNoSoborno.gerente
+        : '';
+    const cartaNoSobornoCargo = fichaDatosValues.puesto || selectedClient.cargo || existingCartaNoSobornoCargo;
+    const cartaNoSobornoUnidadArea =
+      fichaDatosValues.unidadArea ||
+      selectedClient.area ||
+      existingCartaNoSobornoUnidadArea ||
+      existingCartaNoSobornoGerencia ||
+      existingCartaNoSobornoGerente;
 
     const cartaNoSobornoPayload = {
       carta_no_soborno: {
         fecha_registro: existingCartaNoSobornoFechaRegistro || new Date().toISOString(),
         ciudad: existingCartaNoSobornoCiudad || 'Virú',
-        cargo: fichaDatosValues.puesto,
-        unidadArea: fichaDatosValues.unidadArea,
+        cargo: cartaNoSobornoCargo,
+        unidadArea: cartaNoSobornoUnidadArea,
         clientSnapshot: {
           dni: selectedClient.dni,
           apellidos_y_nombres: selectedClient.apellidos_y_nombres,
           a_paterno: selectedClient.a_paterno,
           a_materno: selectedClient.a_materno,
           nombre: selectedClient.nombre,
+          cargo: selectedClient.cargo,
+          area: selectedClient.area,
         }
       }
     };

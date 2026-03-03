@@ -95,6 +95,7 @@ interface FichaDatosFormProps {
   onChange: (next: FichaDatosValues) => void;
   onMissingChange?: (missing: (keyof FichaDatosValues)[]) => void;
   currentPage?: 1 | 2;
+  disableClientAutofill?: boolean;
 }
 
 export const getFichaDatosMissing = (current: FichaDatosValues) =>
@@ -160,7 +161,14 @@ export const getFichaDatosMissing = (current: FichaDatosValues) =>
       return !asString.trim();
     });
 
-export function FichaDatosForm({ client, value, onChange, onMissingChange, currentPage = 1 }: FichaDatosFormProps) {
+export function FichaDatosForm({
+  client,
+  value,
+  onChange,
+  onMissingChange,
+  currentPage = 1,
+  disableClientAutofill = false,
+}: FichaDatosFormProps) {
   const [activeField, setActiveField] = useState<keyof FichaDatosValues | null>(null);
   const normalizeLetters = (input: string) =>
     input
@@ -199,6 +207,7 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
     textFields.includes(field as TextField);
 
   useEffect(() => {
+    if (disableClientAutofill) return;
     if (!client) return;
     const formatDateToDMY = (val?: string | null) => {
       const v = (val ?? '').toString().trim();
@@ -249,7 +258,7 @@ export function FichaDatosForm({ client, value, onChange, onMissingChange, curre
     if (!same) {
       onChange(merged);
     }
-  }, [client?.id]);
+  }, [client?.id, disableClientAutofill]);
 
   const setField = (field: keyof FichaDatosValues, nextValue: string) => {
     let sanitized = nextValue;

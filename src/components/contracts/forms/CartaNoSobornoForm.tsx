@@ -97,6 +97,14 @@ const normalize = (value?: string | number | null) => {
   return String(value).trim();
 };
 
+const pickFirstText = (...values: Array<string | number | null | undefined>) => {
+  for (const value of values) {
+    const normalized = normalize(value);
+    if (normalized) return normalized;
+  }
+  return "";
+};
+
 function formatDate(dateStr?: string, separator = "/"): string {
   if (!dateStr) return "";
   const trimmed = dateStr.trim();
@@ -133,16 +141,21 @@ export function CartaNoSobornoForm({
   cargo,
   unidadArea,
   cartaNoSobornoValues,
+  preferPersistedOnly = false,
 }: {
   client?: Cliente;
   signatureSrc?: string;
   cargo?: string;
   unidadArea?: string;
   cartaNoSobornoValues?: Record<string, unknown> | null;
+  preferPersistedOnly?: boolean;
 }) {
   const hasPersistedValues = !!(cartaNoSobornoValues && typeof cartaNoSobornoValues === "object");
   const valuesObj = (cartaNoSobornoValues && typeof cartaNoSobornoValues === "object"
     ? cartaNoSobornoValues
+    : {}) as Record<string, unknown>;
+  const snapshotObj = (valuesObj.clientSnapshot && typeof valuesObj.clientSnapshot === "object"
+    ? valuesObj.clientSnapshot
     : {}) as Record<string, unknown>;
   const savedFechaRegistro = normalize(valuesObj.fecha_registro as string);
   const normalizedFechaRegistro = savedFechaRegistro && /^\d{4}-\d{2}-\d{2}$/.test(savedFechaRegistro)
@@ -151,10 +164,40 @@ export function CartaNoSobornoForm({
   const parsedSavedDate = normalizedFechaRegistro ? new Date(normalizedFechaRegistro) : null;
   const hasSavedDate = !!(parsedSavedDate && !Number.isNaN(parsedSavedDate.getTime()));
   const fechaSlash = hasSavedDate ? formatDate(normalizedFechaRegistro, "/") : (!hasPersistedValues ? formatDate(new Date().toISOString().slice(0, 10), "/") : "");
-  const fullName = buildFullName(client);
-  const dni = buildDni(client);
-  const cargoDisplay = cargo || "#N/D";
-  const unidadAreaDisplay = unidadArea || "#N/D";
+  const snapshotFullName = pickFirstText(
+    valuesObj.apellidos_y_nombres as string,
+    snapshotObj.apellidos_y_nombres as string,
+    [snapshotObj.nombre, snapshotObj.a_paterno, snapshotObj.a_materno]
+      .map((part) => normalize(part as string))
+      .filter(Boolean)
+      .join(" "),
+  );
+
+  const fullName = preferPersistedOnly
+    ? snapshotFullName || "#N/D"
+    : snapshotFullName || buildFullName(client);
+
+  const dni = preferPersistedOnly
+    ? pickFirstText(valuesObj.dni as string, snapshotObj.dni as string) || "#N/D"
+    : pickFirstText(valuesObj.dni as string, snapshotObj.dni as string, buildDni(client)) || "#N/D";
+
+  const cargoDisplay =
+    pickFirstText(
+      valuesObj.cargo as string,
+      snapshotObj.cargo as string,
+      preferPersistedOnly ? undefined : cargo,
+      preferPersistedOnly ? undefined : client?.cargo,
+    ) || "#N/D";
+
+  const unidadAreaDisplay =
+    pickFirstText(
+      valuesObj.unidadArea as string,
+      valuesObj.gerencia as string,
+      valuesObj.gerente as string,
+      snapshotObj.area as string,
+      preferPersistedOnly ? undefined : unidadArea,
+      preferPersistedOnly ? undefined : client?.area,
+    ) || "#N/D";
 
   return (
     <div className="w-full bg-white text-black print:bg-white print:p-0" style={{ margin: 0, padding: 0 }}>
