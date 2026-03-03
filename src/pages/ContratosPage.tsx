@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ClientSelector } from '@/components/ClientSelector';
 import { SignaturePad } from '@/components/SignaturePad';
-import { PersonalDataSheetHeader, PersonalDataSheetTemplate } from '@/components/ContractTemplate';
+import { PersonalDataSheetHeader, PersonalDataSheetTemplate, type PersonalFichaData } from '@/components/ContractTemplate';
 import { emptyFichaDatosValues, FichaDatosForm, FichaDatosValues, getFichaDatosMissing } from '@/components/contracts/forms/FichaDatosForm';
 import { emptyDeclaracionParentescoValues, DeclaracionParentescoEditor, DeclaracionParentescoValues, getDeclaracionParentescoMissing, DeclaracionParentescoForm } from '@/components/contracts/forms/DeclaracionParentesco';
 import { ContratoIntermitenteForm } from '@/components/contracts/forms/ContratoIntermitenteForm';
@@ -148,8 +148,10 @@ export default function ContratosPage() {
   const [previewPage, setPreviewPage] = useState(1);
   const [downloadingRowId, setDownloadingRowId] = useState<string | null>(null);
   const [downloadContext, setDownloadContext] = useState<{
-    contract: Contrato;
+    contract: Contrato | null;
     client: Cliente | null;
+    fichaDatos: FichaDatosValues;
+    templateData: Partial<PersonalFichaData>;
     signature?: string;
   } | null>(null);
   const [savingContract, setSavingContract] = useState(false);
@@ -716,6 +718,79 @@ export default function ContratosPage() {
     addIfNotEmpty('cooperador', fichaDatosValues.cooperador);
     return fichaLimpia;
   };
+
+  const pickFichaValue = (...values: unknown[]) => {
+    for (const value of values) {
+      if (value === null || value === undefined) continue;
+      const text = String(value).trim();
+      if (text) return text;
+    }
+    return '';
+  };
+
+  const mergeFichaDatosValues = (raw?: Partial<FichaDatosValues> | null): FichaDatosValues => {
+    if (!raw) return { ...emptyFichaDatosValues };
+    const source = raw as Record<string, unknown>;
+    return {
+      ...emptyFichaDatosValues,
+      ...raw,
+      unidadArea: pickFichaValue(source.unidadArea, source.area, emptyFichaDatosValues.unidadArea),
+      puesto: pickFichaValue(source.puesto, source.cargo, emptyFichaDatosValues.puesto),
+      periodoDesde: pickFichaValue(source.periodoDesde, source.fecha_inicio_contrato, emptyFichaDatosValues.periodoDesde),
+      periodoHasta: pickFichaValue(source.periodoHasta, source.fecha_termino_contrato, emptyFichaDatosValues.periodoHasta),
+      fechaNacimiento: pickFichaValue(source.fechaNacimiento, source.fecha_nac, emptyFichaDatosValues.fechaNacimiento),
+      distritoNacimiento: pickFichaValue(source.distritoNacimiento, source.distrito, emptyFichaDatosValues.distritoNacimiento),
+      provinciaNacimiento: pickFichaValue(source.provinciaNacimiento, source.provincia, emptyFichaDatosValues.provinciaNacimiento),
+      departamentoNacimiento: pickFichaValue(source.departamentoNacimiento, source.departamento, emptyFichaDatosValues.departamentoNacimiento),
+      estadoCivil: pickFichaValue(source.estadoCivil, source.estado_civil, emptyFichaDatosValues.estadoCivil),
+      domicilioActual: pickFichaValue(source.domicilioActual, source.direccion, emptyFichaDatosValues.domicilioActual),
+      distritoDomicilio: pickFichaValue(source.distritoDomicilio, source.cpDistrito, source.distrito, emptyFichaDatosValues.distritoDomicilio),
+      provinciaDomicilio: pickFichaValue(source.provinciaDomicilio, source.provincia, emptyFichaDatosValues.provinciaDomicilio),
+      remuneracion: pickFichaValue(source.remuneracion, emptyFichaDatosValues.remuneracion),
+      entidadBancaria: pickFichaValue(source.entidadBancaria, emptyFichaDatosValues.entidadBancaria),
+      numeroCuenta: pickFichaValue(source.numeroCuenta, emptyFichaDatosValues.numeroCuenta),
+      familiares: raw.familiares?.length ? raw.familiares : emptyFichaDatosValues.familiares,
+      experienciaLaboral: raw.experienciaLaboral?.length ? raw.experienciaLaboral : emptyFichaDatosValues.experienciaLaboral,
+      educacion: {
+        ...emptyFichaDatosValues.educacion,
+        ...(raw.educacion || {}),
+        primaria: { ...emptyFichaDatosValues.educacion.primaria, ...(raw.educacion?.primaria || {}) },
+        secundaria: { ...emptyFichaDatosValues.educacion.secundaria, ...(raw.educacion?.secundaria || {}) },
+        tecnico: { ...emptyFichaDatosValues.educacion.tecnico, ...(raw.educacion?.tecnico || {}) },
+        universitario: { ...emptyFichaDatosValues.educacion.universitario, ...(raw.educacion?.universitario || {}) },
+      },
+    };
+  };
+
+  const buildFichaTemplateDataFromSources = (
+    fichaDatos: FichaDatosValues,
+    client: Cliente | null
+  ): Partial<PersonalFichaData> => ({
+    remuneracion: pickFichaValue(fichaDatos.remuneracion),
+    unidadArea: pickFichaValue(fichaDatos.unidadArea, client?.area),
+    puesto: pickFichaValue(fichaDatos.puesto, client?.cargo),
+    periodoDesde: pickFichaValue(fichaDatos.periodoDesde, client?.fecha_inicio_contrato),
+    periodoHasta: pickFichaValue(fichaDatos.periodoHasta, client?.fecha_termino_contrato),
+    entidadBancaria: pickFichaValue(fichaDatos.entidadBancaria),
+    numeroCuenta: pickFichaValue(fichaDatos.numeroCuenta),
+    fechaNacimiento: pickFichaValue(fichaDatos.fechaNacimiento, client?.fecha_nac),
+    distritoNacimiento: pickFichaValue(fichaDatos.distritoNacimiento, client?.distrito),
+    provinciaNacimiento: pickFichaValue(fichaDatos.provinciaNacimiento, client?.provincia),
+    departamentoNacimiento: pickFichaValue(fichaDatos.departamentoNacimiento, client?.departamento),
+    dni: pickFichaValue(client?.dni),
+    telefonoFijo: pickFichaValue(fichaDatos.telefonoFijo),
+    celular: pickFichaValue(fichaDatos.celular),
+    estadoCivil: pickFichaValue(fichaDatos.estadoCivil, client?.estado_civil) as PersonalFichaData['estadoCivil'],
+    domicilioActual: pickFichaValue(fichaDatos.domicilioActual, client?.direccion),
+    cpDistrito: pickFichaValue(fichaDatos.distritoDomicilio, client?.distrito),
+    provinciaDomicilio: pickFichaValue(fichaDatos.provinciaDomicilio, client?.provincia),
+    familiares: fichaDatos.familiares,
+    emergenciaContacto: pickFichaValue(fichaDatos.emergenciaContacto),
+    emergenciaCelular: pickFichaValue(fichaDatos.emergenciaCelular),
+    educacion: fichaDatos.educacion,
+    experienciaLaboral: fichaDatos.experienciaLaboral,
+    sinExperiencia: fichaDatos.sinExperiencia,
+  });
 
   const isSignedReadOnlyView = viewMode === 'view' && viewingContract?.estado === 'firmado';
 
@@ -2604,7 +2679,17 @@ export default function ContratosPage() {
       const safeName = clientName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
 
       if (activeContractForm === 'ficha-datos') {
-        setDownloadContext({ contract: viewingContract || null, client: selectedClient || null, signature: signatureData });
+        const fichaForDownload = viewingContract?.ficha_datos
+          ? mergeFichaDatosValues(viewingContract.ficha_datos as Partial<FichaDatosValues>)
+          : mergeFichaDatosValues(fichaDatosValues);
+        const clientForDownload = selectedClient || null;
+        setDownloadContext({
+          contract: viewingContract || null,
+          client: clientForDownload,
+          fichaDatos: fichaForDownload,
+          templateData: buildFichaTemplateDataFromSources(fichaForDownload, clientForDownload),
+          signature: signatureData,
+        });
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         await new Promise(resolve => setTimeout(resolve, 0));
         const blob = await generatePdfFromRef(downloadContractRef, `${safeName}_ficha_de_datos`, { returnBlob: true });
@@ -3035,7 +3120,15 @@ export default function ContratosPage() {
           .maybeSingle();
         sig = data?.firma_url || '';
 
-        setDownloadContext({ contract: contrato, client: cliente || null, signature: sig });
+        const fichaDatosForZip = mergeFichaDatosValues(contrato.ficha_datos as Partial<FichaDatosValues> | undefined);
+        const clientForZip = cliente || null;
+        setDownloadContext({
+          contract: contrato,
+          client: clientForZip,
+          fichaDatos: fichaDatosForZip,
+          templateData: buildFichaTemplateDataFromSources(fichaDatosForZip, clientForZip),
+          signature: sig,
+        });
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
         const clientName = cliente ? getFullName(cliente) : contrato.id;
@@ -3119,7 +3212,7 @@ export default function ContratosPage() {
     setZipProgress({ active: true, progress: 0, total: formsToDownload.length, current: 0, clientName: safeName });
 
     try {
-      let fichaDatosForZip = fichaDatosValues;
+      let fichaDatosForZip = mergeFichaDatosValues(fichaDatosValues);
       let pensionChoiceForZip = pensionChoice;
       const sistemaPensionarioForZip = (targetContrato?.sistema_pensionario as Record<string, unknown> | null | undefined) ?? null;
       const reglamentosForZip = (targetContrato?.reglamentos as Record<string, unknown> | null | undefined) ?? null;
@@ -3134,23 +3227,7 @@ export default function ContratosPage() {
       let signatureForZip = signatureData;
 
       if (targetContrato) {
-        const raw = targetContrato.ficha_datos as Partial<FichaDatosValues> | undefined;
-        if (raw) {
-          fichaDatosForZip = {
-            ...emptyFichaDatosValues,
-            ...raw,
-            familiares: raw.familiares?.length ? raw.familiares : emptyFichaDatosValues.familiares,
-            experienciaLaboral: raw.experienciaLaboral?.length ? raw.experienciaLaboral : emptyFichaDatosValues.experienciaLaboral,
-            educacion: {
-              ...emptyFichaDatosValues.educacion,
-              ...(raw.educacion || {}),
-              primaria: { ...emptyFichaDatosValues.educacion.primaria, ...(raw.educacion?.primaria || {}) },
-              secundaria: { ...emptyFichaDatosValues.educacion.secundaria, ...(raw.educacion?.secundaria || {}) },
-              tecnico: { ...emptyFichaDatosValues.educacion.tecnico, ...(raw.educacion?.tecnico || {}) },
-              universitario: { ...emptyFichaDatosValues.educacion.universitario, ...(raw.educacion?.universitario || {}) },
-            },
-          };
-        }
+        fichaDatosForZip = mergeFichaDatosValues(targetContrato.ficha_datos as Partial<FichaDatosValues> | undefined);
 
         const sistemaPensionario = targetContrato.sistema_pensionario as Record<string, unknown> | null | undefined;
         const pensionChoiceValue = typeof sistemaPensionario?.pensionChoice === 'string'
@@ -3188,7 +3265,14 @@ export default function ContratosPage() {
         setZipProgress({ active: true, progress: Math.round(((i) / formsToDownload.length) * 100), total: formsToDownload.length, current: i + 1, clientName: safeName });
 
         if (form.id === 'ficha-datos') {
-          setDownloadContext({ contract: targetContrato, client: cliente || null, signature: signatureForZip });
+          const clientForZip = cliente || null;
+          setDownloadContext({
+            contract: targetContrato,
+            client: clientForZip,
+            fichaDatos: fichaDatosForZip,
+            templateData: buildFichaTemplateDataFromSources(fichaDatosForZip, clientForZip),
+            signature: signatureForZip,
+          });
           await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
           await new Promise(resolve => setTimeout(resolve, 0));
           const blob = await generatePdfFromRef(downloadContractRef, safeName, { returnBlob: true });
@@ -3400,23 +3484,7 @@ export default function ContratosPage() {
           const cliente = getClienteById(contrato.cliente_id);
           if (!cliente) continue;
 
-          const rawFicha = contrato.ficha_datos as Partial<FichaDatosValues> | undefined;
-          const fichaDatosForZip = rawFicha
-            ? {
-                ...emptyFichaDatosValues,
-                ...rawFicha,
-                familiares: rawFicha.familiares?.length ? rawFicha.familiares : emptyFichaDatosValues.familiares,
-                experienciaLaboral: rawFicha.experienciaLaboral?.length ? rawFicha.experienciaLaboral : emptyFichaDatosValues.experienciaLaboral,
-                educacion: {
-                  ...emptyFichaDatosValues.educacion,
-                  ...(rawFicha.educacion || {}),
-                  primaria: { ...emptyFichaDatosValues.educacion.primaria, ...(rawFicha.educacion?.primaria || {}) },
-                  secundaria: { ...emptyFichaDatosValues.educacion.secundaria, ...(rawFicha.educacion?.secundaria || {}) },
-                  tecnico: { ...emptyFichaDatosValues.educacion.tecnico, ...(rawFicha.educacion?.tecnico || {}) },
-                  universitario: { ...emptyFichaDatosValues.educacion.universitario, ...(rawFicha.educacion?.universitario || {}) },
-                },
-              }
-            : emptyFichaDatosValues;
+          const fichaDatosForZip = mergeFichaDatosValues(contrato.ficha_datos as Partial<FichaDatosValues> | undefined);
 
           const sistemaPensionario = contrato.sistema_pensionario as { pensionChoice?: 'ONP' | 'AFP' | '' } | undefined;
           const pensionChoiceForZip = sistemaPensionario?.pensionChoice || '';
@@ -5209,7 +5277,7 @@ export default function ContratosPage() {
           <PersonalDataSheetTemplate
             ref={downloadContractRef}
             client={downloadContext.client || selectedClient}
-            data={buildFichaDatosTemplateData()}
+            data={downloadContext.templateData}
             isLocked={true}
             signatureSrc={downloadContext.signature}
           />
