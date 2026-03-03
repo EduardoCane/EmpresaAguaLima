@@ -48,6 +48,13 @@ export default function LoginPage() {
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (hashParams.get('type') === 'recovery') {
+      navigate(`/reset-password${window.location.hash}`, { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const state = location.state as LocationState | null;
     if (state?.prefillEmail) {
       setEmail(state.prefillEmail);
@@ -58,6 +65,10 @@ export default function LoginPage() {
   }, [location.state]);
 
   useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (hashParams.get('type') === 'recovery') {
+      return;
+    }
     if (!loading && session && isAdmin) {
       const state = location.state as LocationState | null;
       navigate(state?.from?.pathname || '/', { replace: true });
@@ -105,8 +116,13 @@ export default function LoginPage() {
 
     setResetLoading(true);
     try {
+      const configuredPublicUrl = (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.trim();
+      const appBaseUrl = configuredPublicUrl
+        ? configuredPublicUrl.replace(/\/$/, '')
+        : window.location.origin;
+
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${appBaseUrl}/reset-password`,
       });
 
       if (resetError) {

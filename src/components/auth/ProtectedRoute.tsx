@@ -5,6 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 export function ProtectedRoute({ children }: { children: JSX.Element }) {
   const location = useLocation();
   const { session, isAdmin, loading, signOut } = useAuth();
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const isRecoveryFlow = hashParams.get('type') === 'recovery';
+
+  if (isRecoveryFlow) {
+    return <Navigate to={`/reset-password${window.location.hash}`} replace />;
+  }
 
   // Show loading only while session is still unknown.
   if (loading && !session) {
