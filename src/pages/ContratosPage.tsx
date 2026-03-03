@@ -32,8 +32,15 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import JSZip from 'jszip';
 
-type FirmaRow = { firma_url?: string; origen?: 'capturada' | 'reutilizada' };
-type ClienteFirmaActivaRow = { firma_url?: string };
+type FirmaRow = {
+  firma_url?: string;
+  origen?: 'capturada' | 'reutilizada';
+  created_at?: string;
+};
+type ClienteFirmaActivaRow = {
+  firma_url?: string;
+  created_at?: string;
+};
 type ErrorWithCode = { code?: string };
 
 type ViewMode = 'list' | 'create' | 'view';
@@ -888,7 +895,7 @@ export default function ContratosPage() {
         if (activeClientId) {
           const { data, error } = await supabase
             .from('cliente_firmas')
-            .select('firma_url')
+            .select('firma_url, created_at')
             .eq('cliente_id', activeClientId)
             .eq('activa', true)
             .order('created_at', { ascending: false })
@@ -905,7 +912,7 @@ export default function ContratosPage() {
         if (activeContractId) {
           const { data, error } = await supabase
             .from('firmas')
-            .select('firma_url, origen')
+            .select('firma_url, origen, created_at')
             .eq('contrato_id', activeContractId)
             .order('created_at', { ascending: false })
             .limit(1)
@@ -918,10 +925,26 @@ export default function ContratosPage() {
           }
         }
 
-        if (!firma?.firma_url && firmaActivaCliente?.firma_url) {
+        const parseTimestamp = (value?: string) => {
+          if (!value) return 0;
+          const parsed = new Date(value).getTime();
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        // Elegir la firma mas reciente entre la del contrato y la activa del cliente.
+        if (firma?.firma_url && firmaActivaCliente?.firma_url) {
+          if (parseTimestamp(firmaActivaCliente.created_at) > parseTimestamp(firma.created_at)) {
+            firma = {
+              firma_url: firmaActivaCliente.firma_url,
+              origen: 'reutilizada',
+              created_at: firmaActivaCliente.created_at,
+            };
+          }
+        } else if (!firma?.firma_url && firmaActivaCliente?.firma_url) {
           firma = {
             firma_url: firmaActivaCliente.firma_url,
             origen: 'reutilizada',
+            created_at: firmaActivaCliente.created_at,
           };
         }
 
@@ -5103,4 +5126,3 @@ export default function ContratosPage() {
     </>
   );
 }
-

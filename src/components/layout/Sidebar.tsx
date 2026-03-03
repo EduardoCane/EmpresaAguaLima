@@ -8,20 +8,25 @@ import {
   X,
   ChevronLeft,
   Moon,
-  Sun
+  Sun,
+  LogOut,
+  Shield
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const navItems = useMemo(
     () => [
       { path: '/', label: 'Dashboard', icon: LayoutDashboard, description: 'Resumen general' },
       { path: '/clientes', label: 'Clientes', icon: Users, description: 'Gestión de clientes' },
       { path: '/contratos', label: 'Fichas / Contratos', icon: FileText, description: 'Contratos y fichas' },
+      { path: '/administradores', label: 'Administradores', icon: Shield, description: 'Gestión de admins' },
     ],
     []
   );
@@ -191,6 +196,25 @@ export function Sidebar() {
             <ChevronLeft className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
             {!isCollapsed && <span>Contraer menú</span>}
           </button>
+
+          <button
+            onClick={() => void signOut()}
+            className={`
+              w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-300 text-sm font-semibold
+              ${isDarkMode
+                ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                : 'bg-red-50 text-red-700 hover:bg-red-100'}
+            `}
+          >
+            <LogOut className="w-4 h-4" />
+            {!isCollapsed && <span>Cerrar sesión</span>}
+          </button>
+
+          {!isCollapsed && (
+            <p className={`text-xs truncate px-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {user?.email}
+            </p>
+          )}
         </div>
       </aside>
 
